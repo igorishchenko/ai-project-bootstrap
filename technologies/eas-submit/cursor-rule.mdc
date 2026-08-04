@@ -1,0 +1,39 @@
+---
+description: EAS Submit conventions
+globs: ["eas.json", ".github/workflows/**", ".gitlab-ci.yml"]
+alwaysApply: false
+---
+
+# EAS Submit
+
+## Credentials
+
+- The Play service account JSON is **never committed**. Store it as an EAS
+  secret or a CI file variable, and keep the path in `.gitignore`.
+- Use an App Store Connect API key, not an Apple ID and password — CI cannot
+  answer a 2FA prompt.
+- `EXPO_TOKEN` lives in CI secrets, masked.
+
+## Tracks
+
+- Submit to `internal` or a beta track, then promote in the store console.
+  Submitting straight to production removes the step where someone confirms the
+  build is the intended one.
+- Submitted is not released. The build sits in a track until a human publishes.
+
+## Build numbers
+
+- `autoIncrement` in the production build profile. Stores reject duplicates
+  *after* the upload finishes, wasting an entire build cycle.
+
+## In CI
+
+- `--non-interactive` always.
+- Prefer an explicit build `--id` over `--latest`, so a concurrent build cannot
+  be submitted by mistake.
+
+## Never
+
+- Never commit store credentials of any kind.
+- Never submit from a local machine for a release the team relies on — it is
+  unreproducible.

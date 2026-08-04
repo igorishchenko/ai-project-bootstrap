@@ -1,0 +1,44 @@
+---
+description: Clerk authentication conventions
+globs: ["src/features/auth/**", "src/services/**", "app/**"]
+alwaysApply: false
+---
+
+# Clerk
+
+## Reading auth state
+
+```tsx
+const { isLoaded, isSignedIn, userId } = useAuth();
+if (!isLoaded) return <Splash />;
+```
+
+Never treat "not loaded" as "signed out". Doing so flashes the sign-in screen at
+every launch for users who are already authenticated, and can redirect them out
+of a deep link.
+
+## Tokens
+
+- `tokenCache` must be backed by `expo-secure-store`. A session token is a
+  credential; `AsyncStorage` is plaintext.
+- Send `await getToken()` as a bearer token to your backend.
+- The backend **verifies** the token. Never trust a user id from a request body
+  or a query parameter.
+- The Clerk secret key is server-side only, never in the app.
+
+## User data
+
+- Store Clerk's `userId` on your own rows to join user data.
+- Handle the `user.deleted` webhook so removing a user removes their data.
+  Orphaned personal data is a compliance problem, not just untidiness.
+
+## Environments
+
+- Separate Clerk applications for development and production. Sharing one puts
+  test accounts in your production user pool.
+
+## Never
+
+- Never log a session token or JWT.
+- Never gate access purely on client state — the backend re-verifies.
+- Never render user-specific UI before `isLoaded`.

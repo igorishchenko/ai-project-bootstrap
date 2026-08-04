@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "resend", "version": "^6.18.0" },
+    { "name": "@react-email/components", "version": "^1.0.0", "dev": true }
+  ],
+  "install": [
+    "npm install resend",
+    "npm install -D @react-email/components"
+  ]
+}

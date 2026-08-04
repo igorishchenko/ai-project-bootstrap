@@ -1,0 +1,41 @@
+---
+description: Expo push notification conventions
+globs: ["src/services/notifications/**", "src/features/**"]
+alwaysApply: false
+---
+
+# Expo Push
+
+## Permission
+
+- Ask **in context**, after explaining the benefit — never on first launch.
+  On iOS the system prompt appears once per install; a decline is effectively
+  permanent, and you cannot ask again.
+- Show your own explanation screen first and only call
+  `requestPermissionsAsync()` when the user agrees.
+- Denied is a normal state, not an error. The app must work fully without push.
+
+## Tokens
+
+- Refresh on every launch — tokens rotate on reinstall and device restore.
+- Send to the backend with the user id; **delete on sign-out**, or the next user
+  on that device receives the previous user's notifications.
+- Purge tokens that come back `DeviceNotRegistered` in a receipt.
+
+## Handling
+
+- Register the response listener once, at startup.
+- Handle the **cold start** with `getLastNotificationResponseAsync()`. A tap
+  usually launches the app from scratch, and without this the deep link is lost.
+- Android needs an explicit notification channel or importance is ignored.
+
+## Sending
+
+- A 200 from the push API means accepted, not delivered. Check receipts.
+- Never put personal data or a token in a notification payload — it is visible
+  on the lock screen and passes through Apple's and Google's infrastructure.
+
+## Never
+
+- Never expect push to work in a simulator or in Expo Go.
+- Never block a feature on notification permission.

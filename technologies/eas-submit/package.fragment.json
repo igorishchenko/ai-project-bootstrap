@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "submit:ios": "eas submit --platform ios --profile production",
+    "submit:android": "eas submit --platform android --profile production"
+  }
+}

@@ -26,6 +26,28 @@ package.json   merged dependencies with version conflicts resolved
 README.md  CLAUDE.md  AGENTS.md  ai-project.config.json
 ```
 
+## Available technologies
+
+| Category | Modules |
+| --- | --- |
+| Platform | React Native, Expo |
+| Backend | Supabase |
+| Auth | Supabase Auth, Clerk |
+| Database | SQLite, PostgreSQL |
+| Payments | RevenueCat |
+| Analytics | PostHog |
+| Crash reporting | Sentry |
+| Notifications | Expo Push, OneSignal |
+| Storage | Supabase Storage, Cloudflare R2 |
+| Email | Resend, SendGrid |
+| Monitoring | Better Stack |
+| CI/CD | GitHub Actions, GitLab CI |
+| Testing | Jest, Detox |
+| Deployment | EAS Submit, Fastlane |
+
+A category with no installed modules is skipped by the wizard, so the catalogue
+can grow without any change to the questions.
+
 ## Usage
 
 ```bash

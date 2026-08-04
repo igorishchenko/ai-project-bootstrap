@@ -1,0 +1,10 @@
+{
+  "id": "onesignal",
+  "name": "OneSignal",
+  "category": "notifications",
+  "description": "Push notifications with segmentation, scheduling and campaign analytics.",
+  "requires": ["react-native"],
+  "conflicts": ["expo-notifications"],
+  "dependencies": [],
+  "priority": 56
+}

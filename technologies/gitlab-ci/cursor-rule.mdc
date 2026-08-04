@@ -1,0 +1,38 @@
+---
+description: GitLab CI conventions
+globs: [".gitlab-ci.yml", "ci/**"]
+alwaysApply: false
+---
+
+# GitLab CI
+
+## Variables
+
+- Secrets live in **Settings → CI/CD → Variables**, never in `.gitlab-ci.yml`.
+- Mark every secret **Masked** (hidden in logs) and **Protected** (available
+  only to protected branches and tags). Both switches matter and they do
+  different things.
+- Never unprotect a variable so a fork merge request can use it — that is the
+  leak the setting exists to prevent.
+
+## Pipelines
+
+- `interruptible: true` so a new push cancels superseded pipelines.
+- `rules` rather than the older `only`/`except`.
+- Cache keyed on the lockfile, caching the package manager's cache directory —
+  not `node_modules` itself.
+
+## Deployment
+
+- Production deploys are `when: manual`, against a protected environment.
+- A green pipeline means the code is safe to ship, not that now is the moment.
+
+## Runners
+
+- Jobs touching production credentials run on project runners, not shared ones.
+- Shared runners execute your job on infrastructure you do not control.
+
+## Never
+
+- Never `echo` a variable to debug it — that defeats masking.
+- Never commit a credential and rely on history rewriting; rotate it instead.

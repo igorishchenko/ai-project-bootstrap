@@ -1,0 +1,10 @@
+{
+  "id": "jest",
+  "name": "Jest",
+  "category": "testing",
+  "description": "Unit and component testing with React Native Testing Library.",
+  "requires": ["react-native"],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 80
+}

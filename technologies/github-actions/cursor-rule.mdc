@@ -1,0 +1,46 @@
+---
+description: GitHub Actions conventions
+globs: [".github/workflows/**"]
+alwaysApply: false
+---
+
+# GitHub Actions
+
+## Secrets
+
+- Repository or environment secrets only. A secret committed to a workflow file
+  is leaked to everyone with read access, and rewriting history does not undo it.
+- Never echo a secret, and never pass one into an untrusted action.
+
+## Permissions
+
+```yaml
+permissions:
+  contents: read
+```
+
+Set explicitly at the top of every workflow. The default is broader than any
+test job needs, and a compromised action inherits whatever the job holds.
+
+## Actions
+
+- Pin third-party actions to a **commit SHA**, not a tag. Tags are mutable, and
+  the action runs with access to your secrets.
+- First-party `actions/*` at a major version tag is acceptable.
+
+## Fork pull requests
+
+- `pull_request` deliberately withholds secrets from forks.
+- **Never** switch to `pull_request_target` to work around that. It runs with
+  full secret access against untrusted code — a known exfiltration path.
+
+## Efficiency
+
+- `concurrency` with `cancel-in-progress` on pull request workflows.
+- Cache the dependency manager via `setup-node`.
+
+## Deployment
+
+- Separate workflow, triggered by tag or manual dispatch.
+- Target a GitHub environment with required reviewers. Do not deploy
+  automatically from every green build.

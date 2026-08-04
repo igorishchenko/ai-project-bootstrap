@@ -1,0 +1,10 @@
+{
+  "id": "expo-notifications",
+  "name": "Expo Push",
+  "category": "notifications",
+  "description": "Push and local notifications through Expo's push service.",
+  "requires": ["expo"],
+  "conflicts": ["onesignal"],
+  "dependencies": [],
+  "priority": 55
+}

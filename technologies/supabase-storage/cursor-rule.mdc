@@ -1,0 +1,41 @@
+---
+description: Supabase Storage conventions
+globs: ["src/services/storage/**", "src/services/supabase/**"]
+alwaysApply: false
+---
+
+# Supabase Storage
+
+## Buckets
+
+- **Private by default.** A public bucket serves every object to anyone holding
+  the URL, permanently and without an auth check. Make one public only when the
+  content genuinely is.
+- Set size limits and allowed MIME types on the bucket. A client-side check is a
+  convenience, not a control.
+
+## Paths
+
+- Namespace by owner: `{userId}/avatar.png`. RLS policies are written against
+  the path, so without a convention they cannot be expressed at all.
+- Decide the convention before the first upload; renaming later means moving
+  every object.
+
+## Access
+
+- Private objects are read through `createSignedUrl` with the shortest lifetime
+  the use allows. Generate on demand — never store a signed URL, it expires.
+- Store the object **path**, not a URL.
+
+## Uploads
+
+- Resize and compress before uploading. Camera originals are multi-megabyte and
+  cost the user data and battery for pixels nobody sees.
+- Always check the returned `error` — the client returns it rather than throwing.
+- Set `contentType` explicitly.
+
+## Never
+
+- Never put user content in a public bucket "for now".
+- Never rely on an unguessable path as security — that is not access control.
+- Never leave a user's objects behind when their account is deleted.

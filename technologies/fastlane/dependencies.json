@@ -1,0 +1,9 @@
+{
+  "packages": [],
+  "install": [
+    "brew install fastlane",
+    "cd ios && fastlane init && cd ..",
+    "cd android && fastlane init && cd ..",
+    "fastlane match init"
+  ]
+}

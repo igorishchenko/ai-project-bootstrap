@@ -1,0 +1,42 @@
+---
+description: PostgreSQL conventions
+globs: ["server/**", "api/**", "db/**", "**/*.sql"]
+alwaysApply: false
+---
+
+# PostgreSQL
+
+## Where it may be used
+
+**Server-side only.** No client application opens a database connection or holds
+a connection string — anything shipped to a device can be extracted from it, and
+that string grants full read and write access.
+
+## Queries
+
+- Parameterised only: `WHERE id = $1`. Never interpolate into SQL.
+- Name the columns; no `SELECT *`.
+- `LIMIT` anything unbounded.
+- Index every column used in `WHERE`, `JOIN` or `ORDER BY`, and confirm the
+  planner uses it with `EXPLAIN ANALYZE`.
+
+## Connections
+
+- One shared `Pool`, never a connection per request.
+- Keep `max` low on serverless and put a pooler in front — each instance opens
+  its own pool, and the server's connection limit is shared.
+- Always release a client acquired from the pool, in a `finally`.
+
+## Migrations
+
+- Files in `db/migrations/`, ordered, committed to git.
+- **Backward-compatible with the deployed release.** Add nullable, backfill,
+  enforce later. Add the new column before dropping the old one.
+- `CREATE INDEX CONCURRENTLY` on live tables — a plain create takes a write lock
+  and stalls the application.
+
+## Never
+
+- Never disable SSL verification to make a connection work.
+- Never run the application as a superuser.
+- Never log a connection string or query parameters containing personal data.

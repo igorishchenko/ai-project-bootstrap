@@ -1,0 +1,11 @@
+{
+  "packages": [
+    { "name": "detox", "version": "^20.51.0", "dev": true, "native": true }
+  ],
+  "install": [
+    "npm install -D detox",
+    "brew tap wix/brew && brew install applesimutils",
+    "npx expo prebuild --clean",
+    "detox build --configuration ios.sim.debug"
+  ]
+}

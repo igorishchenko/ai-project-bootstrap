@@ -1,0 +1,38 @@
+---
+description: Better Stack monitoring and logging conventions
+globs: ["server/**", "api/**", "src/services/monitoring/**"]
+alwaysApply: false
+---
+
+# Better Stack
+
+## Logging
+
+- Structured objects, not interpolated strings:
+  `logger.info('Subscription renewed', { userId, plan })`. The fields are what
+  make a log searchable six months later.
+- **Never log** personal data, tokens, passwords, session ids, API keys, or
+  whole request bodies that might contain them. Logs are retained, replicated
+  and broadly readable.
+- Log levels mean something: `error` is actionable, `warn` is suspicious,
+  `info` is a business event. Do not log everything at `error`.
+- Flush before process exit, or buffered logs die with the process.
+
+## Health endpoints
+
+- A health check verifies dependencies — database reachable, migrations applied
+  — and returns non-200 when they fail.
+- One that unconditionally returns 200 monitors only that the web server is
+  running, which is rarely the thing that breaks.
+
+## Alerts
+
+- Alert on symptoms users feel: down, elevated error rate, latency doubled.
+- Require consecutive failures. A single failed check is a network blip.
+- Every alert must be actionable. If nobody would act at 3am, it belongs on a
+  dashboard.
+
+## Never
+
+- Never route alerts to a shared inbox with no owner.
+- Never disable a noisy alert without fixing or retuning it.

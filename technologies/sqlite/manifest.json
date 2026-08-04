@@ -1,0 +1,10 @@
+{
+  "id": "sqlite",
+  "name": "SQLite",
+  "category": "database",
+  "description": "On-device SQL storage for offline-first data and local caching.",
+  "requires": ["react-native"],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 32
+}

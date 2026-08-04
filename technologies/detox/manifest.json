@@ -1,0 +1,10 @@
+{
+  "id": "detox",
+  "name": "Detox",
+  "category": "testing",
+  "description": "End-to-end tests driving the real app on a simulator or device.",
+  "requires": ["react-native"],
+  "conflicts": [],
+  "dependencies": ["jest"],
+  "priority": 85
+}

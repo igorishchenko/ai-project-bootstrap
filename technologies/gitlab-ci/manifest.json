@@ -1,0 +1,10 @@
+{
+  "id": "gitlab-ci",
+  "name": "GitLab CI",
+  "category": "ci-cd",
+  "description": "Pipelines defined in .gitlab-ci.yml with built-in environments and approvals.",
+  "requires": [],
+  "conflicts": ["github-actions"],
+  "dependencies": [],
+  "priority": 91
+}

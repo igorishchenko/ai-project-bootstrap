@@ -1,0 +1,10 @@
+{
+  "id": "eas-submit",
+  "name": "EAS Submit",
+  "category": "deployment",
+  "description": "Upload builds to the App Store and Play Store from CI.",
+  "requires": ["expo"],
+  "conflicts": ["fastlane"],
+  "dependencies": [],
+  "priority": 95
+}

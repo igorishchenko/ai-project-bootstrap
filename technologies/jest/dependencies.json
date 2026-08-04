@@ -1,0 +1,11 @@
+{
+  "packages": [
+    { "name": "jest", "version": "^30.4.0", "dev": true },
+    { "name": "jest-expo", "version": "^57.0.0", "dev": true },
+    { "name": "@testing-library/react-native", "version": "^14.0.0", "dev": true },
+    { "name": "@types/jest", "version": "^30.0.0", "dev": true }
+  ],
+  "install": [
+    "npx expo install -- --save-dev jest jest-expo @testing-library/react-native @types/jest"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "packages": [
+    { "name": "react-native-onesignal", "version": "^5.5.0", "native": true },
+    { "name": "onesignal-expo-plugin", "version": "^2.7.0", "dev": true }
+  ],
+  "install": [
+    "npx expo install react-native-onesignal onesignal-expo-plugin",
+    "npx expo prebuild --clean",
+    "npx expo run:ios"
+  ]
+}

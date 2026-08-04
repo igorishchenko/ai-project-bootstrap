@@ -1,0 +1,40 @@
+---
+description: Resend transactional email conventions
+globs: ["server/**", "api/**", "emails/**", "src/services/email/**"]
+alwaysApply: false
+---
+
+# Resend
+
+## Where it runs
+
+- **Server-side only.** The API key sends mail as your domain to any recipient.
+  Never in the app, never in an `EXPO_PUBLIC_*` variable.
+
+## Sending
+
+- Check the returned `error` — the SDK returns `{ data, error }` and does not
+  throw. An unchecked error is indistinguishable from success.
+- **Idempotency on any retryable path.** A webhook or queue consumer without a
+  guard emails the user once per retry, and sending cannot be undone.
+- Every template needs a plain-text alternative.
+
+## Deliverability
+
+- Send from a dedicated transactional subdomain, never the primary domain.
+- Handle `email.bounced` and `email.complained`, and suppress those addresses.
+  Continuing to send to bounces destroys sender reputation.
+- Verify webhook signatures — the endpoint is public.
+
+## Templates
+
+- Mail clients support a fraction of modern CSS; Outlook renders with Word.
+  Tables and inline styles.
+- Never put a token, password or session id in an email body. Send a
+  short-lived, single-use link instead.
+
+## Never
+
+- Never log full recipient lists or message bodies.
+- Never send bulk or marketing mail through a transactional flow without
+  unsubscribe handling.

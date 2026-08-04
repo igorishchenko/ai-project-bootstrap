@@ -1,0 +1,41 @@
+---
+description: Fastlane conventions
+globs: ["fastlane/**", "ios/fastlane/**", "android/fastlane/**", "Gemfile"]
+alwaysApply: false
+---
+
+# Fastlane
+
+## Signing
+
+- Signing identities come from `match`, never from certificates generated per
+  developer.
+- **`readonly: true` in CI.** Without it a runner can regenerate certificates
+  and invalidate every other machine's.
+- `setup_ci` at the start of any lane that runs on a fresh runner, or keychain
+  access fails.
+
+## Credentials
+
+- Keystore, `.p8` key and Play service account JSON are supplied by CI at
+  runtime. None of them are committed.
+- The match repository is private, and its passphrase lives only in CI secrets.
+- Use an App Store Connect API key, not an Apple ID password — CI cannot answer
+  a 2FA prompt.
+
+## Reproducibility
+
+- Pin fastlane in a `Gemfile` and commit `Gemfile.lock`. An unpinned gem update
+  changes release behaviour without a code change.
+- A lane must behave the same locally and in CI. Branching on `ENV['CI']` beyond
+  `setup_ci` usually means the lane is doing too much.
+
+## Releases
+
+- Upload to a beta or internal track and promote deliberately.
+- Increment build numbers automatically — duplicates are rejected after upload.
+
+## Never
+
+- Never commit a signing credential of any kind.
+- Never run a team release from a personal machine; it is unreproducible.

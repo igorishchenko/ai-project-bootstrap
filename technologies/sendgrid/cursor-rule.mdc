@@ -1,0 +1,40 @@
+---
+description: SendGrid transactional email conventions
+globs: ["server/**", "api/**", "src/services/email/**"]
+alwaysApply: false
+---
+
+# SendGrid
+
+## Where it runs
+
+- **Server-side only.** The API key sends mail as your domain to any recipient.
+- Use a **restricted** key with Mail Send permission only. A full-access key can
+  read contacts and change account settings.
+
+## Sending
+
+- `from` must be an authenticated sender or the send is rejected.
+- Always include a plain-text alternative alongside HTML.
+- **Idempotency on any retryable path.** Sending cannot be undone, and retries
+  are exactly what happens when something downstream fails.
+
+## Templates
+
+- Dynamic templates live in the dashboard: they are not in version control and
+  change without a deploy. Record template ids in the codebase and treat an edit
+  as a production change.
+- Keep `dynamicTemplateData` keys in sync with the template, or fields render
+  blank with no error.
+
+## Deliverability
+
+- Handle `bounce`, `dropped` and `spamreport` from the Event Webhook and
+  suppress those addresses.
+- Verify the webhook signature — the endpoint is public.
+
+## Never
+
+- Never put a token, password or session id in an email body. Send a short-lived
+  single-use link.
+- Never log recipient lists or message bodies.

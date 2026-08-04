@@ -1,0 +1,35 @@
+---
+description: Supabase Auth conventions
+globs: ["src/services/**", "src/features/auth/**"]
+alwaysApply: false
+---
+
+# Supabase Auth
+
+## Session handling
+
+- Subscribe to `onAuthStateChange` **once**, at startup, and read session state
+  from there. Calling `getSession()` per screen leaves stale copies behind after
+  a background token refresh.
+- Configure a storage adapter (`AsyncStorage`) with `persistSession: true`, or
+  the user is signed out on every cold start.
+- `detectSessionInUrl: false` outside a browser.
+
+## Authorisation
+
+- Authentication proves identity. **Row Level Security grants access.** Signing
+  a user in changes nothing about what they can read.
+- Never make an authorisation decision from a client-held user id. Only
+  `auth.uid()` inside a policy cannot be forged.
+- Every table a signed-in user can reach needs a policy.
+
+## Sign-out
+
+- Clear any cached user-scoped state on sign-out — queries, profile, entitlements.
+  On a shared device the next user inherits whatever you left behind.
+
+## Never
+
+- Never store a session or token in plain app state that outlives sign-out.
+- Never log a JWT, refresh token, or password.
+- Never use the service-role key to work around a failing policy.

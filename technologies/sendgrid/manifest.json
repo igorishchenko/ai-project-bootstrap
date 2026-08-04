@@ -1,0 +1,10 @@
+{
+  "id": "sendgrid",
+  "name": "SendGrid",
+  "category": "email",
+  "description": "Transactional email with dynamic templates and delivery analytics.",
+  "requires": [],
+  "conflicts": ["resend"],
+  "dependencies": [],
+  "priority": 66
+}

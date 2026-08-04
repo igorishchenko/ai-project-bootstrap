@@ -1,0 +1,5 @@
+[
+  "src/features/auth/screens",
+  "src/features/auth/components",
+  "src/hooks/auth"
+]

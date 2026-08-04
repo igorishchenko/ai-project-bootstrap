@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "pg", "version": "^8.22.0" },
+    { "name": "@types/pg", "version": "^8.20.0", "dev": true }
+  ],
+  "install": [
+    "npm install pg",
+    "npm install -D @types/pg"
+  ]
+}

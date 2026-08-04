@@ -1,0 +1,10 @@
+{
+  "id": "supabase-storage",
+  "name": "Supabase Storage",
+  "category": "storage",
+  "description": "File and image storage with the same Row Level Security model as the database.",
+  "requires": ["supabase"],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 45
+}

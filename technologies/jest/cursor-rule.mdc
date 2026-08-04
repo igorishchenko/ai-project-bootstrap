@@ -1,0 +1,42 @@
+---
+description: Jest and React Native Testing Library conventions
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "jest.setup.js"]
+alwaysApply: false
+---
+
+# Jest
+
+## Queries
+
+- Find elements the way a user does: `getByText`, `getByLabelText`, `getByRole`.
+- `getByTestId` is a last resort. Reaching for it first produces tests that pass
+  while the screen is unusable by anyone relying on a screen reader.
+- Anything async uses `findBy*`, which retries. `getBy*` does not, and a fixed
+  `setTimeout` to compensate is a flake waiting to happen.
+
+## Mocking
+
+- Mock native modules and third-party SDKs in `jest.setup.js`.
+- Where this project wraps an SDK in a service, mock the **service**.
+- Never mock your own modules to make a test pass — that couples the test to
+  the current file layout and it will break on a no-op refactor.
+- Reset mocks in `beforeEach`. A test that only passes in isolation is broken.
+
+## Structure
+
+```ts
+it('surfaces a retryable error when the token has expired', async () => {
+  // arrange — the least setup that makes the scenario true
+  // act     — one interaction
+  // expect  — what a caller or user observes
+});
+```
+
+One reason to fail per test, and a name that says which.
+
+## Do not
+
+- Do not commit `it.only` or `it.skip`.
+- Do not add snapshots nobody reads.
+- Do not test library behaviour — test this project's use of it.
+- Do not chase a coverage percentage; cover the paths that can be wrong.

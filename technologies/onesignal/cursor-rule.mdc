@@ -1,0 +1,43 @@
+---
+description: OneSignal conventions
+globs: ["src/services/notifications/**"]
+alwaysApply: false
+---
+
+# OneSignal
+
+## Identity
+
+- `OneSignal.login(userId)` after sign-in, `OneSignal.logout()` after sign-out.
+- Missing `logout()` leaves the device subscribed as the previous user, so the
+  next person to sign in receives someone else's notifications. Treat it as part
+  of the sign-out path, not a nice-to-have.
+
+## Permission
+
+- Request in context, after your own explanation. On iOS the system prompt
+  appears once per install and a decline is effectively permanent.
+- Denied is a normal state — never block a feature on it.
+
+## Tags
+
+- Non-personal attributes only: plan, locale, onboarding state.
+- No email addresses, names, phone numbers or anything sensitive. This is a
+  third-party store and purging it later is painful.
+
+## Payloads
+
+- Notification content is visible on the lock screen and passes through Apple's
+  and Google's infrastructure. Send an identifier and fetch details in-app.
+
+## Configuration
+
+- `initialize()` runs once at startup.
+- The plugin `mode` must match the build: `development` APNs in a production
+  build fails silently.
+- The REST API key is server-side only — it can send to your whole audience.
+
+## Never
+
+- Never expect this to work in Expo Go or a simulator.
+- Never point a development build at the production OneSignal app.

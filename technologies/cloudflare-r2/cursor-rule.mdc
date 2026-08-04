@@ -1,0 +1,40 @@
+---
+description: Cloudflare R2 conventions
+globs: ["server/**", "api/**", "src/services/storage/**"]
+alwaysApply: false
+---
+
+# Cloudflare R2
+
+## Credentials
+
+- **Server-side only.** R2 keys are account-scoped; there is no client-safe
+  variant. Never in the app, never in an `EXPO_PUBLIC_*` variable.
+- Scope API tokens to a single bucket with least privilege.
+
+## Presigned URLs
+
+- The app never talks to R2 directly. It asks the backend for a presigned URL.
+- **The backend chooses the object key**, namespaced by owner:
+  `{userId}/{generatedId}`. A client-supplied key lets one user overwrite
+  another's file.
+- Validate content type and size *before* signing. Once issued, the URL is a
+  capability anyone holding it can use.
+- Shortest workable `expiresIn`.
+
+## Storage
+
+- Persist the object **key**, never a presigned URL — it expires.
+- `region: 'auto'`; R2 ignores regions but the SDK requires the field.
+
+## Buckets
+
+- Private by default. Serve public assets through a custom domain with caching
+  rather than enabling public bucket access.
+- Add a lifecycle rule expiring incomplete multipart uploads, or you are billed
+  for objects that never appear in a listing.
+
+## Never
+
+- Never let a client determine an object key.
+- Never log a secret access key or a presigned URL.

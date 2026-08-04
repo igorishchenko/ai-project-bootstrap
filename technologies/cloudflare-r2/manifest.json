@@ -1,0 +1,10 @@
+{
+  "id": "cloudflare-r2",
+  "name": "Cloudflare R2",
+  "category": "storage",
+  "description": "S3-compatible object storage with no egress fees, accessed through presigned URLs.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 46
+}

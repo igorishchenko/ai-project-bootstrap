@@ -1,0 +1,43 @@
+---
+description: SQLite conventions
+globs: ["src/services/database/**", "src/services/**/*.sql"]
+alwaysApply: false
+---
+
+# SQLite
+
+## Queries
+
+- **Always bind parameters.** Never concatenate a value into SQL — it breaks on
+  an apostrophe and is injectable in general.
+- Select the columns you need, not `SELECT *`.
+- Index anything you filter, join or sort by.
+- Paginate with `LIMIT`/`OFFSET`; never load an unbounded table into memory.
+
+## Writes
+
+- Wrap bulk writes in `withTransactionAsync`. Row-by-row inserts are orders of
+  magnitude slower because each is its own disk sync.
+- Set `PRAGMA journal_mode = WAL` at open, or concurrent access produces
+  "database is locked".
+
+## Migrations
+
+- Ordered, idempotent, **forward-only**, tracked with `PRAGMA user_version`.
+- Never `DROP` or rewrite a column in an upgrade path — that is a user's real
+  data on a device you cannot inspect or restore.
+- A migration must run cleanly from the oldest supported app version, not just
+  from the current schema on your machine.
+
+## Access
+
+- All SQL lives in `src/services/database/`. Components and hooks never write
+  queries.
+- Open the database once and reuse the handle.
+
+## Never
+
+- Never store credentials, tokens or personal data here — the file is not
+  encrypted. Use secure storage.
+- Never assume the local database survives reinstall.
+- Never query inside a render.

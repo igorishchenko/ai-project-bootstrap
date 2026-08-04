@@ -144,6 +144,28 @@ describe('generate', () => {
     if ('format' in pkg.scripts) expect(files).toContain('.prettierrc.json');
   });
 
+  it('leaves no declared script failing on a freshly generated project', () => {
+    // Regression: `jest` exits 1 with "no tests found", and `tsc` exits 1 with
+    // TS18003, on a scaffold that has no application code yet — so the first
+    // CI run of every generated project was red.
+    const withTests = generate({
+      rootDir: ROOT,
+      targetDir: '/virtual/out',
+      selection: {
+        projectName: 'Tested',
+        choices: { platform: 'expo', testing: ['jest'] },
+      },
+      builders,
+      registry,
+    });
+
+    const pkg = JSON.parse(withTests.vfs.read('package.json') as string) as {
+      scripts: Record<string, string>;
+    };
+
+    expect(pkg.scripts.test).toContain('--passWithNoTests');
+  });
+
   it('gives tsconfig at least one input so typecheck is not an error out of the box', () => {
     // TS18003: an include path matching nothing is a hard failure, and a fresh
     // scaffold has no application code yet.

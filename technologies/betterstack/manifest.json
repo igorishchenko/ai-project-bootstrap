@@ -1,0 +1,10 @@
+{
+  "id": "betterstack",
+  "name": "Better Stack",
+  "category": "monitoring",
+  "description": "Uptime monitoring, log management and on-call alerting.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 75
+}

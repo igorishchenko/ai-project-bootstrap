@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "e2e:build": "detox build --configuration ios.sim.debug",
+    "e2e:test": "detox test --configuration ios.sim.debug"
+  }
+}

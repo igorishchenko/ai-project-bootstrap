@@ -1,0 +1,10 @@
+{
+  "id": "github-actions",
+  "name": "GitHub Actions",
+  "category": "ci-cd",
+  "description": "Continuous integration and release automation running on GitHub.",
+  "requires": [],
+  "conflicts": ["gitlab-ci"],
+  "dependencies": [],
+  "priority": 90
+}

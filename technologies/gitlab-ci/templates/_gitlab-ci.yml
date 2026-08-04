@@ -1,0 +1,48 @@
+# CI for {{projectName}}.
+#
+# Secrets belong in Settings -> CI/CD -> Variables, marked Masked and
+# Protected. Never add a credential to this file: it is committed, and
+# rewriting history does not un-leak it.
+
+stages:
+  - verify
+  - deploy
+
+default:
+  image: node:22
+  # Cancel superseded pipelines when a newer commit is pushed.
+  interruptible: true
+
+variables:
+  npm_config_cache: '$CI_PROJECT_DIR/.npm'
+
+# Keyed on the lockfile, so the cache invalidates exactly when dependencies do.
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+
+verify:
+  stage: verify
+  script:
+    - npm ci --prefer-offline
+    - npm run lint
+    - npm run typecheck
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+deploy:production:
+  stage: deploy
+  environment:
+    name: production
+  # Manual on purpose: a green pipeline means the code is safe to ship,
+  # not that this is the right moment to ship it.
+  when: manual
+  script:
+    - echo "Add your deployment command here"
+  rules:
+    - if: $CI_COMMIT_TAG

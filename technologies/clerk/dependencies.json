@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "@clerk/clerk-expo", "version": "^2.19.0", "native": true },
+    { "name": "expo-secure-store", "version": "^57.0.0", "native": true }
+  ],
+  "install": [
+    "npx expo install @clerk/clerk-expo expo-secure-store",
+    "npx expo prebuild --clean"
+  ]
+}

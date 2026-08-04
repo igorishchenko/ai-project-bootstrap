@@ -1,0 +1,10 @@
+{
+  "id": "supabase-auth",
+  "name": "Supabase Auth",
+  "category": "auth",
+  "description": "Email, OAuth and magic-link sign-in issuing the JWT that Row Level Security reads.",
+  "requires": ["supabase"],
+  "conflicts": ["clerk"],
+  "dependencies": [],
+  "priority": 35
+}

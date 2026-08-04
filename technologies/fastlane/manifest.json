@@ -1,0 +1,10 @@
+{
+  "id": "fastlane",
+  "name": "Fastlane",
+  "category": "deployment",
+  "description": "Scripted build, signing and store upload with shared certificate management.",
+  "requires": ["react-native"],
+  "conflicts": ["eas-submit"],
+  "dependencies": [],
+  "priority": 96
+}

@@ -1,0 +1,10 @@
+{
+  "id": "resend",
+  "name": "Resend",
+  "category": "email",
+  "description": "Transactional email with React-based templates and delivery webhooks.",
+  "requires": [],
+  "conflicts": ["sendgrid"],
+  "dependencies": [],
+  "priority": 65
+}

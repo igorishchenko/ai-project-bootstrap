@@ -1,0 +1,10 @@
+{
+  "id": "postgresql",
+  "name": "PostgreSQL",
+  "category": "database",
+  "description": "Self-managed Postgres accessed from your own server or edge functions.",
+  "requires": [],
+  "conflicts": ["supabase"],
+  "dependencies": [],
+  "priority": 33
+}

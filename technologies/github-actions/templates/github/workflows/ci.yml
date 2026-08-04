@@ -5,6 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# The default token grants far more than a test run needs, and any action in
+# the job inherits it. Raise individual permissions only where required.
+permissions:
+  contents: read
+
+# Cancel superseded runs: without this, every push to an open pull request
+# builds an already-obsolete commit to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Lint, typecheck and test
@@ -15,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies

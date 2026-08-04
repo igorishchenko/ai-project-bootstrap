@@ -1,0 +1,11 @@
+{
+  "packages": [
+    { "name": "expo-notifications", "version": "^57.0.0", "native": true },
+    { "name": "expo-device", "version": "^57.0.0", "native": true }
+  ],
+  "install": [
+    "npx expo install expo-notifications expo-device",
+    "npx expo prebuild --clean",
+    "eas credentials"
+  ]
+}

@@ -1,0 +1,41 @@
+---
+description: Detox end-to-end testing conventions
+globs: ["e2e/**", ".detoxrc.js"]
+alwaysApply: false
+---
+
+# Detox
+
+## What belongs here
+
+Only flows where a regression would be unacceptable — sign-in, purchase, the
+core task the app exists for. Everything a component test can catch belongs in
+a component test: each E2E test costs minutes of CI on every push.
+
+## Selectors
+
+- Use `by.id()` with accessibility ids. Unlike component tests, this is the
+  right default — text changes with locale and copy edits.
+- Add the id to the component deliberately, as part of the change.
+
+## Waiting
+
+```js
+await waitFor(element(by.id('pro-badge'))).toBeVisible().withTimeout(10000);
+```
+
+Never `sleep()`. A fixed delay is slow when the app is fast and flaky when it
+is not, and it hides the real timing bug.
+
+## Isolation
+
+- `device.launchApp({ newInstance: true })` in `beforeEach`. State leaking
+  between tests produces failures that depend on execution order.
+- Stub the network and third-party SDKs in the E2E build. A test that charges a
+  real card, sends a real email, or pollutes analytics is not a test.
+
+## Do not
+
+- Do not add an E2E test for something a unit test proves.
+- Do not assert on exact copy that product will change next week.
+- Do not delete a flaky test — quarantine it and fix the non-determinism.

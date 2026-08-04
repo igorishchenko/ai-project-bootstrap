@@ -1,0 +1,8 @@
+{
+  "packages": [
+    { "name": "@sendgrid/mail", "version": "^8.1.0" }
+  ],
+  "install": [
+    "npm install @sendgrid/mail"
+  ]
+}

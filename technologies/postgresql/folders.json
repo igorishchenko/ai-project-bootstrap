@@ -1,0 +1,4 @@
+[
+  "db/migrations",
+  "server/database"
+]

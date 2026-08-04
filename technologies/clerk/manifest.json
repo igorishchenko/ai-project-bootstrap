@@ -1,0 +1,10 @@
+{
+  "id": "clerk",
+  "name": "Clerk",
+  "category": "auth",
+  "description": "Drop-in authentication with prebuilt sign-in, MFA and user management.",
+  "requires": [],
+  "conflicts": ["supabase-auth"],
+  "dependencies": [],
+  "priority": 36
+}
