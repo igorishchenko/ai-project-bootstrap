@@ -14,14 +14,14 @@
 ## Quick start
 
 ```bash
-git init                # before installing — the commit hooks need it
-cp .env.example .env    # fill in the values documented in docs/setup.md
-npm install
-npm run format
+npm run setup     # git init, .env, install, format — safe to re-run
+npm run doctor    # what is still missing, and where it is documented
 ```
 
-Full detail, including what every environment variable is for, is in
-[docs/setup.md](docs/setup.md).
+`doctor` lists every required environment value you have not set yet and links
+each one to the section of [docs/setup.md](docs/setup.md) that explains it.
+Re-run it as you work through the guide; it turns a long setup document into a
+punch list.
 
 ## Start here
 

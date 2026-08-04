@@ -245,6 +245,48 @@ describe('generate', () => {
     for (const prompt of mentioned) expect(files).toContain(prompt);
   });
 
+  it('ships setup and doctor scripts wired to package.json', () => {
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    expect(files).toContain('scripts/setup.mjs');
+    expect(files).toContain('scripts/doctor.mjs');
+    expect(pkg.scripts.setup).toBe('node scripts/setup.mjs');
+    expect(pkg.scripts.doctor).toBe('node scripts/doctor.mjs');
+  });
+
+  it('bakes every required environment key into doctor, with a resolvable anchor', () => {
+    const doctor = read('scripts/doctor.mjs');
+    const setup = read('docs/setup.md');
+    const env = read('.env.example');
+
+    // Every key doctor treats as required must be documented and reachable.
+    const entries = [...doctor.matchAll(/\{ key: '([A-Z0-9_]+)', owner: '([^']*)', anchor: '([^']*)' \}/g)];
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const [, key, owner, anchor] of entries) {
+      expect(env, `${key} should be in .env.example`).toContain(`${key}=`);
+      expect(setup, `docs/setup.md needs a "## ${owner}" heading for #${anchor}`).toContain(
+        `## ${owner}`,
+      );
+    }
+  });
+
+  it('does not let one module silently take over another module\'s npm script', () => {
+    // Regression: expo shipped a "doctor" script that replaced the base one,
+    // so `npm run doctor` ran expo-doctor and the generated script became
+    // unreachable — invisible in the merged package.json.
+    expect(result.warnings.filter((warning) => warning.includes('script'))).toEqual([]);
+  });
+
+  it('permits a module to override a script of something it requires', () => {
+    // Expo deliberately replaces React Native's start/ios/android. That is the
+    // point of a wrapper, so it must not be reported.
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    expect(pkg.scripts.start).toBe('expo start');
+    expect(result.warnings.some((warning) => warning.includes('"start"'))).toBe(false);
+  });
+
   it('round-trips the selection for regeneration', () => {
     expect(JSON.parse(read('ai-project.config.json'))).toEqual({
       projectName: fixture.projectName,

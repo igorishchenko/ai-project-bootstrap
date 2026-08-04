@@ -1,4 +1,4 @@
-import type { Builder } from '../core/types.js';
+import type { BuildContext, Builder, LoadedModule } from '../core/types.js';
 import { mergeDependencies, type DependencyContribution } from '../core/merge/mergeDeps.js';
 import { mergeJson } from '../core/merge/mergeJson.js';
 import { slugify } from '../core/pipeline/buildContext.js';
@@ -22,8 +22,12 @@ export const packageBuilder: Builder = {
       private: true,
     };
 
+    const scriptOwner = new Map<string, string>();
+
     for (const module of ctx.modules) {
-      if (module.packageFragment) pkg = mergeJson(pkg, module.packageFragment);
+      if (!module.packageFragment) continue;
+      warnOnScriptTakeover(ctx, module, scriptOwner);
+      pkg = mergeJson(pkg, module.packageFragment);
     }
 
     const contributions: DependencyContribution[] = ctx.modules.flatMap((module) =>
@@ -60,3 +64,53 @@ export const packageBuilder: Builder = {
     vfs.writeJson('package.json', pkg);
   },
 };
+
+/**
+ * Reports when one module quietly replaces another's npm script.
+ *
+ * A module may legitimately override something it `requires` — a wrapper
+ * replacing the script of the thing it wraps is the point of the wrapper.
+ * Anything else is an accidental name collision, and it is invisible in the
+ * merged output: the losing script simply is not there.
+ */
+function warnOnScriptTakeover(
+  ctx: BuildContext,
+  module: LoadedModule,
+  scriptOwner: Map<string, string>,
+): void {
+  const scripts = module.packageFragment?.scripts;
+  if (typeof scripts !== 'object' || scripts === null) return;
+
+  for (const [name, command] of Object.entries(scripts as Record<string, unknown>)) {
+    const previous = scriptOwner.get(name);
+
+    if (previous !== undefined && previous !== module.manifest.id) {
+      const deliberate = requiresTransitively(ctx, module.manifest.id, previous);
+      if (!deliberate) {
+        ctx.warnings.push(
+          `${module.manifest.name} overwrites the "${name}" script defined by ${previous}; ` +
+            `the original is no longer reachable. Rename one of them.`,
+        );
+      }
+    }
+
+    scriptOwner.set(name, module.manifest.id);
+    void command;
+  }
+}
+
+/** True when `id` depends on `targetId` through the requires graph. */
+function requiresTransitively(ctx: BuildContext, id: string, targetId: string): boolean {
+  const byId = new Map(ctx.modules.map((module) => [module.manifest.id, module]));
+  const seen = new Set<string>();
+
+  const walk = (current: string): boolean => {
+    if (current === targetId) return true;
+    if (seen.has(current)) return false;
+    seen.add(current);
+
+    return (byId.get(current)?.manifest.requires ?? []).some(walk);
+  };
+
+  return (byId.get(id)?.manifest.requires ?? []).some(walk);
+}

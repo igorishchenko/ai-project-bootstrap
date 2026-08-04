@@ -5,7 +5,7 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "prebuild": "expo prebuild --clean",
-    "doctor": "expo-doctor",
+    "doctor:expo": "expo-doctor",
     "build:dev": "eas build --profile development",
     "build:prod": "eas build --profile production --platform all",
     "update": "eas update --branch production"

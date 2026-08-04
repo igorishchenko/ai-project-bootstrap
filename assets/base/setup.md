@@ -3,43 +3,31 @@ technology you selected, in the order you should set them up.
 
 ### Before you start
 
-1. Install Node.js 22.22.1 or newer, and the package manager the team uses.
-   The tooling in this project sets that floor — an older Node fails during
-   install rather than at run time.
+1. Install Node.js 22.22.1 or newer. The tooling in this project sets that
+   floor — an older Node fails during install rather than at run time.
 
-2. Initialise the repository **before installing** — the commit hooks are set up
-   by a post-install step, and it silently installs nothing when there is no
-   `.git` directory yet:
+2. Run the setup script:
 
    ```bash
-   git init
+   npm run setup
    ```
 
-3. Copy the environment template and fill it in as you work through the
-   sections:
+   It initialises the repository, creates `.env`, installs dependencies and
+   formats. The order matters — the commit hooks are installed by a post-install
+   step that silently does nothing when there is no `.git` directory yet — so
+   prefer the script over running the steps by hand. It is safe to re-run.
+
+3. Work through the sections below, filling in `.env` as you go.
+
+4. Check what is still outstanding at any point:
 
    ```bash
-   cp .env.example .env
+   npm run doctor
    ```
 
-4. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-5. Confirm the hooks were wired up. This should print `.husky/_`:
-
-   ```bash
-   git config core.hooksPath
-   ```
-
-6. Normalise formatting once, so the first real commit is not a wall of
-   whitespace changes:
-
-   ```bash
-   npm run format
-   ```
+   It lists every required value you have not set yet and links each one to the
+   section here that explains it. It exits non-zero until everything required is
+   configured, so it is also usable in CI.
 
 ### How to use this document
 

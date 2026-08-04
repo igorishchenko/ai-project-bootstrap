@@ -59,10 +59,15 @@ export class Reporter {
 
     this.write(pc.bold('Done.'));
     this.write();
+    // Deliberately two commands, not a list of steps: the ordering matters
+    // (hooks do not install before `git init`) and repeating it here is how it
+    // drifted out of sync with the docs three times.
     this.write('Next steps:');
     this.write(pc.dim(`  cd ${input.targetDir}`));
-    this.write(pc.dim('  cp .env.example .env'));
-    this.write(pc.dim('  open docs/setup.md'));
+    this.write(pc.dim('  npm run setup      ') + pc.dim('# git init, .env, install, format'));
+    this.write(pc.dim('  npm run doctor     ') + pc.dim('# what is still missing'));
+    this.write();
+    this.write(pc.dim('Full guide: docs/setup.md'));
     this.write();
   }
 

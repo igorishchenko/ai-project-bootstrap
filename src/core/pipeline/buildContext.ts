@@ -66,7 +66,48 @@ export function templateData(ctx: BuildContext): TemplateData {
     folders,
     folderTree: renderFolderTree(folders),
     envKeys: ctx.modules.flatMap((module) => module.env.map((variable) => variable.key)).sort(),
+    // Full env detail, so a generated script can check what is still unset and
+    // name the section of docs/setup.md that explains each one.
+    envVars: describeEnv(ctx),
+    requiredEnvVars: describeEnv(ctx).filter((variable) => variable.required),
   };
+}
+
+interface EnvDescription extends TemplateData {
+  key: string;
+  required: boolean;
+  moduleName: string;
+  anchor: string;
+}
+
+/** Every declared variable, de-duplicated, first declaring module wins. */
+function describeEnv(ctx: BuildContext): EnvDescription[] {
+  const seen = new Set<string>();
+  const described: EnvDescription[] = [];
+
+  for (const module of ctx.modules) {
+    for (const variable of module.env) {
+      if (seen.has(variable.key)) continue;
+      seen.add(variable.key);
+      described.push({
+        key: variable.key,
+        required: variable.required,
+        moduleName: module.manifest.name,
+        anchor: headingAnchor(module.manifest.name),
+      });
+    }
+  }
+
+  return described;
+}
+
+/** GitHub-style heading anchor, matching the headings docsBuilder emits. */
+function headingAnchor(heading: string): string {
+  return heading
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
 }
 
 function describe(module: LoadedModule): TemplateData {
