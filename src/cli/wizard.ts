@@ -29,19 +29,80 @@ export interface WizardOptions {
  */
 export async function runWizard(options: WizardOptions): Promise<Selection> {
   const grouped = groupByCategory(options.modules);
+  const byId = new Map(options.modules.map((module) => [module.manifest.id, module]));
   const choices: Record<string, string | string[]> = {};
+  const chosen = new Set<string>();
 
   const projectName = options.name ?? (await askProjectName(options.acceptDefaults));
 
   for (const category of options.categories) {
-    const available = grouped.get(category.id) ?? [];
+    // Only offer what is still compatible with the answers so far. Presenting
+    // an option and then rejecting the whole selection at the end — after every
+    // remaining question has been answered — is not a real choice.
+    const available = (grouped.get(category.id) ?? []).filter((module) =>
+      isCompatible(module.manifest.id, chosen, byId),
+    );
     if (available.length === 0) continue;
 
     const answer = await askCategory(category, available, options.acceptDefaults);
-    if (answer !== undefined) choices[category.id] = answer;
+    if (answer === undefined) continue;
+
+    choices[category.id] = answer;
+    for (const id of Array.isArray(answer) ? answer : [answer]) {
+      if (id && id !== NONE) addWithPrerequisites(id, chosen, byId);
+    }
   }
 
   return { projectName, choices };
+}
+
+/**
+ * True when a module can still be added to what has been chosen so far.
+ *
+ * Conflicts are checked in both directions: declaring `conflicts: ["x"]` on
+ * either side means the two cannot coexist, and only one of them needs to say so.
+ */
+function isCompatible(
+  id: string,
+  chosen: Set<string>,
+  byId: Map<string, LoadedModule>,
+): boolean {
+  const candidate = byId.get(id);
+  if (!candidate) return false;
+
+  // Everything this module would pull in must also be compatible.
+  const incoming = new Set<string>();
+  addWithPrerequisites(id, incoming, byId);
+
+  for (const incomingId of incoming) {
+    const manifest = byId.get(incomingId)?.manifest;
+    if (!manifest) continue;
+
+    for (const conflictId of manifest.conflicts) {
+      if (chosen.has(conflictId)) return false;
+    }
+    for (const chosenId of chosen) {
+      if (byId.get(chosenId)?.manifest.conflicts.includes(incomingId)) return false;
+    }
+  }
+
+  return true;
+}
+
+/** Adds a module and everything it transitively requires. */
+function addWithPrerequisites(
+  id: string,
+  target: Set<string>,
+  byId: Map<string, LoadedModule>,
+): void {
+  if (target.has(id)) return;
+  const module = byId.get(id);
+  if (!module) return;
+
+  target.add(id);
+  for (const requiredId of module.manifest.requires) {
+    addWithPrerequisites(requiredId, target, byId);
+  }
 }
 
 async function askProjectName(acceptDefaults?: boolean): Promise<string> {

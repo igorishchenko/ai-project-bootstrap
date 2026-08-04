@@ -1,8 +1,8 @@
 {
   "id": "postgresql",
-  "name": "PostgreSQL",
+  "name": "PostgreSQL (self-managed)",
   "category": "database",
-  "description": "Self-managed Postgres accessed from your own server or edge functions.",
+  "description": "Your own Postgres server, reached from your API. Not needed when a backend already provides one.",
   "requires": [],
   "conflicts": ["supabase"],
   "dependencies": [],
