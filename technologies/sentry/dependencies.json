@@ -1,6 +1,10 @@
 {
   "packages": [
-    { "name": "@sentry/react-native", "version": "^5.28.0", "native": true }
+    {
+      "name": "@sentry/react-native",
+      "version": "^8.21.0",
+      "native": true
+    }
   ],
   "install": [
     "npx expo install @sentry/react-native",

@@ -1,8 +1,8 @@
 {
   "packages": [
-    { "name": "@supabase/supabase-js", "version": "^2.45.0" },
-    { "name": "react-native-url-polyfill", "version": "^2.0.0" },
-    { "name": "supabase", "version": "^1.190.0", "dev": true }
+    { "name": "@supabase/supabase-js", "version": "^2.112.0" },
+    { "name": "react-native-url-polyfill", "version": "^4.0.0" },
+    { "name": "supabase", "version": "^2.111.0", "dev": true }
   ],
   "install": [
     "npm install @supabase/supabase-js react-native-url-polyfill",

@@ -13,7 +13,7 @@ each component, and layout is Flexbox — with `flexDirection` defaulting to
 
 | Tool | Version | Notes |
 | --- | --- | --- |
-| Node.js | 18 or newer | |
+| Node.js | 22.22.1 or newer | Set by the tooling; an older Node fails at install |
 | Watchman | latest | macOS/Linux; makes file watching reliable |
 | Xcode | 15 or newer | iOS builds — macOS only |
 | CocoaPods | 1.14 or newer | iOS native dependencies |

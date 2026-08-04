@@ -3,7 +3,9 @@ technology you selected, in the order you should set them up.
 
 ### Before you start
 
-1. Install Node.js 18 or newer, and the package manager the team uses.
+1. Install Node.js 22.22.1 or newer, and the package manager the team uses.
+   The tooling in this project sets that floor — an older Node fails during
+   install rather than at run time.
 
 2. Initialise the repository **before installing** — the commit hooks are set up
    by a post-install step, and it silently installs nothing when there is no
@@ -26,10 +28,17 @@ technology you selected, in the order you should set them up.
    npm install
    ```
 
-5. Confirm the hooks were wired up. This should print `.husky`:
+5. Confirm the hooks were wired up. This should print `.husky/_`:
 
    ```bash
    git config core.hooksPath
+   ```
+
+6. Normalise formatting once, so the first real commit is not a wall of
+   whitespace changes:
+
+   ```bash
+   npm run format
    ```
 
 ### How to use this document

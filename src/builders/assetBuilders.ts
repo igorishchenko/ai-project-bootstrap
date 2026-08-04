@@ -17,6 +17,39 @@ import {
  * directory, and a module that omits it contributes nothing.
  */
 
+/**
+ * Mirrors a template subtree into the project, warning when two modules claim
+ * the same output path.
+ *
+ * The VFS only catches collisions *between* builders; within one builder a
+ * later module would silently overwrite an earlier one. As the catalogue grows
+ * that is exactly the kind of bug nobody notices, so it is surfaced here.
+ */
+function mirror(
+  ctx: BuildContext,
+  vfs: VirtualFsLike,
+  pick: (module: LoadedModule) => Array<{ relativePath: string; content: string }>,
+  toPath: (relativePath: string) => string,
+): void {
+  const data = templateData(ctx);
+  const claimedBy = new Map<string, string>();
+
+  for (const module of ctx.modules) {
+    for (const asset of pick(module)) {
+      const target = toPath(asset.relativePath);
+      const owner = claimedBy.get(target);
+
+      if (owner !== undefined) {
+        ctx.warnings.push(
+          `${module.manifest.name} overwrote ${target}, already provided by ${owner}.`,
+        );
+      }
+      claimedBy.set(target, module.manifest.name);
+      vfs.write(target, render(asset.content, data));
+    }
+  }
+}
+
 /** Emits `.cursor/rules/<id>.mdc` for every module that ships a rule. */
 export const cursorBuilder: Builder = {
   id: 'cursor',
@@ -77,12 +110,12 @@ export const githubBuilder: Builder = {
   label: 'Generated GitHub configuration',
   order: 100,
   build(ctx, vfs) {
-    const data = templateData(ctx);
-    for (const module of ctx.modules) {
-      for (const asset of templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.github)) {
-        vfs.write(`.github/${outputPath(asset.relativePath)}`, render(asset.content, data));
-      }
-    }
+    mirror(
+      ctx,
+      vfs,
+      (module) => templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.github),
+      (relativePath) => `.github/${outputPath(relativePath)}`,
+    );
   },
 };
 
@@ -92,12 +125,12 @@ export const hygieneBuilder: Builder = {
   label: 'Generated lint, format and commit hooks',
   order: 110,
   build(ctx, vfs) {
-    const data = templateData(ctx);
-    for (const module of ctx.modules) {
-      for (const asset of templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.hygiene)) {
-        vfs.write(outputPath(asset.relativePath), render(asset.content, data));
-      }
-    }
+    mirror(
+      ctx,
+      vfs,
+      (module) => templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.hygiene),
+      outputPath,
+    );
   },
 };
 
@@ -107,12 +140,7 @@ export const templateBuilder: Builder = {
   label: 'Generated project templates',
   order: 115,
   build(ctx, vfs) {
-    const data = templateData(ctx);
-    for (const module of ctx.modules) {
-      for (const asset of unreservedTemplates(module)) {
-        vfs.write(outputPath(asset.relativePath), render(asset.content, data));
-      }
-    }
+    mirror(ctx, vfs, unreservedTemplates, outputPath);
   },
 };
 
@@ -122,12 +150,12 @@ export const readmeBuilder: Builder = {
   label: 'Generated README, CLAUDE.md and AGENTS.md',
   order: 120,
   build(ctx, vfs) {
-    const data = templateData(ctx);
-    for (const module of ctx.modules) {
-      for (const asset of templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.root)) {
-        vfs.write(outputPath(asset.relativePath), render(asset.content, data));
-      }
-    }
+    mirror(
+      ctx,
+      vfs,
+      (module) => templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.root),
+      outputPath,
+    );
   },
 };
 

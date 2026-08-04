@@ -32,7 +32,13 @@ npx expo run:android
 
 ### Config plugins
 
-Native configuration lives in `app.json`:
+Native configuration lives in `app.json`. Adding a library with native code
+usually means installing its plugin package **and** listing it here, then
+rebuilding — a plugin named in `app.json` but not installed fails `prebuild`:
+
+```bash
+npx expo install expo-build-properties
+```
 
 ```json
 {
@@ -40,14 +46,15 @@ Native configuration lives in `app.json`:
     "name": "{{projectName}}",
     "slug": "{{projectSlug}}",
     "plugins": [
-      ["expo-build-properties", { "ios": { "deploymentTarget": "15.1" } }]
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.0" } }]
     ]
   }
 }
 ```
 
-Adding a library with native code usually means adding its plugin here, then
-rebuilding. Check the library's docs for whether it ships one.
+Only override the native minimums when you actually need to. Left alone, Expo
+applies the defaults for the installed SDK, which is one fewer thing to keep
+current as the SDK moves.
 
 ### EAS Build
 

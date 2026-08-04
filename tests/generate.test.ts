@@ -134,6 +134,68 @@ describe('generate', () => {
     expect(files).not.toContain('src/.gitkeep');
   });
 
+  it('gives every declared script the config file it needs', () => {
+    // Regression: `typecheck` shipped without a tsconfig.json, so the script
+    // failed on every freshly generated project.
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    if ('typecheck' in pkg.scripts) expect(files).toContain('tsconfig.json');
+    if ('lint' in pkg.scripts) expect(files).toContain('eslint.config.mjs');
+    if ('format' in pkg.scripts) expect(files).toContain('.prettierrc.json');
+  });
+
+  it('gives tsconfig at least one input so typecheck is not an error out of the box', () => {
+    // TS18003: an include path matching nothing is a hard failure, and a fresh
+    // scaffold has no application code yet.
+    const tsconfig = JSON.parse(read('tsconfig.json')) as { include: string[] };
+    const inputs = files.filter(
+      (file) =>
+        (file.endsWith('.ts') || file.endsWith('.tsx')) &&
+        tsconfig.include.some((pattern) => file.startsWith(pattern.replace(/\*.*$/, ''))),
+    );
+
+    expect(inputs.length).toBeGreaterThan(0);
+  });
+
+  it('declares every environment variable in the generated types', () => {
+    const declarations = read('src/types/env.d.ts');
+    const envKeys = [...read('.env.example').matchAll(/^([A-Z][A-Z0-9_]*)=/gm)].map((m) => m[1]);
+
+    expect(envKeys.length).toBeGreaterThan(0);
+    for (const key of envKeys) expect(declarations).toContain(`${key}?: string;`);
+  });
+
+  it('ships ESM configs with an .mjs extension, since package.json is not a module', () => {
+    // Otherwise Node emits MODULE_TYPELESS_PACKAGE_JSON on every lint run.
+    const pkg = JSON.parse(read('package.json')) as { type?: string };
+    if (pkg.type === 'module') return;
+
+    for (const file of files.filter((f) => /^(eslint|commitlint)\.config\./.test(f))) {
+      expect(file).toMatch(/\.mjs$/);
+    }
+  });
+
+  it('references no config plugin that is not also an installed dependency', () => {
+    // Regression: app.json listed expo-build-properties, which nothing
+    // installed, so `expo prebuild` failed.
+    if (!files.includes('app.json')) return;
+
+    const app = JSON.parse(read('app.json')) as { expo: { plugins?: unknown[] } };
+    const pkg = JSON.parse(read('package.json')) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const installed = new Set([
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.devDependencies ?? {}),
+    ]);
+
+    for (const plugin of app.expo.plugins ?? []) {
+      const name = Array.isArray(plugin) ? plugin[0] : plugin;
+      if (typeof name === 'string' && name.startsWith('expo-')) expect(installed).toContain(name);
+    }
+  });
+
   it('round-trips the selection for regeneration', () => {
     expect(JSON.parse(read('ai-project.config.json'))).toEqual({
       projectName: fixture.projectName,

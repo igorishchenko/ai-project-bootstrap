@@ -1,6 +1,10 @@
 {
   "packages": [
-    { "name": "react-native-purchases", "version": "^8.2.0", "native": true }
+    {
+      "name": "react-native-purchases",
+      "version": "^10.6.0",
+      "native": true
+    }
   ],
   "install": [
     "npx expo install react-native-purchases",

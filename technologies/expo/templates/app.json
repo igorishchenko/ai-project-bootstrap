@@ -15,15 +15,7 @@
       "package": "com.example.{{projectSlug}}",
       "versionCode": 1
     },
-    "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "ios": { "deploymentTarget": "15.1" },
-          "android": { "compileSdkVersion": 34, "targetSdkVersion": 34, "minSdkVersion": 24 }
-        }
-      ]
-    ],
+    "plugins": [],
     "extra": {
       "eas": {
         "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"

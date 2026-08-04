@@ -1,10 +1,10 @@
 {
   "packages": [
-    { "name": "expo", "version": "^51.0.0", "native": true },
-    { "name": "expo-dev-client", "version": "^4.0.0", "native": true },
-    { "name": "expo-constants", "version": "^16.0.0", "native": true },
-    { "name": "expo-updates", "version": "^0.25.0", "native": true },
-    { "name": "eas-cli", "version": "^12.0.0", "dev": true }
+    { "name": "expo", "version": "^57.0.0", "native": true },
+    { "name": "expo-dev-client", "version": "^57.0.0", "native": true },
+    { "name": "expo-constants", "version": "^57.0.0", "native": true },
+    { "name": "expo-updates", "version": "^57.0.0", "native": true },
+    { "name": "eas-cli", "version": "^21.5.0", "dev": true }
   ],
   "install": [
     "npx expo install expo expo-dev-client expo-constants expo-updates",
