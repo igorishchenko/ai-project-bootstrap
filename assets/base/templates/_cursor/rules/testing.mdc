@@ -1,0 +1,52 @@
+---
+description: Testing conventions
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/__tests__/**"]
+alwaysApply: false
+---
+
+# Testing
+
+Full guidance: `docs/testing.md`.
+
+## What a test must do
+
+- Assert observable behaviour, not internal structure.
+- Fail for exactly one reason, and say which in its name.
+- Run deterministically — no real network, no real clock, no shared state.
+
+## Structure
+
+```ts
+it('surfaces a retryable error when the token has expired', async () => {
+  // Arrange — the smallest setup that makes the scenario true
+  // Act     — one call
+  // Expect  — the outcome a caller would observe
+});
+```
+
+## Mocking
+
+Mock only at boundaries: network, storage, device APIs, third-party SDKs.
+Mocking your own modules ties the test to today's file layout, and it will
+break on a refactor that changed nothing a user can see.
+
+## Test data
+
+Use a factory with overrides so each test states only what it cares about:
+
+```ts
+const user = makeUser({ subscriptionStatus: 'expired' });
+```
+
+Inline literals repeated across tests hide which field the test depends on.
+
+## Fixing a bug
+
+Write the failing test first. A bug fix without a regression test invites the
+same bug back.
+
+## Do not
+
+- Do not assert on snapshot blobs nobody reads.
+- Do not test third-party library behaviour; test your use of it.
+- Do not skip a flaky test — fix the non-determinism or delete the test.

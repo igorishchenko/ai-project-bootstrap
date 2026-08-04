@@ -1,0 +1,5 @@
+[
+  "src/services/supabase",
+  "supabase/migrations",
+  "supabase/functions"
+]

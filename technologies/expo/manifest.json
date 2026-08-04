@@ -1,0 +1,10 @@
+{
+  "id": "expo",
+  "name": "Expo",
+  "category": "platform",
+  "description": "Managed React Native tooling: config plugins, EAS builds and over-the-air updates.",
+  "requires": ["react-native"],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 20
+}

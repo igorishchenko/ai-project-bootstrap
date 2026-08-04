@@ -1,0 +1,114 @@
+[
+  {
+    "id": "platform",
+    "label": "Platform",
+    "type": "single",
+    "required": true,
+    "allowNone": false,
+    "order": 10
+  },
+  {
+    "id": "backend",
+    "label": "Backend",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 20
+  },
+  {
+    "id": "auth",
+    "label": "Authentication",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 30
+  },
+  {
+    "id": "database",
+    "label": "Database",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 40
+  },
+  {
+    "id": "payments",
+    "label": "Payments",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 50
+  },
+  {
+    "id": "analytics",
+    "label": "Analytics",
+    "type": "multi",
+    "required": false,
+    "allowNone": true,
+    "order": 60
+  },
+  {
+    "id": "crash-reporting",
+    "label": "Crash Reporting",
+    "type": "multi",
+    "required": false,
+    "allowNone": true,
+    "order": 70
+  },
+  {
+    "id": "notifications",
+    "label": "Notifications",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 80
+  },
+  {
+    "id": "storage",
+    "label": "Storage",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 90
+  },
+  {
+    "id": "email",
+    "label": "Email",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 100
+  },
+  {
+    "id": "monitoring",
+    "label": "Monitoring",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 110
+  },
+  {
+    "id": "ci-cd",
+    "label": "CI/CD",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 120
+  },
+  {
+    "id": "testing",
+    "label": "Testing",
+    "type": "multi",
+    "required": false,
+    "allowNone": true,
+    "order": 130
+  },
+  {
+    "id": "deployment",
+    "label": "Deployment",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 140
+  }
+]

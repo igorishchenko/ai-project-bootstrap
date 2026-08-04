@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "react-native-purchases", "version": "^8.2.0", "native": true }
+  ],
+  "install": [
+    "npx expo install react-native-purchases",
+    "npx expo prebuild --clean",
+    "npx expo run:ios"
+  ]
+}

@@ -1,0 +1,50 @@
+---
+description: PostHog analytics conventions
+globs: ["src/**/*.ts", "src/**/*.tsx"]
+alwaysApply: false
+---
+
+# PostHog
+
+## Event naming
+
+`object_action`, past tense, snake_case:
+
+```ts
+posthog.capture('subscription_started', { plan: 'annual', source: 'paywall' });
+```
+
+- Never put a value in the name. `plan_selected` with a `plan` property, not
+  `plan_selected_annual`.
+- Never invent a second convention. Renaming events later does not backfill
+  history, so inconsistency is permanent.
+
+## What to track
+
+- Track decisions and outcomes, not every tap. If you cannot name the question
+  an event answers, do not add it.
+- Analytics calls go through `src/services/analytics/`, never directly from a
+  component.
+
+## Privacy
+
+- No personal data in properties: no email, name, phone number, address, or
+  message content.
+- Identify by internal user id only.
+- `posthog.reset()` on sign-out — without it the next user on a shared device
+  inherits the previous person's identity.
+
+## Feature flags
+
+- Never block first render on a flag. Render the default and update when the
+  flag arrives.
+- Always handle the "flag unavailable" case explicitly; the fetch can fail.
+- Remove a flag from the code once it has fully rolled out. Stale flags become
+  permanent dead branches.
+
+## Never
+
+- Never let an analytics failure break a user flow. Wrap it, and let it fail
+  silently.
+- Never send an event containing a token, key or session id.
+- Never point a development build at the production project.

@@ -1,0 +1,48 @@
+---
+description: Expo conventions
+globs: ["**/*.tsx", "**/*.ts", "app.json", "eas.json"]
+alwaysApply: false
+---
+
+# Expo
+
+## Installing packages
+
+- `npx expo install <package>` for anything Expo-related — it resolves the
+  version matching the installed SDK. Plain `npm install` produces version
+  mismatches whose error messages point somewhere else entirely.
+- After adding a package with native code, the dev client must be rebuilt.
+
+## Native configuration
+
+- All native config goes in `app.json` — permissions, bundle identifiers, icons,
+  plugins. Never edit `ios/` or `android/` directly: `expo prebuild` regenerates
+  them and discards the change.
+- A library needing native setup ships a config plugin. Add it to `plugins`
+  rather than patching the generated project.
+
+## Environment variables
+
+- Only `EXPO_PUBLIC_*` variables reach the app, and they are **embedded in the
+  bundle**. Treat every one as public.
+- Secrets go in EAS secrets or on a server. Never in `EXPO_PUBLIC_*`.
+
+## Updates
+
+- `eas update` ships JavaScript only.
+- Any change touching native code — a new native dependency, a permission, an
+  icon — requires a new build. Shipping an OTA update that expects a missing
+  native module crashes the app on launch for everyone who receives it.
+- Update channels must match build channels.
+
+## Builds
+
+- Keep `development`, `preview` and `production` profiles separate in
+  `eas.json`, each with its own environment variables and credentials.
+- Increment `ios.buildNumber` and `android.versionCode` for every store upload.
+
+## Never
+
+- Never commit a keystore, certificate, or `.env`.
+- Never point a non-production profile at production credentials.
+- Never hand-edit generated native folders.

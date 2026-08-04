@@ -1,0 +1,15 @@
+{
+  "packages": [
+    { "name": "react", "version": "^18.3.1" },
+    { "name": "react-native", "version": "^0.75.0", "native": true },
+    { "name": "react-native-safe-area-context", "version": "^4.10.0", "native": true },
+    { "name": "react-native-screens", "version": "^3.34.0", "native": true },
+    { "name": "@types/react", "version": "^18.3.0", "dev": true },
+    { "name": "@react-native/eslint-config", "version": "^0.75.0", "dev": true }
+  ],
+  "install": [
+    "npm install",
+    "cd ios && pod install && cd ..",
+    "npx react-native doctor"
+  ]
+}

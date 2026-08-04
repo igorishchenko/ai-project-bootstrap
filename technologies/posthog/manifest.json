@@ -1,0 +1,10 @@
+{
+  "id": "posthog",
+  "name": "PostHog",
+  "category": "analytics",
+  "description": "Product analytics, feature flags and session replay.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 70
+}

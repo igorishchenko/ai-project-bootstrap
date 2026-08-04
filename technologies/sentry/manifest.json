@@ -1,0 +1,10 @@
+{
+  "id": "sentry",
+  "name": "Sentry",
+  "category": "crash-reporting",
+  "description": "Crash and error reporting with stack traces, breadcrumbs and release tracking.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 60
+}

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit real values
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

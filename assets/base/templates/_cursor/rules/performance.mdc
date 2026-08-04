@@ -1,0 +1,49 @@
+---
+description: Performance conventions
+alwaysApply: false
+---
+
+# Performance
+
+## The order of operations
+
+1. Measure. A profile, a trace, a timing — something real.
+2. Fix the biggest cost.
+3. Measure again to confirm it moved.
+
+Optimising without measuring usually makes code harder to read and no faster.
+
+## Rendering
+
+- Render only what changed. Keep state near where it is used so an update does
+  not re-render an entire tree.
+- Memoise expensive derived values, not cheap ones — memoisation is not free,
+  and wrapping everything makes the code worse and the app slower.
+- Lists need stable, meaningful keys. An array index is not stable when the list
+  reorders or filters.
+- Long lists must be virtualised.
+
+## Data
+
+- Fetch in parallel when requests are independent.
+- Do not fetch the same thing twice; cache with an explicit invalidation rule.
+- Paginate anything unbounded.
+- Move filtering and aggregation to the server when the dataset is large.
+
+## Assets
+
+- Images at the size they are displayed, in a modern format.
+- Lazy-load anything below the fold or behind navigation.
+- Watch bundle size on every dependency added — check the cost before adding it,
+  not after the app feels slow.
+
+## Perceived speed
+
+Often the win is not doing less work but showing progress sooner: render the
+shell immediately, show skeletons rather than spinners, and apply optimistic
+updates for actions that almost always succeed.
+
+## Startup
+
+Do the minimum before first paint. Initialise SDKs lazily where they are not
+needed to render — and never block the first screen on analytics.

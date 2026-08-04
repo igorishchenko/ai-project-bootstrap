@@ -1,0 +1,57 @@
+---
+description: React Native conventions
+globs: ["**/*.tsx", "src/**/*.ts"]
+alwaysApply: false
+---
+
+# React Native
+
+## Components
+
+- Function components with typed props. No class components.
+- One screen per file; extract a component once a screen passes ~150 lines.
+- `StyleSheet.create` at the bottom of the file — never inline style objects in
+  render, which allocates a new object every frame.
+- Platform differences go in `Platform.select`, or a `.ios.tsx` / `.android.tsx`
+  pair when the whole component differs.
+
+## Layout
+
+- Flexbox only. `flexDirection` defaults to `column` — the opposite of the web.
+- Never hardcode screen dimensions. Use flex, `useWindowDimensions`, and
+  `SafeAreaView` for notches and home indicators.
+- Wrap text in `<Text>`. A bare string inside `<View>` crashes at runtime.
+
+## Lists
+
+- `FlatList` or `FlashList`, never `.map()` over fetched data — an unvirtualised
+  list of 500 rows mounts 500 components.
+- `keyExtractor` returns a stable id, not the index.
+- Memoise `renderItem` and keep row components pure, or every parent render
+  re-renders every visible row.
+
+## Images
+
+- Always give remote images explicit `width`/`height`; without them layout jumps
+  when they load.
+- Ship assets at display size. A 4000px source scaled into a 100px avatar costs
+  full decode memory on every render.
+
+## Platform APIs
+
+- Request permissions immediately before the action that needs them, with an
+  explanation — not on app start.
+- Handle the denied case as a real UI state, not an alert-and-hope.
+- Anything touching the native layer goes behind a service, so it can be mocked.
+
+## Performance
+
+- Profile in a release build; debug builds are misleading.
+- Keep `useEffect` dependency arrays honest. Do not disable the lint rule.
+- Clean up subscriptions, timers and listeners on unmount.
+
+## Never
+
+- Never edit `ios/` or `android/` generated files by hand.
+- Never leave `console.log` in shipped code.
+- Never assume a JS reload picks up a native module change — rebuild.

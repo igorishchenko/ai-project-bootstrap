@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "@sentry/react-native", "version": "^5.28.0", "native": true }
+  ],
+  "install": [
+    "npx expo install @sentry/react-native",
+    "npx expo prebuild --clean",
+    "eas secret:create --name SENTRY_AUTH_TOKEN --value <token>"
+  ]
+}

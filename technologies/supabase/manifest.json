@@ -1,0 +1,10 @@
+{
+  "id": "supabase",
+  "name": "Supabase",
+  "category": "backend",
+  "description": "Postgres database, authentication, storage and realtime behind one client.",
+  "requires": [],
+  "conflicts": ["firebase"],
+  "dependencies": [],
+  "priority": 30
+}

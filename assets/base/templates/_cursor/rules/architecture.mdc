@@ -1,0 +1,52 @@
+---
+description: Architectural constraints for {{projectName}}
+alwaysApply: true
+---
+
+# Architecture
+
+Full context: `docs/architecture.md`.
+
+## Layers
+
+```
+UI  →  hooks  →  services  →  clients / SDKs
+```
+
+Dependencies point one way only. A service never imports a component; a client
+never imports a service. If you need the reverse, invert it with a callback or
+an event rather than reaching back up.
+
+## Where things go
+
+| Kind of code | Lives in |
+| --- | --- |
+| Screens and components | The feature's own folder |
+| Reusable stateful logic | `hooks/` within the feature |
+| Business rules, API access | `services/` |
+| Third-party SDK setup | A single client module per SDK |
+| Shared primitives | The shared location, after the third use |
+
+## Third-party SDKs
+
+Each SDK is initialised in exactly one place and accessed through a thin project
+wrapper. Components never import a vendor SDK directly.
+
+This is not ceremony: it is what makes the SDK mockable in tests, replaceable
+without touching feature code, and greppable when its API changes.
+
+## State
+
+- Server state and client state are different things — do not store fetched
+  data in the same place as UI state.
+- Derive rather than duplicate. Two fields that must agree will eventually
+  disagree.
+- Keep state as close to where it is used as possible; lift only when a second
+  consumer genuinely appears.
+
+## Adding a feature
+
+1. Create the feature folder with its screens, hooks and services.
+2. Put anything crossing a boundary behind a service.
+3. Add the tests described in `docs/testing.md`.
+4. If it introduces an SDK, a variable, or a new flow, update `docs/`.

@@ -1,0 +1,57 @@
+---
+description: Supabase conventions
+globs: ["src/services/**/*.ts", "supabase/**/*.sql"]
+alwaysApply: false
+---
+
+# Supabase
+
+## Access
+
+- One client instance, in `src/services/supabase/client.ts`. Never call
+  `createClient` anywhere else.
+- Components never import `@supabase/supabase-js`. They call a service in
+  `src/services/`, which owns the query.
+- Every query is typed from the generated `database.types.ts`. Regenerate it
+  after a schema change; do not hand-edit it.
+
+## Every response has an error
+
+```ts
+const { data, error } = await supabase.from('profiles').select('id, name');
+if (error) throw new Error(`Failed to load profiles: ${error.message}`);
+```
+
+The client does not throw. An unchecked `error` silently reads as an empty
+result, which is the single most common Supabase bug.
+
+## Queries
+
+- Select the columns you need. `select('*')` fetches everything and breaks the
+  day someone adds a large column.
+- Paginate with `.range()` for anything unbounded.
+- Filter in the query, not in JavaScript after fetching.
+- Any column used in a filter or join needs an index.
+
+## Security
+
+- **RLS enabled on every table.** No exceptions. The anon key is public — it
+  ships inside the app — so RLS is the only thing protecting the data.
+- The `service_role` key never appears in client code, in an `EXPO_PUBLIC_*`
+  variable, or in this repository. It bypasses every policy.
+- If a query needs privileges the user does not have, the answer is an edge
+  function or an RLS policy — never a more powerful key in the client.
+
+## Schema
+
+- Schema changes are migration files in `supabase/migrations/`, committed to
+  git. Never change the schema through the dashboard: environments drift and
+  the divergence only shows up during a release.
+- Migrations must be compatible with the currently deployed app version, so a
+  rollback does not corrupt data.
+
+## Auth
+
+- Initialise auth state once at startup and subscribe to `onAuthStateChange`.
+- Never read a user id from client state for an authorisation decision — the
+  policy uses `auth.uid()`, which the client cannot forge.

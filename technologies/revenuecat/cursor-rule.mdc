@@ -1,0 +1,53 @@
+---
+description: RevenueCat and in-app purchase conventions
+globs: ["src/services/payments/**", "src/features/**/subscription*/**"]
+alwaysApply: false
+---
+
+# RevenueCat
+
+## Access checks
+
+- Check **entitlements**, never product identifiers:
+
+  ```ts
+  const isPro = info.entitlements.active['pro'] !== undefined;
+  ```
+
+  Hardcoding a product id means every pricing change needs an app update.
+
+- Ask the SDK, do not trust local state. `getCustomerInfo()` is the source of
+  truth; cached flags go stale after a refund, a cancellation or an expiry.
+- Access checks live in one service. Components ask that service, never the SDK.
+
+## Configuration
+
+- `Purchases.configure()` runs exactly once, at startup, before any other call.
+- Each platform gets its own public SDK key via `Platform.select`.
+- The **secret** API key is server-side only. It must never appear in the app,
+  in an `EXPO_PUBLIC_*` variable, or in this repository.
+
+## Purchases
+
+- `userCancelled` is not an error. Check it before reporting or logging:
+
+  ```ts
+  catch (error) {
+    if (error.userCancelled) return;
+    report(error);
+  }
+  ```
+
+- Restore purchases must be reachable from the UI. Apple rejects apps without
+  it, and users need it after reinstalling.
+- Call `Purchases.logIn(userId)` after sign-in so entitlements follow the
+  account rather than the device.
+
+## Never
+
+- Never grant access based on a local flag alone.
+- Never assume a purchase succeeded without checking the returned
+  `customerInfo`.
+- Never put purchase logic in a component.
+- Never expect this to work in Expo Go — it is a native module, so it needs a
+  development build.

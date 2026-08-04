@@ -1,0 +1,36 @@
+---
+description: Project-wide conventions for {{projectName}}
+alwaysApply: true
+---
+
+# {{projectName}}
+
+Stack: {{#each stack}}{{label}} — {{#each modules}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}{{#unless @last}}; {{/unless}}{{/each}}
+
+## Before writing code
+
+- Follow the patterns already in the codebase. Read a sibling file first.
+- There is a rule file in `.cursor/rules/` for each technology in the stack.
+  The one matching what you are touching takes precedence over this file.
+- Full conventions: `docs/coding-standards.md`. Architecture: `docs/architecture.md`.
+
+## Non-negotiable
+
+- No `any`, and no type assertions on unvalidated external data.
+- No secrets, API keys, tokens, or URLs hardcoded — they come from `.env`, and
+  every key is documented in `.env.example`.
+- No new environment variable without adding it to `.env.example`.
+- No disabled lint rules or `@ts-ignore` to silence an error. Fix the cause.
+- No console logging left in shipped code; use the project's logger.
+
+## Structure
+
+- Group by feature, not by file type.
+- Dependencies point inward: UI → services → data. Never the reverse.
+- Extract shared code on the third use, not the first.
+- No circular imports.
+
+## When you change behaviour
+
+- Add or update the test that covers it (`docs/testing.md`).
+- Update the documentation that describes it, in the same change.

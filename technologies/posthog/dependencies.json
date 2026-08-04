@@ -1,0 +1,12 @@
+{
+  "packages": [
+    { "name": "posthog-react-native", "version": "^3.3.0" },
+    { "name": "expo-file-system", "version": "^17.0.0", "native": true },
+    { "name": "expo-application", "version": "^5.9.0", "native": true },
+    { "name": "expo-device", "version": "^6.0.0", "native": true },
+    { "name": "expo-localization", "version": "^15.0.0", "native": true }
+  ],
+  "install": [
+    "npx expo install posthog-react-native expo-file-system expo-application expo-device expo-localization"
+  ]
+}

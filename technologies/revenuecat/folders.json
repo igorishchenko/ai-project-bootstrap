@@ -1,0 +1,6 @@
+[
+  "src/features/subscriptions/screens",
+  "src/features/subscriptions/components",
+  "src/hooks/payments",
+  "src/services/payments"
+]

@@ -1,0 +1,53 @@
+---
+description: TypeScript conventions
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# TypeScript
+
+## Types
+
+- `strict` is on and stays on. Do not weaken the compiler to pass.
+- Never `any`. Use `unknown` at boundaries and narrow with a type guard.
+- Prefer discriminated unions over optional properties for state — make the
+  impossible states unrepresentable rather than merely unlikely.
+- Infer return types for local helpers; annotate them on exported functions, so
+  a refactor cannot silently change a public signature.
+- `readonly` for anything not meant to be mutated, including arrays.
+
+## Validation at the edges
+
+Anything arriving from outside the process — an API response, storage, a deep
+link, `process.env` — is `unknown` until validated. A cast is not validation:
+
+```ts
+// No: the compiler believes you, the runtime does not.
+const user = (await response.json()) as User;
+
+// Yes: parsed, and wrong shapes fail here instead of three screens later.
+const user = userSchema.parse(await response.json());
+```
+
+## Nullability
+
+- Distinguish "absent" (`undefined`) from "explicitly empty" (`null`) and stay
+  consistent about which one your code produces.
+- Use `?.` and `??` for genuinely optional values, not to paper over a value
+  that should always exist — if it should always exist, assert it at the
+  boundary and keep the rest of the code honest.
+
+## Modules
+
+- Named exports. Default exports make renames invisible in review.
+- `import type { … }` for type-only imports.
+- No barrel file that re-exports an entire feature; it defeats tree-shaking and
+  creates import cycles.
+
+## Async
+
+- `async`/`await`, not raw `.then()` chains.
+- Every `await` that can reject is either caught here or deliberately allowed
+  to propagate — decide which, do not leave it to chance.
+- `Promise.all` for independent work; sequential `await` only when the second
+  call genuinely needs the first result.

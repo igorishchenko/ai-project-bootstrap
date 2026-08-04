@@ -1,0 +1,42 @@
+---
+description: Sentry error reporting conventions
+globs: ["src/**/*.ts", "src/**/*.tsx"]
+alwaysApply: false
+---
+
+# Sentry
+
+## Initialisation
+
+- `Sentry.init()` runs once, as early in startup as possible. Anything thrown
+  before it is lost.
+- `enabled: !__DEV__` — development noise buries real production issues.
+- `environment` must distinguish development, staging and production.
+
+## Reporting
+
+- Report with context, not bare:
+
+  ```ts
+  Sentry.captureException(error, { tags: { area: 'payments' } });
+  ```
+
+- Reporting is not handling. After capturing, decide what the user sees — a
+  retry, a message, a fallback. A reported error that leaves a blank screen is
+  still a broken screen.
+- Add breadcrumbs for domain events. They are what make an error reproducible.
+
+## Privacy
+
+- Never put personal data in an event: no email addresses, names, phone numbers,
+  addresses, or message content.
+- Never put a token, key, password or session id in tags, extras or breadcrumbs.
+- Identify users by internal id only: `Sentry.setUser({ id: userId })`.
+- Clear the user on sign-out: `Sentry.setUser(null)`.
+
+## Do not
+
+- Do not wrap everything in try/catch just to report — unhandled errors are
+  captured automatically, and over-catching hides where a failure came from.
+- Do not swallow an error after reporting it unless the fallback is deliberate.
+- Do not log an error to the console *and* to Sentry in shipped code.

@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "react-native start",
+    "ios": "react-native run-ios",
+    "android": "react-native run-android",
+    "start:clean": "react-native start --reset-cache"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

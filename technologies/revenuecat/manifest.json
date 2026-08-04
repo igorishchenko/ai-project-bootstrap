@@ -1,0 +1,10 @@
+{
+  "id": "revenuecat",
+  "name": "RevenueCat",
+  "category": "payments",
+  "description": "In-app subscriptions and purchases across the App Store and Play Store.",
+  "requires": ["expo"],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 40
+}

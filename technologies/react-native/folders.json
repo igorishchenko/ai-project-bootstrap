@@ -1,0 +1,11 @@
+[
+  "src/components",
+  "src/features",
+  "src/hooks",
+  "src/navigation",
+  "src/services",
+  "src/theme",
+  "src/utils",
+  "assets/images",
+  "assets/fonts"
+]

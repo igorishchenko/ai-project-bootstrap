@@ -1,0 +1,10 @@
+{
+  "id": "react-native",
+  "name": "React Native",
+  "category": "platform",
+  "description": "Cross-platform iOS and Android apps from one TypeScript codebase.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 10
+}
