@@ -14,11 +14,29 @@
 ## Quick start
 
 ```bash
-cp .env.example .env   # fill in the values documented in docs/setup.md
+git init                # before installing — the commit hooks need it
+cp .env.example .env    # fill in the values documented in docs/setup.md
 npm install
+npm run format
 ```
 
-Then work through [docs/setup.md](docs/setup.md) top to bottom.
+Full detail, including what every environment variable is for, is in
+[docs/setup.md](docs/setup.md).
+
+## Start here
+
+Read in this order. Each step assumes the one before it.
+
+| # | Read | Why |
+| --- | --- | --- |
+| 1 | [docs/setup.md](docs/setup.md) | Get the project running. One section per technology: install, configure, credentials, troubleshooting |
+| 2 | [docs/architecture.md](docs/architecture.md) | How the pieces fit together and how data moves between them |
+| 3 | [docs/coding-standards.md](docs/coding-standards.md) | How code in this project is expected to read |
+| 4 | [docs/testing.md](docs/testing.md) | What kind of test a given change needs |
+| 5 | [CLAUDE.md](CLAUDE.md) | Point your AI assistant at this before it writes anything |
+
+Then, when the time comes: [docs/deployment.md](docs/deployment.md),
+[docs/release.md](docs/release.md), and the `checklists/`.
 
 ## Where things live
 
@@ -33,9 +51,27 @@ Then work through [docs/setup.md](docs/setup.md) top to bottom.
 
 ## Working with an AI assistant
 
-Point it at `CLAUDE.md` (or `AGENTS.md`) first — that file tells it where the
-rules live and what it must not do. For a specific task, start from the matching
-file in `prompts/`.
+Point it at [CLAUDE.md](CLAUDE.md) first — or [AGENTS.md](AGENTS.md) for tools
+that look for that name. It says where the rules live, what to read before which
+kind of change, and what it must never do.
+
+For a specific task, start from the matching file in `prompts/` rather than a
+blank message:
+
+| Task | Prompt |
+| --- | --- |
+| Add a feature | `prompts/create-feature.md` |
+| Add a screen | `prompts/create-screen.md` |
+| Add an endpoint | `prompts/create-api.md` |
+| Add a reusable hook | `prompts/create-hook.md` |
+| Fix a bug | `prompts/fix-bug.md` |
+| Write tests | `prompts/write-tests.md` |
+| Review a change | `prompts/review-code.md` |
+| Investigate slowness | `prompts/performance.md` |
+| Prepare a release | `prompts/release.md` |
+
+`.cursor/rules/` and `.claude/skills/` are not documents you read — Cursor and
+Claude load them automatically and they shape how code gets written.
 
 ## Regenerating
 

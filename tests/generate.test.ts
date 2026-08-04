@@ -218,6 +218,33 @@ describe('generate', () => {
     }
   });
 
+  it('links only to files that exist from the root entry points', () => {
+    // A README promising docs/testing.md that was never generated is worse
+    // than no README — it sends the reader somewhere that is not there.
+    for (const entry of ['README.md', 'CLAUDE.md', 'AGENTS.md']) {
+      const content = read(entry);
+      // Both styles count: markdown links, and paths quoted in backticks.
+      const referenced = [
+        ...[...content.matchAll(/\]\(([^)#:]+\.md)\)/g)].map((match) => match[1] as string),
+        ...[...content.matchAll(/`([\w./-]+\/[\w.-]+\.md)`/g)].map((match) => match[1] as string),
+      ];
+
+      expect(referenced.length, `${entry} should point the reader somewhere`).toBeGreaterThan(0);
+      for (const path of new Set(referenced)) {
+        expect(files, `${entry} references missing ${path}`).toContain(path);
+      }
+    }
+  });
+
+  it('references only prompts that were generated', () => {
+    const mentioned = [...read('README.md').matchAll(/`(prompts\/[\w-]+\.md)`/g)].map(
+      (match) => match[1] as string,
+    );
+
+    expect(mentioned.length).toBeGreaterThan(0);
+    for (const prompt of mentioned) expect(files).toContain(prompt);
+  });
+
   it('round-trips the selection for regeneration', () => {
     expect(JSON.parse(read('ai-project.config.json'))).toEqual({
       projectName: fixture.projectName,
