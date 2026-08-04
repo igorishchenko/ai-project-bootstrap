@@ -288,10 +288,28 @@ describe('generate', () => {
   });
 
   it('round-trips the selection for regeneration', () => {
-    expect(JSON.parse(read('ai-project.config.json'))).toEqual({
-      projectName: fixture.projectName,
-      choices: fixture.choices,
-    });
+    const config = JSON.parse(read('ai-project.config.json')) as {
+      projectName: string;
+      choices: unknown;
+      generated: Record<string, string>;
+    };
+
+    expect(config.projectName).toBe(fixture.projectName);
+    expect(config.choices).toEqual(fixture.choices);
+
+    // Fingerprints let a later regeneration tell generated content from edits.
+    expect(Object.keys(config.generated).length).toBeGreaterThan(0);
+    expect(config.generated['README.md']).toMatch(/^[a-f0-9]{16}$/);
+    expect(config.generated).not.toHaveProperty('ai-project.config.json');
+  });
+
+  it('fingerprints every file it wrote', () => {
+    const config = JSON.parse(read('ai-project.config.json')) as {
+      generated: Record<string, string>;
+    };
+
+    const tracked = files.filter((file) => file !== 'ai-project.config.json');
+    expect(Object.keys(config.generated).sort()).toEqual(tracked);
   });
 
   it('is deterministic — the same selection twice is byte-identical', () => {
@@ -347,16 +365,23 @@ describe('generate', () => {
     expect(minimal.moduleNames).toEqual(['React Native']);
   });
 
-  it('rejects a selection that omits a required category', () => {
-    expect(() =>
-      generate({
-        rootDir: ROOT,
-        targetDir: '/virtual/out',
-        selection: { projectName: 'Bare', choices: {} },
-        builders,
-        registry,
-      }),
-    ).toThrow(/required category/);
+  it('generates a baseline project when every question is answered "None"', () => {
+    // No category is mandatory: skipping a layer is a normal answer, and the
+    // documentation-only project it produces is a legitimate outcome.
+    const bare = generate({
+      rootDir: ROOT,
+      targetDir: '/virtual/out',
+      selection: { projectName: 'Bare', choices: {} },
+      builders,
+      registry,
+    });
+    const bareFiles = bare.vfs.snapshot().files;
+
+    expect(bare.moduleNames).toEqual([]);
+    expect(bareFiles).toContain('README.md');
+    expect(bareFiles).toContain('docs/setup.md');
+    expect(bareFiles).toContain('.cursor/rules/typescript.mdc');
+    expect(bareFiles.some((file) => file.startsWith('.cursor/rules/supabase'))).toBe(false);
   });
 
   it('rejects an unknown module with a useful message', () => {

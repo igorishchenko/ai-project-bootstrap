@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { builderIds, builders } from '../builders/index.js';
+import { CONFIG_FILENAME } from '../builders/configBuilder.js';
+import { preservedPaths, readFingerprints } from '../core/vfs/preserve.js';
 import { generate } from '../core/pipeline/generate.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
 import { GeneratorError } from '../core/resolve/errors.js';
@@ -131,11 +133,27 @@ async function main(argv: string[]): Promise<number> {
     onBuilder: (run) => reporter.step(run),
   });
 
-  const flushed = result.vfs.flush(targetDir, { dryRun: flags.dryRun, force: flags.force });
+  // Regenerating over an existing project must not discard the user's edits.
+  // Anything whose contents no longer match the fingerprint recorded when it
+  // was generated is theirs, not ours.
+  const preserve = new Set(
+    preservedPaths(
+      targetDir,
+      result.vfs.snapshot().files,
+      readFingerprints(path.join(targetDir, CONFIG_FILENAME)),
+    ),
+  );
+
+  const flushed = result.vfs.flush(targetDir, {
+    dryRun: flags.dryRun,
+    force: flags.force,
+    preserve,
+  });
 
   reporter.summary({
     targetDir,
     fileCount: flushed.files.length,
+    preserved: flushed.preserved,
     modules: result.moduleNames,
     autoIncluded: result.autoIncluded,
     warnings: result.warnings,

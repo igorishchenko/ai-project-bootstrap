@@ -47,8 +47,13 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
     const answer = await askCategory(category, available, options.acceptDefaults);
     if (answer === undefined) continue;
 
-    choices[category.id] = answer;
-    for (const id of Array.isArray(answer) ? answer : [answer]) {
+    // "None" is an affordance, not a module — drop it before it is persisted.
+    const cleaned = Array.isArray(answer)
+      ? answer.filter((id) => id !== NONE)
+      : answer;
+
+    choices[category.id] = cleaned;
+    for (const id of Array.isArray(cleaned) ? cleaned : [cleaned]) {
       if (id && id !== NONE) addWithPrerequisites(id, chosen, byId);
     }
   }
@@ -132,15 +137,22 @@ async function askCategory(
   }));
 
   if (acceptDefaults) {
+    // "Accept defaults" should produce a working project, so single-select
+    // questions take their first (lowest-priority) option. Multi-select
+    // questions take nothing — adding every analytics tool is not a default.
     if (category.type === 'multi') return category.required ? [options[0]?.value as string] : [];
-    if (category.required) return options[0]?.value as string;
-    return category.allowNone ? NONE : (options[0]?.value as string);
+    return options[0]?.value as string;
   }
+
+  // Every question offers a way out. Not needing a layer is a normal answer,
+  // and a wizard that forces a choice produces projects wired to things nobody
+  // asked for.
+  const none = { value: NONE, label: 'None', hint: 'Skip this — nothing will be generated for it' };
 
   if (category.type === 'multi') {
     const answer = await prompts.multiselect({
       message: category.label,
-      options,
+      options: category.required ? options : [...options, none],
       required: category.required,
     });
     if (prompts.isCancel(answer)) throw new WizardCancelled();
@@ -149,10 +161,7 @@ async function askCategory(
 
   const answer = await prompts.select({
     message: category.label,
-    options:
-      category.required || !category.allowNone
-        ? options
-        : [...options, { value: NONE, label: 'None', hint: 'Skip this layer' }],
+    options: category.allowNone ? [...options, none] : options,
   });
   if (prompts.isCancel(answer)) throw new WizardCancelled();
   return answer as string;

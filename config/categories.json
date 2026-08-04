@@ -3,8 +3,8 @@
     "id": "platform",
     "label": "Platform",
     "type": "single",
-    "required": true,
-    "allowNone": false,
+    "required": false,
+    "allowNone": true,
     "order": 10
   },
   {

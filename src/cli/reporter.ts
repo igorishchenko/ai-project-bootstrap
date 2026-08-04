@@ -28,12 +28,24 @@ export class Reporter {
   summary(input: {
     targetDir: string;
     fileCount: number;
+    preserved: string[];
     modules: string[];
     autoIncluded: string[];
     warnings: string[];
     dryRun: boolean;
   }): void {
     this.write();
+
+    if (input.preserved.length > 0) {
+      this.write(
+        `${pc.cyan('ℹ')} Kept your edits — ${input.preserved.length} file${input.preserved.length > 1 ? 's' : ''} changed since generation:`,
+      );
+      for (const file of input.preserved.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (input.preserved.length > 8) {
+        this.write(pc.dim(`    …and ${input.preserved.length - 8} more`));
+      }
+      this.write();
+    }
 
     if (input.autoIncluded.length > 0) {
       this.write(

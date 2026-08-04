@@ -34,6 +34,14 @@ const categories: CategoryQuestion[] = [
   { id: 'backend', label: 'Backend', type: 'single', required: false, allowNone: true, order: 10 },
   { id: 'database', label: 'Database', type: 'single', required: false, allowNone: true, order: 20 },
   { id: 'auth', label: 'Auth', type: 'single', required: false, allowNone: true, order: 30 },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    type: 'multi',
+    required: false,
+    allowNone: true,
+    order: 40,
+  },
 ];
 
 const modules = [
@@ -42,6 +50,7 @@ const modules = [
   makeModule({ id: 'sqlite', name: 'SQLite', category: 'database' }),
   makeModule({ id: 'supabase-auth', name: 'Supabase Auth', category: 'auth', requires: ['supabase'] }),
   makeModule({ id: 'clerk', name: 'Clerk', category: 'auth', conflicts: ['supabase-auth'] }),
+  makeModule({ id: 'posthog', name: 'PostHog', category: 'analytics' }),
 ];
 
 const optionsFor = (label: string): string[] =>
@@ -100,6 +109,24 @@ describe('runWizard', () => {
     await runWizard({ categories, modules: narrow, name: 'Test' });
 
     expect(asked.map((entry) => entry.message)).not.toContain('Database');
+  });
+
+  it('offers None on every question, single and multi select alike', async () => {
+    await runWizard({ categories, modules, name: 'Test' });
+
+    for (const label of ['Backend', 'Database', 'Auth', 'Analytics']) {
+      expect(optionsFor(label), `${label} should offer None`).toContain('none');
+    }
+  });
+
+  it('does not persist None as if it were a module', async () => {
+    answers = { Backend: 'none', Database: 'none', Auth: 'none', Analytics: ['none'] };
+
+    const selection = await runWizard({ categories, modules, name: 'Test' });
+
+    expect(selection.choices.backend).toBe('none');
+    // A multi-select answer of "None" becomes an empty list, not ["none"].
+    expect(selection.choices.analytics).toEqual([]);
   });
 
   it('never offers a combination the resolver would reject', async () => {

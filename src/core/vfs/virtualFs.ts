@@ -7,11 +7,15 @@ import { mergeJson } from '../merge/mergeJson.js';
 export interface FlushOptions {
   dryRun?: boolean;
   force?: boolean;
+  /** Paths to leave exactly as they are on disk — see `preservedPaths`. */
+  preserve?: ReadonlySet<string>;
 }
 
 export interface FlushResult {
   files: string[];
   directories: string[];
+  /** Files that existed and were left untouched because of `preserve`. */
+  preserved: string[];
 }
 
 /**
@@ -96,9 +100,13 @@ export class VirtualFs implements VirtualFsLike {
 
   /** Writes the tree to disk. With `dryRun`, reports what it would write. */
   flush(targetDir: string, options: FlushOptions = {}): FlushResult {
+    const preserve = options.preserve ?? new Set<string>();
+    const preserved = [...this.files.keys()].filter((file) => preserve.has(file)).sort();
+
     const result: FlushResult = {
-      files: [...this.files.keys()].sort(),
+      files: [...this.files.keys()].filter((file) => !preserve.has(file)).sort(),
       directories: [...this.directories].sort(),
+      preserved,
     };
 
     if (options.dryRun) return result;
@@ -118,6 +126,7 @@ export class VirtualFs implements VirtualFsLike {
       fs.mkdirSync(path.join(targetDir, ...dir.split('/')), { recursive: true });
     }
     for (const [file, content] of this.files) {
+      if (preserve.has(file)) continue; // edited since generation — leave it
       const full = path.join(targetDir, ...file.split('/'));
       fs.mkdirSync(path.dirname(full), { recursive: true });
       fs.writeFileSync(full, content, 'utf8');
