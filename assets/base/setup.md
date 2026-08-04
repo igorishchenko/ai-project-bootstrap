@@ -4,16 +4,32 @@ technology you selected, in the order you should set them up.
 ### Before you start
 
 1. Install Node.js 18 or newer, and the package manager the team uses.
-2. Copy the environment template and fill it in as you work through the sections:
+
+2. Initialise the repository **before installing** — the commit hooks are set up
+   by a post-install step, and it silently installs nothing when there is no
+   `.git` directory yet:
+
+   ```bash
+   git init
+   ```
+
+3. Copy the environment template and fill it in as you work through the
+   sections:
 
    ```bash
    cp .env.example .env
    ```
 
-3. Install dependencies:
+4. Install dependencies:
 
    ```bash
    npm install
+   ```
+
+5. Confirm the hooks were wired up. This should print `.husky`:
+
+   ```bash
+   git config core.hooksPath
    ```
 
 ### How to use this document
