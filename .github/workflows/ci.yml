@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+  generate:
+    name: Generate a project and run its own checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # The unit tests assert on a virtual filesystem. This proves the output
+      # is a project that actually installs and passes its own checks —
+      # the class of bug that shipped a broken `typecheck` script twice.
+      # Every category populated, so each builder has something to do and the
+      # generated package.json has all its scripts.
+      - name: Generate a project
+        run: node dist/index.js --out /tmp/generated --config tests/fixtures/ci-full-stack.json
+
+      - name: Set it up
+        working-directory: /tmp/generated
+        run: npm run setup
+
+      - name: Doctor reports the unconfigured values
+        working-directory: /tmp/generated
+        run: |
+          if npm run doctor; then
+            echo "::error::doctor passed on an unconfigured project — it should fail"
+            exit 1
+          fi
+
+      - name: Its lint, typecheck and tests pass
+        working-directory: /tmp/generated
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run format:check

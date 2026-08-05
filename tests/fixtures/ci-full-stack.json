@@ -1,0 +1,19 @@
+{
+  "projectName": "CI Full Stack",
+  "choices": {
+    "platform": "expo",
+    "backend": "supabase",
+    "auth": "supabase-auth",
+    "database": "sqlite",
+    "payments": "revenuecat",
+    "analytics": ["posthog"],
+    "crash-reporting": ["sentry"],
+    "notifications": "expo-notifications",
+    "storage": "supabase-storage",
+    "email": "resend",
+    "monitoring": "betterstack",
+    "ci-cd": "github-actions",
+    "testing": ["jest"],
+    "deployment": "eas-submit"
+  }
+}
