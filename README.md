@@ -59,15 +59,21 @@ can grow without any change to the questions.
 ```bash
 npx ai-project-bootstrap                          # interactive
 npx ai-project-bootstrap my-app --yes             # accept defaults
+npx ai-project-bootstrap --name ./apps/my-app     # create ./apps/my-app
 npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
 npx ai-project-bootstrap --dry-run                # show what would be written
 npx ai-project-bootstrap --list-modules
 ```
 
+The project name doubles as its location. Answer `my-app` and the project lands
+in `./my-app`; answer `./apps/my-app` and that folder is created — parents and
+all — with the project named `my-app` inside it. `--out` overrides the location
+without touching the name.
+
 | Flag | Meaning |
 | --- | --- |
 | `-o, --out <dir>` | Target directory (default: the project slug) |
-| `--name <name>` | Project name, skipping the first question |
+| `--name <name>` | Project name or path, skipping the first question |
 | `--config <file>` | Replay a saved selection instead of asking |
 | `-y, --yes` | Accept defaults for every question |
 | `--dry-run` | Print the file list without writing anything |

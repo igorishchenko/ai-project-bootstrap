@@ -7,9 +7,9 @@ import { preservedPaths, readFingerprints } from '../core/vfs/preserve.js';
 import { generate } from '../core/pipeline/generate.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
 import { GeneratorError } from '../core/resolve/errors.js';
-import { slugify } from '../core/pipeline/buildContext.js';
 import type { Selection } from '../core/types.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
+import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
 import { runWizard, WizardCancelled } from './wizard.js';
 
@@ -116,12 +116,19 @@ async function main(argv: string[]): Promise<number> {
         categories: registry.categories,
         modules: registry.modules,
         name: flags.name,
+        // A directory was already given, so the name question starts from it
+        // rather than from a generic placeholder.
+        defaultName: flags.out ? path.basename(path.resolve(flags.out)) : undefined,
         acceptDefaults: flags.yes,
       });
 
   if (flags.name) selection.projectName = flags.name;
 
-  const targetDir = path.resolve(flags.out ?? slugify(selection.projectName));
+  // The answer may be a path — `./apps/my-proj` names the project `my-proj` and
+  // generates it there, creating any missing parent directories.
+  const target = resolveProjectTarget({ name: selection.projectName, out: flags.out });
+  selection.projectName = target.projectName;
+  const targetDir = target.targetDir;
 
   const result = generate({
     rootDir,

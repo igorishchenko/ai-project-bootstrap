@@ -94,9 +94,12 @@ ai-project-bootstrap — bootstrap the development environment for AI-assisted d
 Usage
   npx ai-project-bootstrap [directory] [options]
 
+The project name doubles as its location: answer "my-app" to generate ./my-app,
+or "./apps/my-app" to create that folder and name the project "my-app".
+
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)
-      --name <name>     Project name, skips the first wizard question
+      --name <name>     Project name or path, skips the first wizard question
       --config <file>   Replay a saved ai-project.config.json instead of asking
   -y, --yes             Accept defaults for every unanswered question
       --dry-run         Print what would be written without touching disk

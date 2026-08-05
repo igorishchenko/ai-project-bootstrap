@@ -3,6 +3,7 @@ import type { CategoryQuestion, LoadedModule, Selection } from '../core/types.js
 import { isGatingQuestion } from '../core/types.js';
 import { groupByCategory } from '../core/registry/loadModules.js';
 import { NONE } from '../core/resolve/validate.js';
+import { validateProjectInput } from './projectTarget.js';
 
 export class WizardCancelled extends Error {
   constructor() {
@@ -16,6 +17,8 @@ export interface WizardOptions {
   modules: LoadedModule[];
   /** Pre-supplied project name, skipping that question. */
   name?: string;
+  /** What the name question starts from — derived from `--out` when given. */
+  defaultName?: string;
   /** Accept the first option for every question instead of asking. */
   acceptDefaults?: boolean;
 }
@@ -34,7 +37,8 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
   const choices: Record<string, string | string[]> = {};
   const chosen = new Set<string>();
 
-  const projectName = options.name ?? (await askProjectName(options.acceptDefaults));
+  const projectName =
+    options.name ?? (await askProjectName(options.defaultName, options.acceptDefaults));
 
   // Questions ruled out by an earlier answer. A web-only project never sees the
   // mobile question, so anything needing a mobile platform is off the table too.
@@ -193,15 +197,22 @@ async function askGating(
   return answer as string;
 }
 
-async function askProjectName(acceptDefaults?: boolean): Promise<string> {
-  if (acceptDefaults) return 'my-ai-project';
+/**
+ * Asks for the project name, which doubles as its location.
+ *
+ * Answering with a path (`./apps/my-proj`) generates the project there under
+ * that name, so the folder you get and the project inside it always match.
+ */
+async function askProjectName(defaultName?: string, acceptDefaults?: boolean): Promise<string> {
+  const fallback = defaultName ?? 'my-ai-project';
+  if (acceptDefaults) return fallback;
 
   const answer = await prompts.text({
-    message: 'Project name',
-    placeholder: 'my-ai-project',
-    defaultValue: 'my-ai-project',
+    message: 'Project name or path',
+    placeholder: `${fallback} — or ./apps/${fallback} to create it there`,
+    defaultValue: fallback,
     validate: (value) =>
-      value.trim().length === 0 ? 'Please enter a project name.' : undefined,
+      value.trim().length === 0 ? 'Please enter a project name.' : validateProjectInput(value),
   });
 
   if (prompts.isCancel(answer)) throw new WizardCancelled();
