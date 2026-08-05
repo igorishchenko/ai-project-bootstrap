@@ -1,0 +1,43 @@
+---
+description: React and Vite conventions
+globs: ["src/**/*.tsx", "src/**/*.ts", "vite.config.*"]
+alwaysApply: false
+---
+
+# React (Vite)
+
+## Everything here is public
+
+There is no server. The bundle ships to the browser in full.
+
+- No secret in a `VITE_*` variable — it is inlined and readable by anyone.
+- Authorisation is enforced by the API. Hiding a button is presentation, not
+  security.
+
+## Components
+
+- Function components with typed props. One screen per file; extract at ~150
+  lines.
+- Lazy-load route components, or every visitor downloads every screen.
+- Keys on lists must be stable ids, never the array index.
+
+## State and effects
+
+- Effects run twice in development under StrictMode, deliberately. Make them
+  idempotent rather than working around it.
+- Cancel in-flight requests on unmount, or use a query library that does.
+- Do not fetch in `useEffect` without cancellation — races and leaks.
+- Server state and UI state are different concerns; do not store fetched data
+  alongside form state.
+
+## Structure
+
+- Group by feature, not by file type.
+- API access lives in `src/services/`. Components call services, never `fetch`
+  directly.
+
+## Never
+
+- Never trust anything the client computed for an authorisation decision.
+- Never ship source maps publicly without deciding to.
+- Never verify only against `npm run dev` — the build behaves differently.

@@ -28,9 +28,15 @@ README.md  CLAUDE.md  AGENTS.md  ai-project.config.json
 
 ## Available technologies
 
+The first question asks what you are building — **mobile**, **web**, or **both**
+— and the rest of the wizard follows from it. Choosing both asks for a mobile
+platform and then a web framework, and the generated project carries the
+documentation, rules and scripts for each.
+
 | Category | Modules |
 | --- | --- |
-| Platform | React Native, Expo |
+| Mobile | React Native, Expo |
+| Web | Next.js, React (Vite) |
 | Backend | Supabase |
 | Auth | Supabase Auth, Clerk |
 | Database | SQLite, PostgreSQL |
@@ -110,6 +116,21 @@ manifest:
 wizard's questions, and options are derived from the modules found on disk. A
 category with no installed modules is skipped rather than shown empty.
 
+A question may instead declare fixed `choices`, making it a **gating question**:
+its answer shapes the wizard rather than selecting a technology. Other questions
+opt in with `showWhen`, and a question ruled out this way also removes any module
+that would have pulled one of its modules in — a web-only project is never
+offered a mobile-only test runner.
+
+```jsonc
+{ "id": "target", "label": "What are you building?", "type": "single",
+  "required": true, "allowNone": false, "order": 5,
+  "choices": [{ "value": "mobile", "label": "Mobile app" },
+              { "value": "hybrid", "label": "Both" }] }
+
+{ "id": "mobile", "label": "Mobile platform", …, "showWhen": { "target": ["mobile", "hybrid"] } }
+```
+
 `requires` are hard prerequisites, pulled in transitively. `conflicts` are
 mutual exclusions. `dependencies` are soft edges that only affect ordering.
 
@@ -117,6 +138,10 @@ mutual exclusions. `dependencies` are soft edges that only affect ordering.
 
 - **`env.md`** documents variables in a markdown table with `Key`, `Required`,
   `Description` and `Example` columns. Prose around the table is ignored.
+- **`dependencies.json` and `package.fragment.json` may be templated.** They are
+  parsed after rendering, so a module can vary by what else was selected —
+  `{{#if has.react-native}}` picks native test tooling, and a web framework
+  namespaces its `start` script when a mobile platform already defines one.
 - **`templates/`** has three reserved subtrees: `root/` (project root),
   `github/` (`.github/`) and `hygiene/` (lint, format and hook configs).
   Everything else mirrors to the project root at its own path.

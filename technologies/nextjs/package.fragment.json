@@ -1,0 +1,13 @@
+{
+  "scripts": {
+{{#if has.react-native}}
+    "dev:web": "next dev",
+    "build:web": "next build",
+    "start:web": "next start"
+{{/if}}{{#unless has.react-native}}
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+{{/unless}}
+  }
+}

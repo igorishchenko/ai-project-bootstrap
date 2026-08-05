@@ -1,0 +1,15 @@
+{
+  "packages": [
+    { "name": "react", "version": "^19.2.3" },
+    { "name": "react-dom", "version": "^19.2.3" },
+    { "name": "react-router-dom", "version": "^7.18.0" },
+    { "name": "vite", "version": "^8.2.0", "dev": true },
+    { "name": "@vitejs/plugin-react", "version": "^6.0.0", "dev": true },
+    { "name": "@types/react", "version": "^19.2.0", "dev": true },
+    { "name": "@types/react-dom", "version": "^19.2.0", "dev": true }
+  ],
+  "install": [
+    "npm install react react-dom react-router-dom",
+    "npm install -D vite @vitejs/plugin-react @types/react @types/react-dom"
+  ]
+}

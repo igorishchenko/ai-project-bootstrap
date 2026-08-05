@@ -1,5 +1,6 @@
 import * as prompts from '@clack/prompts';
 import type { CategoryQuestion, LoadedModule, Selection } from '../core/types.js';
+import { isGatingQuestion } from '../core/types.js';
 import { groupByCategory } from '../core/registry/loadModules.js';
 import { NONE } from '../core/resolve/validate.js';
 
@@ -35,12 +36,30 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
 
   const projectName = options.name ?? (await askProjectName(options.acceptDefaults));
 
+  // Questions ruled out by an earlier answer. A web-only project never sees the
+  // mobile question, so anything needing a mobile platform is off the table too.
+  const excluded = new Set<string>();
+
   for (const category of options.categories) {
+    if (!shouldAsk(category, choices)) {
+      excluded.add(category.id);
+      continue;
+    }
+
+    // A gating question shapes the rest of the wizard rather than selecting a
+    // technology, so its options come from config and its answer is recorded
+    // without ever reaching the resolver.
+    if (isGatingQuestion(category)) {
+      const answer = await askGating(category, options.acceptDefaults);
+      if (answer !== undefined) choices[category.id] = answer;
+      continue;
+    }
+
     // Only offer what is still compatible with the answers so far. Presenting
     // an option and then rejecting the whole selection at the end — after every
     // remaining question has been answered — is not a real choice.
     const available = (grouped.get(category.id) ?? []).filter((module) =>
-      isCompatible(module.manifest.id, chosen, byId),
+      isCompatible(module.manifest.id, chosen, byId, choices, excluded),
     );
     if (available.length === 0) continue;
 
@@ -71,6 +90,8 @@ function isCompatible(
   id: string,
   chosen: Set<string>,
   byId: Map<string, LoadedModule>,
+  choices: Record<string, string | string[]>,
+  excluded: ReadonlySet<string>,
 ): boolean {
   const candidate = byId.get(id);
   if (!candidate) return false;
@@ -89,9 +110,33 @@ function isCompatible(
     for (const chosenId of chosen) {
       if (byId.get(chosenId)?.manifest.conflicts.includes(incomingId)) return false;
     }
+
+    // Would this drag in something from a question already answered otherwise?
+    // Offering Detox to a web-only project would silently add React Native,
+    // contradicting an answer the user already gave.
+    if (
+      !chosen.has(incomingId) &&
+      (excluded.has(manifest.category) ||
+        contradictsAnswer(manifest.category, incomingId, choices))
+    ) {
+      return false;
+    }
   }
 
   return true;
+}
+
+/** True when `category` was already answered and `moduleId` was not the answer. */
+function contradictsAnswer(
+  category: string,
+  moduleId: string,
+  choices: Record<string, string | string[]>,
+): boolean {
+  if (!(category in choices)) return false;
+
+  const answer = choices[category];
+  const given = Array.isArray(answer) ? answer : [answer];
+  return !given.includes(moduleId);
 }
 
 /** Adds a module and everything it transitively requires. */
@@ -108,6 +153,44 @@ function addWithPrerequisites(
   for (const requiredId of module.manifest.requires) {
     addWithPrerequisites(requiredId, target, byId);
   }
+}
+
+/**
+ * Whether a question applies, given the answers so far.
+ *
+ * `showWhen` lists the answers that reveal it. "Both" reveals the mobile and
+ * web questions by appearing in each of their conditions — the wizard knows
+ * nothing about what "both" means.
+ */
+function shouldAsk(
+  category: CategoryQuestion,
+  choices: Record<string, string | string[]>,
+): boolean {
+  if (!category.showWhen) return true;
+
+  return Object.entries(category.showWhen).every(([dependsOn, accepted]) => {
+    const answer = choices[dependsOn];
+    const given = Array.isArray(answer) ? answer : [answer];
+    return given.some((value) => value !== undefined && accepted.includes(value));
+  });
+}
+
+async function askGating(
+  category: CategoryQuestion,
+  acceptDefaults?: boolean,
+): Promise<string | undefined> {
+  const options = (category.choices ?? []).map((choice) => ({
+    value: choice.value,
+    label: choice.label,
+    ...(choice.hint ? { hint: choice.hint } : {}),
+  }));
+  if (options.length === 0) return undefined;
+
+  if (acceptDefaults) return options[0]?.value;
+
+  const answer = await prompts.select({ message: category.label, options });
+  if (prompts.isCancel(answer)) throw new WizardCancelled();
+  return answer as string;
 }
 
 async function askProjectName(acceptDefaults?: boolean): Promise<string> {

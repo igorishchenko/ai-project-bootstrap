@@ -1,10 +1,15 @@
 {
   "projectName": "Demo App",
   "choices": {
-    "platform": "expo",
+    "target": "mobile",
     "backend": "supabase",
     "payments": "revenuecat",
-    "analytics": ["posthog"],
-    "crash-reporting": ["sentry"]
+    "analytics": [
+      "posthog"
+    ],
+    "crash-reporting": [
+      "sentry"
+    ],
+    "mobile": "expo"
   }
 }

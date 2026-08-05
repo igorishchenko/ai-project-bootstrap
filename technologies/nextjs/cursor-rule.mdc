@@ -1,0 +1,48 @@
+---
+description: Next.js conventions
+globs: ["app/**", "src/app/**", "next.config.*", "**/*.tsx"]
+alwaysApply: false
+---
+
+# Next.js
+
+## Server by default
+
+- Components are Server Components unless the file starts with `'use client'`.
+- Add `'use client'` as far down the tree as possible. On a layout it turns the
+  entire subtree into client code and the bundle balloons.
+- Data fetching, database access and secrets belong in Server Components.
+
+## Environment variables
+
+- `NEXT_PUBLIC_*` is **inlined into the browser bundle**. Everything else is
+  server-only.
+- Never add the prefix to fix an `undefined` in a client component — that
+  publishes the value to every visitor. Move the code that reads it to the
+  server instead.
+- Mark server-only modules with `import 'server-only'` so a wrong import fails
+  the build rather than leaking.
+
+## Route handlers and Server Actions
+
+- Both are **public HTTP entry points**. `'use server'` means "runs on the
+  server", not "only my code can call it".
+- Validate input and check authorisation in every one, the same as a REST
+  endpoint.
+
+## Caching
+
+- Be explicit: `next: { revalidate: n }` or `cache: 'no-store'`.
+- Reading cookies or headers opts a route out of static rendering — know which
+  routes are dynamic rather than finding out in production.
+
+## Rendering
+
+- No `Date.now()`, `Math.random()` or `window` during render — hydration
+  mismatches.
+- `next/image` with explicit dimensions for anything above the fold.
+
+## Never
+
+- Never put a secret in a client component or a `NEXT_PUBLIC_*` variable.
+- Never suppress a type error to get a build through.

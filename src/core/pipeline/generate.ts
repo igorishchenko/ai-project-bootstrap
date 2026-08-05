@@ -1,6 +1,6 @@
 import type { Builder, Selection } from '../types.js';
 import { loadRegistry, type Registry } from '../registry/loadModules.js';
-import { validateSelection } from '../resolve/validate.js';
+import { gatingCategoryIds, validateSelection } from '../resolve/validate.js';
 import { resolveSelection } from '../resolve/resolveSelection.js';
 import { createBuildContext } from './buildContext.js';
 import { runPipeline, type BuilderRun, type RunOptions } from './runPipeline.js';
@@ -39,7 +39,8 @@ export function generate(input: GenerateInput): GenerateResult {
   );
   validateSelection(input.selection, registry.categories, registry.byId, availableCategories);
 
-  const { modules, autoIncluded } = resolveSelection(input.selection, registry.byId);
+  const gating = gatingCategoryIds(registry.categories);
+  const { modules, autoIncluded } = resolveSelection(input.selection, registry.byId, gating);
 
   const ctx = createBuildContext({
     projectName: input.selection.projectName,

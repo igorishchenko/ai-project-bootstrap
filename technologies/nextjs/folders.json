@@ -1,0 +1,7 @@
+[
+  "app",
+  "src/components",
+  "src/lib",
+  "src/services",
+  "public"
+]

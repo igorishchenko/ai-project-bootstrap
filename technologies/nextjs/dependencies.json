@@ -1,0 +1,14 @@
+{
+  "packages": [
+    { "name": "next", "version": "^16.3.0" },
+    { "name": "react", "version": "^19.2.3" },
+    { "name": "react-dom", "version": "^19.2.3" },
+    { "name": "@types/react", "version": "^19.2.0", "dev": true },
+    { "name": "@types/react-dom", "version": "^19.2.0", "dev": true },
+    { "name": "server-only", "version": "^0.0.1" }
+  ],
+  "install": [
+    "npm install next react react-dom server-only",
+    "npm install -D @types/react @types/react-dom"
+  ]
+}

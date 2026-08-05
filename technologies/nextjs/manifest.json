@@ -1,0 +1,10 @@
+{
+  "id": "nextjs",
+  "name": "Next.js",
+  "category": "web",
+  "description": "React framework with server components, file-based routing and a build-in server runtime.",
+  "requires": [],
+  "conflicts": ["react"],
+  "dependencies": [],
+  "priority": 12
+}

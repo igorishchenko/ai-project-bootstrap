@@ -1,0 +1,10 @@
+{
+  "id": "react",
+  "name": "React (Vite)",
+  "category": "web",
+  "description": "Single-page React application built with Vite. No server — everything ships to the browser.",
+  "requires": [],
+  "conflicts": ["nextjs"],
+  "dependencies": [],
+  "priority": 14
+}

@@ -1,0 +1,13 @@
+{
+  "scripts": {
+{{#if has.react-native}}
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "preview:web": "vite preview"
+{{/if}}{{#unless has.react-native}}
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+{{/unless}}
+  }
+}

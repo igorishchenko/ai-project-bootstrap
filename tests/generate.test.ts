@@ -153,7 +153,7 @@ describe('generate', () => {
       targetDir: '/virtual/out',
       selection: {
         projectName: 'Tested',
-        choices: { platform: 'expo', testing: ['jest'] },
+        choices: { target: 'mobile', mobile: 'expo', testing: ['jest'] },
       },
       builders,
       registry,
@@ -324,7 +324,8 @@ describe('generate', () => {
         analytics: ['posthog'],
         payments: 'revenuecat',
         backend: 'supabase',
-        platform: 'expo',
+        target: 'mobile',
+        mobile: 'expo',
       },
     };
 
@@ -353,7 +354,7 @@ describe('generate', () => {
     const minimal = generate({
       rootDir: ROOT,
       targetDir: '/virtual/out',
-      selection: { projectName: 'Bare', choices: { platform: 'react-native' } },
+      selection: { projectName: 'Bare', choices: { target: 'mobile', mobile: 'react-native' } },
       builders,
       registry,
     });

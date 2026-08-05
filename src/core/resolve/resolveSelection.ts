@@ -21,8 +21,9 @@ export interface ResolveResult {
 export function resolveSelection(
   selection: Selection,
   byId: Map<string, LoadedModule>,
+  gatingCategories: ReadonlySet<string> = new Set(),
 ): ResolveResult {
-  const explicit = new Set(selectedModuleIds(selection));
+  const explicit = new Set(selectedModuleIds(selection, gatingCategories));
   const included = new Set<string>();
   const autoIncluded: string[] = [];
 

@@ -1,5 +1,6 @@
 import type { BuildContext, CategoryQuestion, LoadedModule, Selection } from '../types.js';
 import type { TemplateData } from '../template/render.js';
+import { render } from '../template/render.js';
 import { mergeFolders, renderFolderTree } from '../merge/mergeFolders.js';
 
 /** Turns a project name into a safe npm package / directory name. */
@@ -25,7 +26,7 @@ export function createBuildContext(input: {
   // Base always leads, so its content frames every merged document.
   const modules = input.base ? [input.base, ...input.modules] : [...input.modules];
 
-  return {
+  const ctx: BuildContext = {
     projectName: input.projectName,
     targetDir: input.targetDir,
     selection: input.selection,
@@ -33,6 +34,41 @@ export function createBuildContext(input: {
     categories: input.categories,
     warnings: [],
   };
+
+  // `dependencies.json` may branch on the rest of the stack, so it is rendered
+  // now that the full module list is known. Safe to compute template data
+  // first: none of it reads the dependencies field.
+  const data = templateData(ctx);
+  ctx.modules = modules.map((module) => ({
+    ...module,
+    dependencies:
+      renderJson(module.dependenciesRaw, 'dependencies.json', module, data, ctx) ??
+      module.dependencies,
+    packageFragment:
+      renderJson(module.packageFragmentRaw, 'package.fragment.json', module, data, ctx) ??
+      module.packageFragment,
+  }));
+  return ctx;
+}
+
+/** Renders a templated JSON asset, or returns undefined when it needs no rendering. */
+function renderJson<T>(
+  raw: string | undefined,
+  filename: string,
+  module: LoadedModule,
+  data: TemplateData,
+  ctx: BuildContext,
+): T | undefined {
+  if (!raw || !raw.includes('{{')) return undefined;
+
+  try {
+    return JSON.parse(render(raw, data)) as T;
+  } catch (error) {
+    ctx.warnings.push(
+      `${module.manifest.name}: ${filename} did not parse after rendering — ${(error as Error).message}`,
+    );
+    return undefined;
+  }
 }
 
 /**
@@ -70,6 +106,10 @@ export function templateData(ctx: BuildContext): TemplateData {
     // name the section of docs/setup.md that explains each one.
     envVars: describeEnv(ctx),
     requiredEnvVars: describeEnv(ctx).filter((variable) => variable.required),
+    // Lets a module's own content adapt to the rest of the stack:
+    // {{#if has.react-native}} … {{/if}}. Keeps cross-platform modules from
+    // needing a hard `requires` just to know what they are running alongside.
+    has: Object.fromEntries(ctx.modules.map((module) => [module.manifest.id, true])),
   };
 }
 

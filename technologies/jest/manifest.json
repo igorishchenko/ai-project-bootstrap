@@ -2,8 +2,8 @@
   "id": "jest",
   "name": "Jest",
   "category": "testing",
-  "description": "Unit and component testing with React Native Testing Library.",
-  "requires": ["react-native"],
+  "description": "Unit and component testing. Adapts its configuration to the platform you selected.",
+  "requires": [],
   "conflicts": [],
   "dependencies": [],
   "priority": 80

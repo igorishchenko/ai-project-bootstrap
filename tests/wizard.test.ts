@@ -53,6 +53,46 @@ const modules = [
   makeModule({ id: 'posthog', name: 'PostHog', category: 'analytics' }),
 ];
 
+/** A target question that reveals the mobile and/or web questions. */
+const targeted: CategoryQuestion[] = [
+  {
+    id: 'target',
+    label: 'What are you building?',
+    type: 'single',
+    required: true,
+    allowNone: false,
+    order: 5,
+    choices: [
+      { value: 'mobile', label: 'Mobile app' },
+      { value: 'web', label: 'Web app' },
+      { value: 'hybrid', label: 'Both' },
+    ],
+  },
+  {
+    id: 'mobile',
+    label: 'Mobile platform',
+    type: 'single',
+    required: false,
+    allowNone: true,
+    order: 10,
+    showWhen: { target: ['mobile', 'hybrid'] },
+  },
+  {
+    id: 'web',
+    label: 'Web framework',
+    type: 'single',
+    required: false,
+    allowNone: true,
+    order: 15,
+    showWhen: { target: ['web', 'hybrid'] },
+  },
+];
+
+const platforms = [
+  makeModule({ id: 'rn', name: 'RN', category: 'mobile' }),
+  makeModule({ id: 'nextish', name: 'Nextish', category: 'web' }),
+];
+
 const optionsFor = (label: string): string[] =>
   asked.find((entry) => entry.message === label)?.values ?? [];
 
@@ -127,6 +167,58 @@ describe('runWizard', () => {
     expect(selection.choices.backend).toBe('none');
     // A multi-select answer of "None" becomes an empty list, not ["none"].
     expect(selection.choices.analytics).toEqual([]);
+  });
+
+  it('asks only the mobile question for a mobile target', async () => {
+    answers = { 'What are you building?': 'mobile' };
+
+    await runWizard({ categories: targeted, modules: platforms, name: 'Test' });
+    const asked_ = asked.map((entry) => entry.message);
+
+    expect(asked_).toContain('Mobile platform');
+    expect(asked_).not.toContain('Web framework');
+  });
+
+  it('asks only the web question for a web target', async () => {
+    answers = { 'What are you building?': 'web' };
+
+    await runWizard({ categories: targeted, modules: platforms, name: 'Test' });
+    const asked_ = asked.map((entry) => entry.message);
+
+    expect(asked_).toContain('Web framework');
+    expect(asked_).not.toContain('Mobile platform');
+  });
+
+  it('asks mobile then web for a hybrid target, in that order', async () => {
+    answers = { 'What are you building?': 'hybrid' };
+
+    const selection = await runWizard({ categories: targeted, modules: platforms, name: 'Test' });
+    const asked_ = asked.map((entry) => entry.message);
+
+    expect(asked_.indexOf('Mobile platform')).toBeGreaterThan(-1);
+    expect(asked_.indexOf('Web framework')).toBeGreaterThan(asked_.indexOf('Mobile platform'));
+    // The gating answer is recorded but is not a module.
+    expect(selection.choices.target).toBe('hybrid');
+  });
+
+  it('does not offer a module that would contradict an earlier answer', async () => {
+    // Choosing web-only means no mobile platform, so a mobile-only tool must
+    // not be offered — accepting it would silently add React Native.
+    const withMobileTool = [
+      ...platforms,
+      makeModule({ id: 'e2e', name: 'E2E', category: 'testing', requires: ['rn'] }),
+      makeModule({ id: 'unit', name: 'Unit', category: 'testing' }),
+    ];
+    const categoriesWithTesting = [
+      ...targeted,
+      { id: 'testing', label: 'Testing', type: 'multi' as const, required: false, allowNone: true, order: 50 },
+    ];
+    answers = { 'What are you building?': 'web', 'Web framework': 'nextish' };
+
+    await runWizard({ categories: categoriesWithTesting, modules: withMobileTool, name: 'Test' });
+
+    expect(optionsFor('Testing')).toContain('unit');
+    expect(optionsFor('Testing')).not.toContain('e2e');
   });
 
   it('never offers a combination the resolver would reject', async () => {

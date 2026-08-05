@@ -76,8 +76,15 @@ function byName(a: { name: string }, b: { name: string }): number {
 }
 
 /** Reads every declared asset for one module directory. */
+/** True when a file needs rendering before it can be parsed. */
+function isTemplated(raw: string | undefined): boolean {
+  return raw !== undefined && /\{\{/.test(raw);
+}
+
 export function loadModuleAssets(manifest: Manifest, root: string, isBase: boolean): LoadedModule {
   const envMarkdown = readIfPresent(root, FILES.env);
+  const dependenciesRaw = readIfPresent(root, FILES.dependencies);
+  const packageFragmentRaw = readIfPresent(root, FILES.packageFragment);
   const folders = readJsonIfPresent<string[]>(root, FILES.folders) ?? [];
 
   if (!Array.isArray(folders)) {
@@ -100,8 +107,16 @@ export function loadModuleAssets(manifest: Manifest, root: string, isBase: boole
     claudeSkill: readIfPresent(root, FILES.claudeSkill),
     env: envMarkdown ? parseEnvTable(envMarkdown, path.join(root, FILES.env)) : [],
     folders,
-    packageFragment: readJsonIfPresent<Record<string, unknown>>(root, FILES.packageFragment),
-    dependencies: readJsonIfPresent<DependenciesFile>(root, FILES.dependencies),
+    packageFragment: isTemplated(packageFragmentRaw)
+      ? undefined
+      : readJsonIfPresent<Record<string, unknown>>(root, FILES.packageFragment),
+    packageFragmentRaw,
+    // A templated dependencies.json is not valid JSON until it is rendered
+    // against the chosen stack, so parsing is deferred to build time.
+    dependencies: isTemplated(dependenciesRaw)
+      ? undefined
+      : readJsonIfPresent<DependenciesFile>(root, FILES.dependencies),
+    dependenciesRaw,
     prompts: readTree(root, DIRS.prompts),
     checklists: readTree(root, DIRS.checklists),
     templates: readTree(root, DIRS.templates),

@@ -1,9 +1,11 @@
 {
   "id": "expo",
   "name": "Expo",
-  "category": "platform",
+  "category": "mobile",
   "description": "Managed React Native tooling: config plugins, EAS builds and over-the-air updates.",
-  "requires": ["react-native"],
+  "requires": [
+    "react-native"
+  ],
   "conflicts": [],
   "dependencies": [],
   "priority": 20

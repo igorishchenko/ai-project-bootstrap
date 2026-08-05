@@ -1,11 +1,34 @@
 [
   {
-    "id": "platform",
-    "label": "Platform",
+    "id": "target",
+    "label": "What are you building?",
+    "type": "single",
+    "required": true,
+    "allowNone": false,
+    "order": 5,
+    "choices": [
+      { "value": "mobile", "label": "Mobile app", "hint": "iOS and Android" },
+      { "value": "web", "label": "Web app", "hint": "Browser" },
+      { "value": "hybrid", "label": "Both", "hint": "Mobile and web sharing one repository" }
+    ]
+  },
+  {
+    "id": "mobile",
+    "label": "Mobile platform",
     "type": "single",
     "required": false,
     "allowNone": true,
-    "order": 10
+    "order": 10,
+    "showWhen": { "target": ["mobile", "hybrid"] }
+  },
+  {
+    "id": "web",
+    "label": "Web framework",
+    "type": "single",
+    "required": false,
+    "allowNone": true,
+    "order": 15,
+    "showWhen": { "target": ["web", "hybrid"] }
   },
   {
     "id": "backend",
