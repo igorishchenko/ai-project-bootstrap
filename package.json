@@ -27,7 +27,9 @@
     "node": ">=18"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "scripts": {
     "build": "tsup",
@@ -54,5 +56,13 @@
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.2.0",
     "vitest": "^2.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igorishchenko/ai-project-bootstrap.git"
+  },
+  "homepage": "https://github.com/igorishchenko/ai-project-bootstrap#readme",
+  "bugs": {
+    "url": "https://github.com/igorishchenko/ai-project-bootstrap/issues"
   }
 }
