@@ -109,7 +109,15 @@ export function templateData(ctx: BuildContext): TemplateData {
     // Lets a module's own content adapt to the rest of the stack:
     // {{#if has.react-native}} … {{/if}}. Keeps cross-platform modules from
     // needing a hard `requires` just to know what they are running alongside.
-    has: Object.fromEntries(ctx.modules.map((module) => [module.manifest.id, true])),
+    // Category ids are flagged too ({{#if has.testing}}), so base content can
+    // ask "did anything fill this slot?" without naming every candidate.
+    has: {
+      ...Object.fromEntries(ctx.categories.map((category) => [category.id, false])),
+      ...Object.fromEntries(
+        technologies.map((module) => [module.manifest.category, true] as const),
+      ),
+      ...Object.fromEntries(ctx.modules.map((module) => [module.manifest.id, true])),
+    },
   };
 }
 

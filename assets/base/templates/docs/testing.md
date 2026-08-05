@@ -40,13 +40,25 @@ Name the scenario and the expected outcome. Not `it('works')`.
 
 ## Running
 
-```bash
+{{#if has.testing}}```bash
 npm test
 ```
 
 See `package.json` for watch and coverage variants.
 
-## Coverage
+{{/if}}{{#unless has.testing}}This project has no test runner yet — nothing in `package.json` runs a suite,
+so everything above is the standard to hold new tests to once one is installed.
+
+To add one, re-run the generator and answer the Testing question:
+
+```bash
+npx ai-project-bootstrap --config ai-project.config.json --out . --force
+```
+
+See [Regenerating](../README.md#regenerating) — files you have edited are left
+alone.
+
+{{/unless}}## Coverage
 
 Coverage measures what was executed, not what was verified — treat a drop as a
 prompt to look, not as a target to hit. Untested error paths and edge cases
@@ -57,5 +69,6 @@ matter far more than the percentage.
 ```bash
 npm run lint
 npm run typecheck
-npm test
+{{#if has.testing}}npm test
+{{/if}}npm run format:check
 ```

@@ -17,15 +17,16 @@ This file is the tool-agnostic entry point. The full instructions live in
 - Conventions per technology are in `.claude/skills/` and `.cursor/rules/`.
   Both directories describe the same rules in the format each tool expects.
 - Configuration comes from environment variables documented in `.env.example`.
-- Run the project's lint, typecheck and test commands before reporting a task
-  as finished. They are defined in `package.json`.
+- Run the project's verification commands before reporting a task as finished.
+  They are defined in `package.json`.
 
 ## Verifying your work
 
 ```bash
 npm run lint
 npm run typecheck
-npm test
+{{#if has.testing}}npm test
+{{/if}}npm run format:check
 ```
 
 If a command does not exist yet, say so instead of inventing one.

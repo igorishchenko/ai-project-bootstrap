@@ -397,3 +397,83 @@ describe('generate', () => {
     ).toThrow(GeneratorError);
   });
 });
+
+/**
+ * Regression: every generated document told the reader — and the assistant —
+ * to run `npm test`, but the `test` script ships with the testing module. A
+ * project generated without one documented a command that did not exist, and
+ * its CI failed on the first push.
+ */
+describe('commands a generated project documents', () => {
+  const withTests = run({
+    projectName: 'Tested',
+    choices: { target: 'web', web: 'nextjs', 'ci-cd': 'github-actions', testing: ['jest'] },
+  });
+  const withoutTests = run({
+    projectName: 'Untested',
+    choices: { target: 'web', web: 'nextjs', 'ci-cd': 'github-actions' },
+  });
+
+  const scriptsOf = (result: ReturnType<typeof run>): Record<string, string> =>
+    (JSON.parse(result.vfs.read('package.json') as string) as { scripts: Record<string, string> }).scripts;
+
+  /** Every `npm run x` / `npm test` a generated file asks the reader to run. */
+  const invoked = (result: ReturnType<typeof run>): Map<string, string[]> => {
+    const found = new Map<string, string[]>();
+    for (const [file, content] of result.vfs.entries()) {
+      for (const match of content.matchAll(/\bnpm (?:run ([a-z][a-z0-9:-]*)|(test)\b)/g)) {
+        const script = (match[1] ?? match[2]) as string;
+        found.set(script, [...(found.get(script) ?? []), file]);
+      }
+    }
+    return found;
+  };
+
+  it('defines every script it tells you to run, with a test runner', () => {
+    const scripts = scriptsOf(withTests);
+    for (const [script, where] of invoked(withTests)) {
+      expect(scripts[script], `${where.join(', ')} run "npm run ${script}"`).toBeDefined();
+    }
+    expect(scripts.test).toBeDefined();
+  });
+
+  it('defines every script it tells you to run, without a test runner', () => {
+    const scripts = scriptsOf(withoutTests);
+    for (const [script, where] of invoked(withoutTests)) {
+      expect(scripts[script], `${where.join(', ')} run "npm run ${script}"`).toBeDefined();
+    }
+    expect(scripts.test).toBeUndefined();
+  });
+
+  it('mentions npm test only where a runner exists', () => {
+    expect([...invoked(withTests).keys()]).toContain('test');
+    expect([...invoked(withoutTests).keys()]).not.toContain('test');
+  });
+
+  it('drops the CI test step rather than failing the pipeline on it', () => {
+    const workflow = (result: ReturnType<typeof run>): string =>
+      result.vfs.read('.github/workflows/ci.yml') as string;
+
+    expect(workflow(withTests)).toContain('run: npm test');
+    expect(workflow(withoutTests)).not.toContain('npm test');
+    // The job name is what a reviewer reads on a red check — keep it honest.
+    expect(workflow(withTests)).toContain('name: Lint, typecheck and test');
+    expect(workflow(withoutTests)).toContain('name: Lint and typecheck');
+  });
+
+  it('leaves the workflow\'s own ${{ }} expressions for the runner to resolve', () => {
+    // Regression: the template engine consumed them, collapsing the
+    // concurrency group to "$-$" so unrelated branches cancelled each other.
+    expect(withTests.vfs.read('.github/workflows/ci.yml')).toContain(
+      'group: ${{ github.workflow }}-${{ github.ref }}',
+    );
+  });
+
+  it('renders every template in a CI stack — no placeholder survives', () => {
+    for (const [file, content] of withTests.vfs.entries()) {
+      // `${{ … }}` belongs to the CI runner; `{{ flex: 1 }}` in prose is JSX.
+      const tags = content.replace(/\$\{\{[^{}]*\}\}/g, '').match(/\{\{[^{}:]*\}\}/g) ?? [];
+      expect(tags, `${file} has unrendered tags`).toEqual([]);
+    }
+  });
+});

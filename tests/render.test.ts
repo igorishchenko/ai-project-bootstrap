@@ -62,6 +62,15 @@ describe('render', () => {
     expect(render('# Title\n\n{{body}}\n\nend', { body: 'x' })).toBe('# Title\n\nx\n\nend');
   });
 
+  it('leaves a CI runner expression alone', () => {
+    const template = 'group: ${{ github.workflow }}-${{ github.ref }}';
+    expect(render(template, {})).toBe(template);
+  });
+
+  it('still renders our own tag on a line that also holds a CI expression', () => {
+    expect(render('{{name}}: ${{ github.sha }}', { name: 'build' })).toBe('build: ${{ github.sha }}');
+  });
+
   it('rejects an unclosed block', () => {
     expect(() => render('{{#if a}}x', {})).toThrow(GeneratorError);
   });

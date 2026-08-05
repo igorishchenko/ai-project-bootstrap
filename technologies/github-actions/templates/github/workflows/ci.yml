@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Lint, typecheck and test
+    name: {{#if has.testing}}Lint, typecheck and test{{/if}}{{#unless has.testing}}Lint and typecheck{{/unless}}
     runs-on: ubuntu-latest
 
     steps:
@@ -37,6 +37,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
-
+{{#if has.testing}}
       - name: Test
         run: npm test
+{{/if}}
+      - name: Format
+        run: npm run format:check

@@ -52,7 +52,9 @@ explicitly.
 
 ## Verifying
 
-`npm test` runs the unit tests; `npm run test:e2e` exercises the HTTP layer.
-Report what actually ran, and if the `ValidationPipe` or guards are not
+{{#if has.jest}}`npm test` runs the unit tests; `npm run test:e2e` exercises the HTTP layer.
+{{/if}}{{#unless has.jest}}`npm run test:e2e` is defined, but no test runner is installed — see
+`docs/testing.md` before relying on it.
+{{/unless}}Report what actually ran, and if the `ValidationPipe` or guards are not
 registered globally, say so — those are the two configuration gaps that make
 everything else here decorative.

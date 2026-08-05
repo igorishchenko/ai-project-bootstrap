@@ -14,6 +14,9 @@ export type TemplateData = Record<string, unknown>;
  *   {{#if flag}} … {{else}} … {{/if}}
  *   {{#unless flag}} … {{/unless}}
  *   {{#each items}} … {{this}} {{name}} {{@index}} … {{/each}}
+ *
+ * `${{ … }}` is left alone. CI templates are full of GitHub Actions and GitLab
+ * expressions in exactly that form, and they belong to the runner, not to us.
  */
 export function render(template: string, data: TemplateData): string {
   return evaluate(parse(template), data);
@@ -64,6 +67,9 @@ function parse(template: string): Node[] {
   TAG.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = TAG.exec(template)) !== null) {
+    // A CI runner's expression, not ours — leave it in the text verbatim.
+    if (match.index > 0 && template[match.index - 1] === '$') continue;
+
     tags.push({
       tag: classify(match[1] ?? '', match[2] ?? '', match[3]),
       start: match.index,

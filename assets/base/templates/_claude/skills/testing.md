@@ -61,8 +61,15 @@ A flaky test is worse than no test: it teaches everyone to ignore a red build.
 ```bash
 npm run lint
 npm run typecheck
-npm test
+{{#if has.testing}}npm test
+{{/if}}npm run format:check
 ```
 
 If any of these fail, say so with the output. Do not describe work as complete
 with a failing suite.
+{{#unless has.testing}}
+This project has no test runner configured — there is no `test` script in
+`package.json`. Do not invent one, and do not report a change as tested. If a
+change needs a test, say that a runner has to be installed first;
+`docs/testing.md` says how.
+{{/unless}}
