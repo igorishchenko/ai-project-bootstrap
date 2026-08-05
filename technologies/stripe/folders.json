@@ -1,0 +1,4 @@
+[
+  "server/payments",
+  "src/features/billing"
+]

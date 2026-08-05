@@ -1,0 +1,44 @@
+---
+description: Firebase conventions
+globs: ["src/services/firebase/**", "firestore.rules", "functions/**"]
+alwaysApply: false
+---
+
+# Firebase
+
+## Security rules are the security
+
+- The client talks straight to the database, and the app config is public by
+  design. **Rules are the only thing protecting the data.**
+- Deny by default; grant narrowly by path and `request.auth.uid`.
+- Rules live in `firestore.rules`, in git, deployed with the app. Never edit
+  them in the console — environments drift and the difference surfaces in
+  production.
+- The `apiKey` in the config is not a secret. Restricting it does not secure
+  anything.
+
+## Access
+
+- One `initializeApp` for the whole app, in `src/services/firebase/`.
+- Components call a service; they never import the Firebase SDK directly.
+- Always handle the error branch — permission failures are normal and must be
+  surfaced, not swallowed.
+
+## Queries
+
+- Every real query needs its composite index committed alongside the code.
+- Paginate with `limit()`. An unbounded collection read is both slow and
+  expensive.
+- Detach listeners on unmount. A leaked listener bills for as long as it lives.
+
+## Privileged work
+
+- Anything the client must not do belongs in a Cloud Function using the Admin
+  SDK, which bypasses rules.
+- The Admin service account key is server-side only. Never in the app.
+
+## Never
+
+- Never leave Firestore in test mode.
+- Never share one Firebase project across environments.
+- Never rely on client-side filtering for access control.

@@ -1,0 +1,10 @@
+{
+  "id": "crashlytics",
+  "name": "Crashlytics",
+  "category": "crash-reporting",
+  "description": "Firebase crash reporting for native mobile apps, with crash-free user metrics.",
+  "requires": ["react-native"],
+  "conflicts": [],
+  "dependencies": ["firebase"],
+  "priority": 61
+}

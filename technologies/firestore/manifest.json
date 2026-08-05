@@ -1,0 +1,10 @@
+{
+  "id": "firestore",
+  "name": "Firestore",
+  "category": "database",
+  "description": "Firebase's document database, queried directly from the client under security rules.",
+  "requires": ["firebase"],
+  "conflicts": ["postgresql"],
+  "dependencies": [],
+  "priority": 34
+}

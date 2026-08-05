@@ -1,0 +1,10 @@
+{
+  "id": "firebase",
+  "name": "Firebase",
+  "category": "backend",
+  "description": "Google's app platform: authentication, Firestore, storage, functions and messaging.",
+  "requires": [],
+  "conflicts": ["supabase"],
+  "dependencies": [],
+  "priority": 31
+}

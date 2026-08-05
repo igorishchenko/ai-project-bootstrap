@@ -1,0 +1,10 @@
+{
+  "id": "stripe",
+  "name": "Stripe",
+  "category": "payments",
+  "description": "Card payments, subscriptions and billing for web checkout.",
+  "requires": [],
+  "conflicts": ["revenuecat", "lemonsqueezy", "paddle"],
+  "dependencies": [],
+  "priority": 41
+}

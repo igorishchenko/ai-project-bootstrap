@@ -1,0 +1,39 @@
+---
+description: Crashlytics conventions
+globs: ["src/services/monitoring/**", "src/**/*.ts", "src/**/*.tsx"]
+alwaysApply: false
+---
+
+# Crashlytics
+
+## What is automatic and what is not
+
+- Native crashes are captured automatically.
+- **JavaScript errors are not.** Report the ones that matter with
+  `crashlytics().recordError(error)`.
+- `crashlytics().log()` adds breadcrumbs to the next crash. Use it for domain
+  events, not for chatter.
+
+## Reporting is not handling
+
+After recording an error, decide what the user sees — a retry, a message, a
+fallback. A reported error that leaves a blank screen is still a broken screen.
+
+## Privacy
+
+- Identify users by **internal id only**: `setUserId(userId)`.
+- No email addresses, names, phone numbers or message content in logs, custom
+  keys or the user id. Reports are stored by a third party.
+- No tokens or credentials, ever.
+
+## Configuration
+
+- Disable collection in development, or your own crashes bury the real ones.
+- Symbol files must upload with every release build, or the stack traces are
+  memory addresses.
+
+## Never
+
+- Never assume a crash appears without relaunching the app — the report uploads
+  on next launch.
+- Never rely on Crashlytics alone for a JavaScript-heavy failure path.

@@ -1,0 +1,13 @@
+{
+  "packages": [
+    { "name": "firebase", "version": "^12.17.0" },
+    { "name": "firebase-tools", "version": "^14.0.0", "dev": true }
+  ],
+  "install": [
+    "npm install firebase",
+    "npm install -D firebase-tools",
+    "npx firebase login",
+    "npx firebase init",
+    "npx firebase emulators:start"
+  ]
+}

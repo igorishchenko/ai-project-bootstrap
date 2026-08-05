@@ -1,0 +1,38 @@
+---
+description: Stripe conventions
+globs: ["server/**", "api/**", "app/api/**", "src/services/payments/**"]
+alwaysApply: false
+---
+
+# Stripe
+
+## Trust boundary
+
+- **Never take an amount, price or currency from the client.** Look the price up
+  server-side from an id you control. A forged request body is trivial.
+- The secret key is server-side only. The publishable key is the only one that
+  may reach a browser.
+- Landing on the success page is not proof of payment.
+
+## Webhooks are the source of truth
+
+- Verify every webhook signature against the **raw** body. A parsed body breaks
+  the check; an unverified endpoint accepts forged "payment succeeded" events
+  from anyone.
+- **Idempotency is required**, not optional. Stripe retries and delivers
+  at-least-once: record the event id and ignore duplicates, or a retry grants
+  access twice.
+- Handle the subscription lifecycle — `updated` and `deleted` — not only
+  checkout completion.
+
+## Money
+
+- Amounts are integers in the smallest currency unit. Never use floats.
+- Store the Stripe customer and subscription ids against your own user.
+
+## Never
+
+- Never log a full card number, secret key or webhook payload containing
+  personal data.
+- Never use Stripe for digital goods inside a mobile app — the stores reject it.
+- Never grant access from client state alone; re-check server-side.

@@ -1,0 +1,39 @@
+---
+description: Firestore conventions
+globs: ["src/services/firebase/**", "firestore.rules", "firestore.indexes.json"]
+alwaysApply: false
+---
+
+# Firestore
+
+## Queries
+
+- **`limit()` on every query.** An unbounded read on a growing collection costs
+  money proportional to the collection.
+- Paginate with cursors (`startAfter`), not offsets.
+- Composite indexes belong in `firestore.indexes.json`, committed. An index
+  created by clicking a console link does not exist in the next environment.
+- No joins. Denormalise the fields a screen reads, and keep the write path that
+  updates every copy.
+
+## Listeners
+
+- Every `onSnapshot` returns an unsubscribe. Return it from the effect.
+- A leaked listener bills for as long as the tab is open.
+
+## Writes
+
+- `setDoc` replaces; `updateDoc` merges. Pick deliberately.
+- `serverTimestamp()` for anything you order by — client clocks are unreliable.
+- Batches for related writes; transactions when you read then write atomically.
+
+## Modelling
+
+- Shallow and wide beats deep and nested: a document is always read in full.
+- Model around the screens that read the data, not around entities.
+
+## Never
+
+- Never read a collection without a bound.
+- Never rely on client-side filtering for access control — rules enforce it.
+- Never store personal data in a document whose rules allow broad reads.

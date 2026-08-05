@@ -1,0 +1,10 @@
+{
+  "packages": [
+    { "name": "stripe", "version": "^22.4.0" },
+    { "name": "@stripe/stripe-js", "version": "^9.13.0" }
+  ],
+  "install": [
+    "npm install stripe @stripe/stripe-js",
+    "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
+  ]
+}
