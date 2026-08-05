@@ -1,6 +1,6 @@
 # {{projectName}}
 
-> Scaffolded with `create-ai-project`. The documentation, rules and prompts in
+> Scaffolded with `ai-project-bootstrap`. The documentation, rules and prompts in
 > this repository are the project's shared context — for people and for AI
 > assistants alike.
 
@@ -78,7 +78,12 @@ Claude load them automatically and they shape how code gets written.
 The generator can rebuild the scaffolding from the saved answers:
 
 ```bash
-npx create-ai-project --config ai-project.config.json --out .
+npx ai-project-bootstrap --config ai-project.config.json --out . --force
 ```
 
-This overwrites generated files, so commit your work first.
+Files you have edited are left alone — the generator records a fingerprint of
+everything it wrote, and anything that no longer matches is treated as yours. It
+reports what it kept. Files you have not touched are refreshed.
+
+Commit before regenerating anyway: it is the only way to see exactly what
+changed.

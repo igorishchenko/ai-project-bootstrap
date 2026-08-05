@@ -1,4 +1,4 @@
-# create-ai-project
+# ai-project-bootstrap
 
 Bootstrap the **development environment for AI-assisted development** — not
 application code.
@@ -9,7 +9,7 @@ package manifest that let an AI assistant open the repository and start
 implementing features correctly.
 
 ```bash
-npx create-ai-project
+npx ai-project-bootstrap
 ```
 
 ## What it generates
@@ -51,11 +51,11 @@ can grow without any change to the questions.
 ## Usage
 
 ```bash
-npx create-ai-project                          # interactive
-npx create-ai-project my-app --yes             # accept defaults
-npx create-ai-project --config ai-project.config.json --out .   # regenerate
-npx create-ai-project --dry-run                # show what would be written
-npx create-ai-project --list-modules
+npx ai-project-bootstrap                          # interactive
+npx ai-project-bootstrap my-app --yes             # accept defaults
+npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
+npx ai-project-bootstrap --dry-run                # show what would be written
+npx ai-project-bootstrap --list-modules
 ```
 
 | Flag | Meaning |

@@ -1,13 +1,22 @@
 {
-  "name": "create-ai-project",
+  "name": "ai-project-bootstrap",
   "version": "0.1.0",
-  "description": "Bootstrap the perfect development environment for AI-assisted development.",
+  "description": "Generate the development environment for AI-assisted development: docs, Cursor rules, Claude skills, prompts and checklists tailored to your stack.",
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "ai",
+    "scaffolding",
+    "generator",
+    "cursor",
+    "claude",
+    "boilerplate",
+    "developer-experience"
+  ],
   "bin": {
-    "create-ai-project": "./dist/index.js"
+    "ai-project-bootstrap": "dist/index.js"
   },
-  "main": "./dist/index.js",
+  "main": "dist/index.js",
   "files": [
     "dist",
     "assets",

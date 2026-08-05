@@ -6,7 +6,7 @@ export const CONFIG_FILENAME = 'ai-project.config.json';
 
 /**
  * Persists the wizard answers so the project can be regenerated later with
- * `create-ai-project --config ai-project.config.json`.
+ * `ai-project-bootstrap --config ai-project.config.json`.
  *
  * Also records a fingerprint of every file produced. On a regeneration those
  * fingerprints are compared against what is on disk, so files you have edited

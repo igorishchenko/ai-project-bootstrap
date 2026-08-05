@@ -89,10 +89,10 @@ export function parseFlags(argv: string[]): CliFlags {
 }
 
 export const HELP_TEXT = `
-create-ai-project — bootstrap the development environment for AI-assisted development.
+ai-project-bootstrap — bootstrap the development environment for AI-assisted development.
 
 Usage
-  npx create-ai-project [directory] [options]
+  npx ai-project-bootstrap [directory] [options]
 
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)

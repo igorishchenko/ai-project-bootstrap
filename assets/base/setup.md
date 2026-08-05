@@ -1,4 +1,4 @@
-This project was scaffolded by `create-ai-project`. The sections below cover every
+This project was scaffolded by `ai-project-bootstrap`. The sections below cover every
 technology you selected, in the order you should set them up.
 
 ### Before you start

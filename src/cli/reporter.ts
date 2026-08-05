@@ -12,7 +12,7 @@ export class Reporter {
 
   intro(version: string): void {
     this.write();
-    this.write(pc.bold(pc.cyan('create-ai-project')) + pc.dim(` v${version}`));
+    this.write(pc.bold(pc.cyan('ai-project-bootstrap')) + pc.dim(` v${version}`));
     this.write(pc.dim('The development environment for AI-assisted development.'));
     this.write();
   }
