@@ -1,0 +1,52 @@
+---
+description: FastAPI conventions
+globs: ["app/**/*.py", "**/*.py"]
+alwaysApply: false
+---
+
+# FastAPI
+
+## Types are the contract
+
+- Every request body is a Pydantic model. **Never `dict` or `Any`** — that
+  throws away validation, documentation and type safety at once.
+- Every endpoint declares a response model, or internal fields leak to clients.
+- Annotate return types. They are checked and documented.
+
+## Async
+
+- No blocking I/O inside `async def`. A synchronous driver or `requests` call
+  stalls the event loop for every other request.
+- If a library is synchronous, declare the handler `def` and let FastAPI use a
+  threadpool.
+
+## Configuration
+
+- One `Settings` object via `pydantic-settings`, validated at import. Scattered
+  `os.getenv` calls fail at request time instead of at boot.
+- Secrets come from the environment, never from source.
+
+## Auth
+
+- Enforce with dependencies (`Depends`), so it is declarative and cannot be
+  forgotten on a new endpoint.
+- Never trust a user id from the request body — derive it from the verified
+  token.
+
+## Structure
+
+```
+app/
+  api/         routers
+  models/      Pydantic models
+  services/    business logic
+  db/          database access
+```
+
+Handlers stay thin: validate, delegate to a service, return a model.
+
+## Never
+
+- Never return an ORM object directly; map it to a response model.
+- Never use `allow_origins=["*"]` together with credentials.
+- Never log secrets, tokens or personal data.

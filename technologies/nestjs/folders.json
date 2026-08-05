@@ -1,0 +1,7 @@
+[
+  "src/modules",
+  "src/common/guards",
+  "src/common/filters",
+  "src/config",
+  "test"
+]

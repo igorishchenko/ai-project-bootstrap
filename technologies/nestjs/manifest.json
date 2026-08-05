@@ -1,0 +1,10 @@
+{
+  "id": "nestjs",
+  "name": "NestJS",
+  "category": "backend",
+  "description": "TypeScript server framework with dependency injection, modules and decorators.",
+  "requires": [],
+  "conflicts": ["supabase", "firebase", "fastapi"],
+  "dependencies": [],
+  "priority": 33
+}

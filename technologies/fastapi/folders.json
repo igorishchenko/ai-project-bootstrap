@@ -1,0 +1,7 @@
+[
+  "app/api",
+  "app/models",
+  "app/services",
+  "app/db",
+  "app/tests"
+]

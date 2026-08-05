@@ -1,0 +1,39 @@
+---
+description: NestJS conventions
+globs: ["src/**/*.controller.ts", "src/**/*.service.ts", "src/**/*.module.ts", "src/**/dto/**"]
+alwaysApply: false
+---
+
+# NestJS
+
+## Validation
+
+- `ValidationPipe` is registered globally with `whitelist: true` and
+  `forbidNonWhitelisted: true`. Without `whitelist`, unknown properties in the
+  body reach your service — that is how a profile update smuggles in `role`.
+- **DTOs are classes with `class-validator` decorators.** An interface does not
+  exist at runtime and validates nothing.
+
+## Auth
+
+- Guards, applied globally, with public routes opted out explicitly. Per-route
+  guards mean the one you forget is the one that leaks.
+- Never take a user id from the request body; derive it from the verified token.
+
+## Structure
+
+- Controllers are thin: parse, delegate to a service, return.
+- Business logic lives in providers so it can be tested without HTTP.
+- One module per feature; export only what other modules genuinely need.
+
+## Responses
+
+- Map entities to response DTOs. Returning an ORM entity serialises whatever is
+  on it, including fields no client should see.
+- Never return a raw error or stack trace to a client.
+
+## Never
+
+- Never put an interface where a DTO class belongs.
+- Never disable `whitelist` to make a request work — fix the DTO.
+- Never log secrets, tokens or personal data.

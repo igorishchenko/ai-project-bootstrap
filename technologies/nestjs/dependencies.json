@@ -1,0 +1,19 @@
+{
+  "packages": [
+    { "name": "@nestjs/core", "version": "^11.1.0" },
+    { "name": "@nestjs/common", "version": "^11.1.0" },
+    { "name": "@nestjs/platform-express", "version": "^11.1.0" },
+    { "name": "@nestjs/config", "version": "^4.0.0" },
+    { "name": "class-validator", "version": "^0.15.0" },
+    { "name": "class-transformer", "version": "^0.5.0" },
+    { "name": "reflect-metadata", "version": "^0.2.0" },
+    { "name": "rxjs", "version": "^7.8.0" },
+    { "name": "helmet", "version": "^8.3.0" },
+    { "name": "@nestjs/cli", "version": "^11.0.0", "dev": true },
+    { "name": "@nestjs/testing", "version": "^11.1.0", "dev": true }
+  ],
+  "install": [
+    "npm install @nestjs/core @nestjs/common @nestjs/platform-express @nestjs/config class-validator class-transformer reflect-metadata rxjs helmet",
+    "npm install -D @nestjs/cli @nestjs/testing"
+  ]
+}

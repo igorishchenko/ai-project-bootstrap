@@ -1,0 +1,10 @@
+{
+  "id": "fastapi",
+  "name": "FastAPI",
+  "category": "backend",
+  "description": "Python API with typed request validation and generated OpenAPI docs.",
+  "requires": [],
+  "conflicts": ["supabase", "firebase", "nestjs"],
+  "dependencies": [],
+  "priority": 32
+}

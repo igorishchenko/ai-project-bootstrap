@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "build:api": "nest build",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  }
+}
