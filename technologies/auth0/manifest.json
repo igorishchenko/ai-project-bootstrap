@@ -1,0 +1,10 @@
+{
+  "id": "auth0",
+  "name": "Auth0",
+  "category": "auth",
+  "description": "Hosted identity with enterprise SSO, MFA and fine-grained rules.",
+  "requires": [],
+  "conflicts": ["clerk", "supabase-auth"],
+  "dependencies": [],
+  "priority": 37
+}

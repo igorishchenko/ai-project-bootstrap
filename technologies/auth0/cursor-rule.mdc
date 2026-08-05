@@ -1,0 +1,38 @@
+---
+description: Auth0 conventions
+globs: ["src/features/auth/**", "src/services/**", "app/api/auth/**"]
+alwaysApply: false
+---
+
+# Auth0
+
+## Tokens
+
+- **Always request an `audience`.** Without it Auth0 returns an opaque token
+  your API cannot verify — the single most common integration failure.
+- The API verifies signature **and** `aud` **and** `iss`. A correctly signed
+  token issued for a different API is still not for you.
+- Never send an ID token to an API. ID tokens describe the user; access tokens
+  authorise the call.
+
+## Secrets
+
+- The client secret is server-side only. Browser and mobile apps use PKCE and
+  hold no secret.
+- Never log a token.
+
+## Claims
+
+- Custom claims must be namespaced with a URL, or they are silently dropped.
+- Roles are not in the token by default; add them with an Action.
+
+## Sessions
+
+- `offline_access` in the scope, or sessions end when the access token expires
+  and users are logged out at apparently random moments.
+- Clear cached user-scoped state on logout.
+
+## Never
+
+- Never authorise from a client-held user id; use the verified `sub` claim.
+- Never share one tenant across environments.
