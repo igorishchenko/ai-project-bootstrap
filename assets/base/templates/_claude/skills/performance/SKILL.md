@@ -1,3 +1,8 @@
+---
+name: performance
+description: "How to make {{projectName}} faster without making it worse: measuring, rendering, data fetching, startup and perceived performance. Read before optimising anything, or when a change touches a hot path."
+---
+
 # Performance
 
 How to make {{projectName}} faster without making it worse.

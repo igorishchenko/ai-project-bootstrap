@@ -1,3 +1,8 @@
+---
+name: architecture
+description: "How to add code to {{projectName}} without fighting the structure: layering, where a piece of code belongs, and signs a change is going against the grain. Read before adding a feature or wiring two layers together."
+---
+
 # Architecture
 
 How to add code to {{projectName}} without fighting the structure.

@@ -1,3 +1,9 @@
+---
+name: testing
+description: "What to write, at which level, and how to make it hold up. Read before writing or changing a test, or before reporting a change as done."
+paths: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/__tests__/**"]
+---
+
 # Testing
 
 What to write, at which level, and how to make it hold up.

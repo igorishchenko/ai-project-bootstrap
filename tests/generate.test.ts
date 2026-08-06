@@ -61,10 +61,31 @@ describe('generate', () => {
   it('writes a rule and a skill for every selected technology, plus the base set', () => {
     for (const id of ['expo', 'react-native', 'supabase', 'revenuecat', 'sentry', 'posthog']) {
       expect(files).toContain(`.cursor/rules/${id}.mdc`);
-      expect(files).toContain(`.claude/skills/${id}.md`);
+      expect(files).toContain(`.claude/skills/${id}/SKILL.md`);
     }
     expect(files).toContain('.cursor/rules/typescript.mdc');
-    expect(files).toContain('.claude/skills/architecture.md');
+    expect(files).toContain('.claude/skills/architecture/SKILL.md');
+  });
+
+  it('writes every Claude skill in the directory shape Claude Code discovers', () => {
+    const skillFiles = files.filter((file) => file.startsWith('.claude/skills/'));
+    for (const file of skillFiles) {
+      expect(file, `${file} must be a SKILL.md inside a skill directory`).toMatch(
+        /^\.claude\/skills\/[^/]+\/SKILL\.md$/,
+      );
+    }
+    expect(skillFiles.length).toBeGreaterThan(0);
+  });
+
+  it('gives every generated skill a description, and scopes it with the matching cursor rule globs', () => {
+    const stripeSkill = read('.claude/skills/base/SKILL.md');
+    expect(stripeSkill).toMatch(/^---\nname: base\ndescription: ".+"\n---\n/);
+
+    const revenuecatSkill = read('.claude/skills/revenuecat/SKILL.md');
+    const revenuecatRule = read('.cursor/rules/revenuecat.mdc');
+    const globsMatch = revenuecatRule.match(/^globs:\s*(\[.*\])\s*$/m);
+    expect(globsMatch).not.toBeNull();
+    expect(revenuecatSkill).toContain(`paths: ${JSON.stringify(JSON.parse(globsMatch?.[1] ?? '[]'))}`);
   });
 
   it('writes no rule for a technology that was not selected', () => {

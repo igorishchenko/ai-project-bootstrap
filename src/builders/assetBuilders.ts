@@ -67,7 +67,18 @@ export const cursorBuilder: Builder = {
   },
 };
 
-/** Emits `.claude/skills/<id>.md` for every module that ships a skill. */
+/**
+ * Emits `.claude/skills/<id>/SKILL.md` for every module that ships a skill.
+ *
+ * Claude Code only discovers a skill in that exact shape — a directory named
+ * for the skill, holding a `SKILL.md` whose frontmatter tells Claude when to
+ * load it. A flat `<id>.md` file is invisible to that mechanism, so the
+ * frontmatter is synthesised here rather than authored per module: every
+ * module already has a one-line `description` in its manifest, and the same
+ * `globs` its `cursor-rule.mdc` uses to scope Cursor's rule become the
+ * skill's `paths`, so both tools activate on the same files without the
+ * content being duplicated anywhere.
+ */
 export const claudeBuilder: Builder = {
   id: 'claude',
   label: 'Generated Claude Skills',
@@ -76,13 +87,51 @@ export const claudeBuilder: Builder = {
     const data = templateData(ctx);
     for (const module of ctx.modules) {
       if (!module.claudeSkill) continue;
+      const body = render(module.claudeSkill, data);
       vfs.write(
-        `.claude/skills/${module.manifest.id}.md`,
-        ensureTrailingNewline(render(module.claudeSkill, data)),
+        `.claude/skills/${module.manifest.id}/SKILL.md`,
+        ensureTrailingNewline(`${skillFrontmatter(module)}\n\n${body}`),
       );
     }
   },
 };
+
+/** Extracts the `globs` array from a module's (unrendered) `cursor-rule.mdc` frontmatter. */
+function extractGlobs(cursorRule: string | undefined): string[] | undefined {
+  const match = cursorRule?.match(/^globs:\s*(\[.*\])\s*$/m);
+  if (!match) return undefined;
+  try {
+    const parsed = JSON.parse(match[1] ?? '[]');
+    return Array.isArray(parsed) && parsed.every((entry) => typeof entry === 'string')
+      ? parsed
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function skillDescription(module: LoadedModule): string {
+  return module.isBase
+    ? `${module.manifest.description} Read this before any other skill.`
+    : `${module.manifest.description} Read before writing code that touches ${module.manifest.name}.`;
+}
+
+/** A minimal YAML string: double-quoted, with embedded quotes escaped. */
+function yamlString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function skillFrontmatter(module: LoadedModule): string {
+  const lines = [
+    '---',
+    `name: ${module.manifest.id}`,
+    `description: ${yamlString(skillDescription(module))}`,
+  ];
+  const globs = extractGlobs(module.cursorRule);
+  if (globs && globs.length > 0) lines.push(`paths: ${JSON.stringify(globs)}`);
+  lines.push('---');
+  return lines.join('\n');
+}
 
 /** Copies every module's `prompts/` into the project's `prompts/`. */
 export const promptBuilder: Builder = {

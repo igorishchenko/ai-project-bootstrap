@@ -92,7 +92,7 @@ technologies/<id>/
   ios.md  android.md     → platform subsections of that section
   architecture.md        → a section in docs/architecture.md
   cursor-rule.mdc        → .cursor/rules/<id>.mdc
-  claude-skill.md        → .claude/skills/<id>.md
+  claude-skill.md        → .claude/skills/<id>/SKILL.md
   env.md                 → .env.example
   folders.json           → project folders
   package.fragment.json  → package.json
@@ -142,6 +142,12 @@ mutual exclusions. `dependencies` are soft edges that only affect ordering.
 
 ### Conventions inside a module
 
+- **`claude-skill.md`** is plain content — no frontmatter. The builder writes
+  it to `.claude/skills/<id>/SKILL.md`, the directory shape Claude Code
+  requires to discover a skill at all, and synthesises the frontmatter itself:
+  `description` from the manifest, `paths` from the same `globs` the module's
+  `cursor-rule.mdc` already declares. Cursor and Claude activate on the same
+  files without the glob list living in two places.
 - **`env.md`** documents variables in a markdown table with `Key`, `Required`,
   `Description` and `Example` columns. Prose around the table is ignored.
 - **`dependencies.json` and `package.fragment.json` may be templated.** They are
