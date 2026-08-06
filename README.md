@@ -81,6 +81,30 @@ without touching the name.
 | `--skip <ids>` | Comma-separated builder ids to skip |
 | `--list-modules` | List every available technology |
 
+## Growing a project after the fact
+
+Nobody picks their whole stack on day one. `add` puts one more technology into
+a project this tool already generated, without starting over:
+
+```bash
+cd my-app
+npx ai-project-bootstrap add stripe
+npx ai-project-bootstrap add stripe --dry-run     # preview first
+npx ai-project-bootstrap add stripe --dir ../my-app   # from elsewhere
+```
+
+It loads the project's `ai-project.config.json`, adds the technology to the
+saved selection, and regenerates — the same fingerprint-based preservation as
+a normal `--config` regeneration, so anything you have hand-edited since it
+was generated is left alone.
+
+A category that only allows one choice (payments, database, backend, ...) can
+be filled in when empty, but not swapped once answered: replacing an
+already-selected technology would leave its old files behind, since
+regeneration only ever adds or preserves — it never deletes. Multi-select
+categories (analytics, testing, crash-reporting) just grow. `add --help`
+covers the rest.
+
 ## Adding a technology
 
 **Create one folder. Change no code.**

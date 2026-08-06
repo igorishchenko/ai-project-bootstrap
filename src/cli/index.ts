@@ -8,6 +8,7 @@ import { generate } from '../core/pipeline/generate.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import type { Selection } from '../core/types.js';
+import { ADD_HELP_TEXT, mergeChoice, parseAddFlags } from './add.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
@@ -71,11 +72,111 @@ function loadSelectionFile(file: string): Selection {
   return { projectName: selection.projectName, choices: selection.choices ?? {} };
 }
 
+/**
+ * Adds one technology to a project that was already generated.
+ *
+ * Loads its saved ai-project.config.json, merges in the new choice, and runs
+ * the exact same generate-then-flush path as a normal `--config` regeneration
+ * — including fingerprint preservation, so files edited since generation are
+ * left alone.
+ */
+async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Promise<number> {
+  const flags = parseAddFlags(argv);
+
+  if (flags.help) {
+    reporter.plain(ADD_HELP_TEXT);
+    return 0;
+  }
+  if (!flags.moduleId) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      'add needs a technology id.',
+      'Example: ai-project-bootstrap add stripe — run --list-modules on the main command to see every id.',
+    );
+  }
+
+  const registry = loadRegistry(rootDir);
+  const targetDir = path.resolve(flags.dir ?? process.cwd());
+  const configFile = path.join(targetDir, CONFIG_FILENAME);
+
+  if (!fs.existsSync(configFile)) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      `No ${CONFIG_FILENAME} found in ${targetDir}.`,
+      'This must be a project ai-project-bootstrap already generated. Pass --dir to point at one.',
+    );
+  }
+  const selection = loadSelectionFile(configFile);
+
+  const module = registry.byId.get(flags.moduleId);
+  if (!module) {
+    throw new GeneratorError(
+      'UNKNOWN_MODULE',
+      `Unknown technology "${flags.moduleId}".`,
+      'Run `ai-project-bootstrap --list-modules` to see every available id.',
+    );
+  }
+
+  const category = registry.categories.find((entry) => entry.id === module.manifest.category);
+  if (!category) {
+    throw new GeneratorError(
+      'INVALID_MANIFEST',
+      `"${module.manifest.id}" declares category "${module.manifest.category}", which has no wizard question.`,
+    );
+  }
+
+  mergeChoice(selection, module, category);
+
+  reporter.intro(readVersion(rootDir));
+  reporter.plain(`Adding ${module.manifest.name} to ${selection.projectName}…\n`);
+
+  const result = generate({
+    rootDir,
+    targetDir,
+    selection,
+    builders,
+    registry,
+    onBuilder: (run) => reporter.step(run),
+  });
+
+  // Same safety net as a normal regeneration: anything whose contents no
+  // longer match what was recorded at generation is the user's, not ours.
+  const preserve = new Set(
+    preservedPaths(targetDir, result.vfs.snapshot().files, readFingerprints(configFile)),
+  );
+
+  const flushed = result.vfs.flush(targetDir, {
+    dryRun: flags.dryRun,
+    // The target is necessarily an existing, non-empty project — that is the
+    // whole point of `add` — so the "don't write into a non-empty directory"
+    // guard would always trip otherwise.
+    force: true,
+    preserve,
+  });
+
+  reporter.summary({
+    targetDir,
+    fileCount: flushed.files.length,
+    preserved: flushed.preserved,
+    modules: result.moduleNames,
+    autoIncluded: result.autoIncluded,
+    warnings: result.warnings,
+    dryRun: flags.dryRun,
+  });
+
+  return 0;
+}
+
 async function main(argv: string[]): Promise<number> {
-  const flags: CliFlags = parseFlags(argv);
   const rootDir = findGeneratorRoot();
-  const version = readVersion(rootDir);
   const reporter = new Reporter();
+
+  if (argv[0] === 'add') {
+    return runAdd(argv.slice(1), rootDir, reporter);
+  }
+
+  const flags: CliFlags = parseFlags(argv);
+  const version = readVersion(rootDir);
 
   if (flags.help) {
     reporter.plain(HELP_TEXT);
