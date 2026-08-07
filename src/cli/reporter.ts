@@ -107,6 +107,76 @@ export class Reporter {
     this.write();
   }
 
+  private fileList(label: string, files: string[]): void {
+    this.write(`${pc.bold(label)}  ${files.length}`);
+    for (const file of files.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+    if (files.length > 8) this.write(pc.dim(`    …and ${files.length - 8} more`));
+  }
+
+  upgradeSummary(input: {
+    targetDir: string;
+    fromVersion: string;
+    toVersion: string;
+    added: string[];
+    updated: string[];
+    unchanged: string[];
+    preserved: string[];
+    newProviders: string[];
+    warnings: string[];
+    dryRun: boolean;
+  }): void {
+    this.write();
+
+    if (input.preserved.length > 0) {
+      this.write(
+        `${pc.cyan('ℹ')} Kept your edits — ${input.preserved.length} file${input.preserved.length > 1 ? 's' : ''} changed since generation:`,
+      );
+      for (const file of input.preserved.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (input.preserved.length > 8) {
+        this.write(pc.dim(`    …and ${input.preserved.length - 8} more`));
+      }
+      this.write();
+    }
+
+    for (const warning of input.warnings) this.write(`${pc.yellow('!')} ${warning}`);
+    if (input.warnings.length > 0) this.write();
+
+    if (input.newProviders.length > 0) {
+      const are = input.newProviders.length > 1 ? 'are' : 'is';
+      this.write(
+        `${pc.cyan('ℹ')} ${input.newProviders.length} more AI tool${input.newProviders.length > 1 ? 's' : ''} ${are} now supported: ${input.newProviders.join(', ')}.`,
+      );
+      this.write(
+        pc.dim(
+          '  Not requested when this project was generated. Add to "aiTools" in ai-project.config.json and upgrade again to include them.',
+        ),
+      );
+      this.write();
+    }
+
+    if (input.added.length === 0 && input.updated.length === 0) {
+      this.write(pc.green('Up to date.') + ' Nothing to regenerate.');
+      this.write();
+      return;
+    }
+
+    if (input.added.length > 0) this.fileList('Added', input.added);
+    if (input.updated.length > 0) this.fileList('Updated', input.updated);
+    if (input.unchanged.length > 0) {
+      this.write(pc.dim(`${'Unchanged'.padEnd(7)}  ${input.unchanged.length}`));
+    }
+    this.write();
+
+    this.write(`${pc.bold(input.fromVersion)} → ${pc.bold(input.toVersion)}`);
+    this.write(pc.dim(`  ${input.targetDir}`));
+    this.write();
+
+    if (input.dryRun) {
+      this.write(pc.yellow('Dry run — nothing was written.'));
+      this.write();
+    }
+  }
+
   list(rows: Array<{ id: string; category: string; name: string }>): void {
     const width = Math.max(...rows.map((row) => row.id.length), 4);
     for (const row of rows) {

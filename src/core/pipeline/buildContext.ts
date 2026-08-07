@@ -22,6 +22,7 @@ export function createBuildContext(input: {
   modules: LoadedModule[];
   categories: CategoryQuestion[];
   base?: LoadedModule;
+  generatorVersion: string;
 }): BuildContext {
   // Base always leads, so its content frames every merged document.
   const modules = input.base ? [input.base, ...input.modules] : [...input.modules];
@@ -33,6 +34,7 @@ export function createBuildContext(input: {
     modules,
     categories: input.categories,
     warnings: [],
+    generatorVersion: input.generatorVersion,
   };
 
   // `dependencies.json` may branch on the rest of the stack, so it is rendered

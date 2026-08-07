@@ -199,5 +199,6 @@ function fakeContext(
     modules,
     categories: [],
     warnings: [],
+    generatorVersion: '0.0.0-test',
   };
 }

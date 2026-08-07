@@ -128,4 +128,61 @@ describe('VirtualFs', () => {
 
     expect(fs.existsSync(path.join(dir, 'b.md'))).toBe(true);
   });
+
+  it('classifies every file as added, updated or unchanged, relative to what is already on disk', () => {
+    const dir = tempDir();
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'same.md'), 'same content');
+    fs.writeFileSync(path.join(dir, 'stale.md'), 'old content');
+
+    const vfs = new VirtualFs();
+    vfs.setOwner('a');
+    vfs.write('same.md', 'same content');
+    vfs.write('stale.md', 'new content');
+    vfs.write('new.md', 'brand new');
+
+    const result = vfs.flush(dir, { force: true });
+
+    expect(result.unchanged).toEqual(['same.md']);
+    expect(result.updated).toEqual(['stale.md']);
+    expect(result.added).toEqual(['new.md']);
+    // The union covers every non-preserved file, with no double-counting.
+    expect([...result.added, ...result.updated, ...result.unchanged].sort()).toEqual(result.files);
+  });
+
+  it('computes the same classification on a dry run, without writing anything', () => {
+    const dir = tempDir();
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'stale.md'), 'old content');
+
+    const vfs = new VirtualFs();
+    vfs.setOwner('a');
+    vfs.write('stale.md', 'new content');
+    vfs.write('new.md', 'brand new');
+
+    const result = vfs.flush(dir, { dryRun: true });
+
+    expect(result.updated).toEqual(['stale.md']);
+    expect(result.added).toEqual(['new.md']);
+    expect(fs.readFileSync(path.join(dir, 'stale.md'), 'utf8')).toBe('old content');
+    expect(fs.existsSync(path.join(dir, 'new.md'))).toBe(false);
+  });
+
+  it('does not classify a preserved file as added/updated/unchanged — it is only in `preserved`', () => {
+    const dir = tempDir();
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'edited.md'), 'hand-edited content');
+
+    const vfs = new VirtualFs();
+    vfs.setOwner('a');
+    vfs.write('edited.md', 'regenerated content');
+
+    const result = vfs.flush(dir, { force: true, preserve: new Set(['edited.md']) });
+
+    expect(result.preserved).toEqual(['edited.md']);
+    expect(result.added).toEqual([]);
+    expect(result.updated).toEqual([]);
+    expect(result.unchanged).toEqual([]);
+    expect(fs.readFileSync(path.join(dir, 'edited.md'), 'utf8')).toBe('hand-edited content');
+  });
 });

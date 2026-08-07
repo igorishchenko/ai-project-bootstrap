@@ -1,8 +1,7 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import * as prompts from '@clack/prompts';
 import type { Preset } from '../core/types.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
+import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import {
   type CheckResult,
@@ -96,17 +95,6 @@ missing — missing mobile or backend tooling is reported, not enforced, since
 this machine may simply not be the one you use for that platform.
 `.trim();
 
-function readPackageJson(rootDir: string): { version?: string; engines?: { node?: string } } {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
-      version?: string;
-      engines?: { node?: string };
-    };
-  } catch {
-    return {};
-  }
-}
-
 /** Whether a preset's own answers touch mobile and/or backend/database categories. */
 function presetNeeds(preset: Preset): { mobile: boolean; backend: boolean } {
   const target = preset.choices.target;
@@ -145,8 +133,8 @@ export async function runDoctor(
     );
   }
 
-  const pkg = readPackageJson(rootDir);
-  reporter.intro(pkg.version ?? '0.0.0');
+  const pkg = readGeneratorPackageInfo(rootDir);
+  reporter.intro(pkg.version);
 
   let checkMobile = flags.mobile || flags.all;
   let checkBackend = flags.backend || flags.all;

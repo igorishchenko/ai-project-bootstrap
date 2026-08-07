@@ -115,10 +115,12 @@ per-technology rule output.
 ## Non-destructive regeneration: fingerprints and preservation
 
 `src/core/vfs/fingerprint.ts` records a short content hash for every generated
-file at generation time, stored in `ai-project.config.json`. On any later
-regeneration (`--config` replay, `add`, or a future `upgrade` — see
-`.planning/prompts/04-upgrade-command.md`), `src/core/vfs/preserve.ts` compares
-each candidate file's current on-disk content against its recorded fingerprint:
+file at generation time, stored in `ai-project.config.json` alongside the
+generator's own version (`generatorVersion`, threaded through `BuildContext`
+from `generate()`'s `rootDir/package.json` — see `configBuilder.ts`). On any
+later regeneration (`--config` replay, `add`, or `upgrade`),
+`src/core/vfs/preserve.ts` compares each candidate file's current on-disk
+content against its recorded fingerprint:
 
 - **Unchanged since generation** → safe to overwrite with the new output.
 - **Changed** (a human edited it) → left alone. Regeneration only ever adds or
@@ -126,8 +128,13 @@ each candidate file's current on-disk content against its recorded fingerprint:
   never deletes files either (see `.planning/prompts/05-replace-technology.md`
   for the one place that constraint currently blocks a feature).
 
-This is the mechanism that makes `add <technology-id>` (`src/cli/add.ts`) safe
-to run against a project someone has already been working in.
+This is the mechanism that makes `add <technology-id>` (`src/cli/add.ts`) and
+`upgrade` (`src/cli/upgrade.ts`) safe to run against a project someone has
+already been working in. `VirtualFs.flush()` additionally classifies every
+non-preserved file as `added`, `updated` or `unchanged` by comparing the
+freshly rendered content against whatever is currently on disk (not the
+fingerprint — a separate comparison) — `upgrade` is what surfaces that
+breakdown, but the data is computed for every flush, dry-run included.
 
 ## Selection resolution: `requires`, `conflicts`, `dependencies`
 
@@ -165,19 +172,25 @@ native test tooling).
 
 ## CLI surface
 
-`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches three
+`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches four
 commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
 saved `Selection`, and re-running the same `generate()` → flush path with
-`force: true`; and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`)
-checks the local machine's tooling — Node/Git/npm always, plus mobile
+`force: true`; `upgrade` (`src/cli/upgrade.ts`) is the same
+`generate()` → flush path again, but _without_ mutating the selection — it
+refreshes a project's output against whatever templates/builders are
+installed now, reporting added/updated/unchanged file counts (see
+"Non-destructive regeneration" above for where that classification comes
+from) and which newly-supported AI providers the project never opted into;
+and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`) checks the
+local machine's tooling — Node/Git/npm always, plus mobile
 (Xcode/Android SDK/Watchman/Java) and backend (Docker) tooling on request —
 before generation, independent of it. Its check functions take an injected
 `DoctorEnv` (command runner, platform, env vars, Node version) rather than
 reading `process` directly, so they're testable without a real toolchain.
-See `.planning/roadmap/` for the commands planned on top of this (`upgrade`,
-`implement`, `review`, `analyze`).
+See `.planning/roadmap/` for the commands planned on top of this (`implement`,
+`review`, `analyze`).
 
 ## Testing
 

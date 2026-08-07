@@ -153,6 +153,8 @@ export interface BuildContext {
   categories: CategoryQuestion[];
   /** Non-fatal notes surfaced in the final report. */
   warnings: string[];
+  /** The generator's own version at build time — recorded so `upgrade` can compare. */
+  generatorVersion: string;
 }
 
 export interface Builder {

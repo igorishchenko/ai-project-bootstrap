@@ -157,6 +157,28 @@ regeneration only ever adds or preserves — it never deletes. Multi-select
 categories (analytics, testing, crash-reporting) just grow. `add --help`
 covers the rest.
 
+## Upgrading a project
+
+`add` brings in something new; `upgrade` refreshes what is already there —
+bring a project's rules, prompts, docs and hygiene config up to date with
+whatever version of `ai-project-bootstrap` is installed now, using the exact
+same selection it was generated with:
+
+```bash
+cd my-app
+npx ai-project-bootstrap upgrade
+npx ai-project-bootstrap upgrade --dry-run       # preview first
+npx ai-project-bootstrap upgrade --dir ../my-app # from elsewhere
+```
+
+It reports what actually changed — added, updated, and how many files were
+already current — and, same as `add`, never touches a file you have
+hand-edited since it was generated. Nothing is added to or removed from the
+stack; that's what `add` is for. If newer AI tools are supported than this
+project originally selected, `upgrade` says so without adding them itself —
+edit `"aiTools"` in `ai-project.config.json` and upgrade again to include
+them. `upgrade --help` covers the rest.
+
 ## Checking your environment
 
 `doctor` checks whether this machine can actually build what you are about

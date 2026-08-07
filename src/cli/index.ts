@@ -6,10 +6,12 @@ import { CONFIG_FILENAME } from '../builders/configBuilder.js';
 import { preservedPaths, readFingerprints } from '../core/vfs/preserve.js';
 import { generate } from '../core/pipeline/generate.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
+import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
-import type { Selection } from '../core/types.js';
 import { ADD_HELP_TEXT, mergeChoice, parseAddFlags } from './add.js';
+import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
+import { runUpgrade } from './upgrade.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
@@ -38,39 +40,7 @@ function findGeneratorRoot(): string {
 }
 
 function readVersion(rootDir: string): string {
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
-      version?: string;
-    };
-    return pkg.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-}
-
-function loadSelectionFile(file: string): Selection {
-  if (!fs.existsSync(file)) {
-    throw new GeneratorError('INVALID_CONFIG', `No such config file: ${file}`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (error) {
-    throw new GeneratorError(
-      'INVALID_CONFIG',
-      `${file} is not valid JSON: ${(error as Error).message}`,
-    );
-  }
-
-  const selection = parsed as Partial<Selection>;
-  if (typeof selection?.projectName !== 'string' || typeof selection?.choices !== 'object') {
-    throw new GeneratorError(
-      'INVALID_CONFIG',
-      `${file} is not a valid selection.`,
-      'It needs a "projectName" string and a "choices" object — see ai-project.config.json in a generated project.',
-    );
-  }
-  return { projectName: selection.projectName, choices: selection.choices ?? {} };
+  return readGeneratorPackageInfo(rootDir).version;
 }
 
 /**
@@ -177,6 +147,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (argv[0] === 'doctor') {
     return runDoctor(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'upgrade') {
+    return runUpgrade(argv.slice(1), rootDir, reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);
