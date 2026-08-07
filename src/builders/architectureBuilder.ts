@@ -1,4 +1,4 @@
-import type { Builder, BuildContext } from '../core/types.js';
+import type { Builder, BuildContext, LoadedModule } from '../core/types.js';
 import { render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
 import { mergeFolders, renderFolderTree } from '../core/merge/mergeFolders.js';
@@ -23,6 +23,7 @@ export const architectureBuilder: Builder = {
 
     const byCategory = ctx.categories
       .map((category) => ({
+        id: category.id,
         label: category.label,
         modules: technologies.filter((module) => module.manifest.category === category.id),
       }))
@@ -84,21 +85,77 @@ export const architectureBuilder: Builder = {
   },
 };
 
-/** A top-down diagram: the app, its layers, and the modules in each. */
-function stackDiagram(
-  projectName: string,
-  byCategory: Array<{ label: string; modules: Array<{ manifest: { id: string; name: string } }> }>,
-): string[] {
+interface CategoryEntry {
+  id: string;
+  label: string;
+  modules: LoadedModule[];
+}
+
+/** Where a request enters the system, in the absence of a more specific edge below. */
+const FRONTEND_CATEGORIES = ['web', 'mobile'];
+const BACKEND_CATEGORY = 'backend';
+const DATABASE_CATEGORY = 'database';
+
+/**
+ * A top-down diagram: the app, its layers, and the modules in each — plus two
+ * kinds of edges beyond the tree. `requires` edges name an actual dependency
+ * the resolver already computed (e.g. an auth module requiring its backend).
+ * Backbone edges are a generic frontend → backend → database default, drawn
+ * only between layers that don't already have a more specific `requires` edge
+ * connecting them, since category ids (not technology ids) are the only thing
+ * this function is allowed to know about.
+ */
+function stackDiagram(projectName: string, byCategory: CategoryEntry[]): string[] {
   const lines = ['flowchart TD', `  app["${escapeLabel(projectName)}"]`];
+  const layerNodeByCategory = new Map<string, string>();
 
   byCategory.forEach((entry, index) => {
     const categoryNode = `layer${index}`;
+    layerNodeByCategory.set(entry.id, categoryNode);
     lines.push(`  app --> ${categoryNode}["${escapeLabel(entry.label)}"]`);
     for (const module of entry.modules) {
-      lines.push(`  ${categoryNode} --> ${nodeId(module.manifest.id)}["${escapeLabel(module.manifest.name)}"]`);
+      lines.push(
+        `  ${categoryNode} --> ${nodeId(module.manifest.id)}["${escapeLabel(module.manifest.name)}"]`,
+      );
     }
   });
 
+  lines.push(...backboneEdges(layerNodeByCategory));
+  lines.push(...requiresEdges(byCategory));
+
+  return lines;
+}
+
+/** Frontend → backend → database, using whichever of those three layers are actually present. */
+function backboneEdges(layerNodeByCategory: Map<string, string>): string[] {
+  const frontendNodes = FRONTEND_CATEGORIES.map((id) => layerNodeByCategory.get(id)).filter(
+    (node): node is string => node !== undefined,
+  );
+  const backendNode = layerNodeByCategory.get(BACKEND_CATEGORY);
+  const databaseNode = layerNodeByCategory.get(DATABASE_CATEGORY);
+  const downstreamOfFrontend = backendNode ?? databaseNode;
+
+  const lines: string[] = [];
+  if (downstreamOfFrontend) {
+    for (const node of frontendNodes) lines.push(`  ${node} -->|calls| ${downstreamOfFrontend}`);
+  }
+  if (backendNode && databaseNode) lines.push(`  ${backendNode} -->|reads/writes| ${databaseNode}`);
+  return lines;
+}
+
+/** A dashed edge for every hard prerequisite the resolver pulled in — already computed, not guessed. */
+function requiresEdges(byCategory: CategoryEntry[]): string[] {
+  const modules = byCategory.flatMap((entry) => entry.modules);
+  const selectedIds = new Set(modules.map((module) => module.manifest.id));
+
+  const lines: string[] = [];
+  for (const module of modules) {
+    for (const requiredId of module.manifest.requires) {
+      if (selectedIds.has(requiredId)) {
+        lines.push(`  ${nodeId(module.manifest.id)} -.->|requires| ${nodeId(requiredId)}`);
+      }
+    }
+  }
   return lines;
 }
 

@@ -24,3 +24,25 @@ flowchart TD
 
 Each release must work against the schema on either side of it, because a
 rollback deploys the previous code against the current database.
+
+### Starter data model
+
+Nothing here scaffolds real tables — this is a starting point to replace, not
+a reflection of your actual schema. `users` owning many rows of some other
+entity is the shape most schemas begin from:
+
+```mermaid
+erDiagram
+  USERS ||--o{ RECORDS : owns
+  USERS {
+    uuid id PK
+    text email
+    timestamptz created_at
+  }
+  RECORDS {
+    uuid id PK
+    uuid user_id FK
+    text data
+    timestamptz created_at
+  }
+```

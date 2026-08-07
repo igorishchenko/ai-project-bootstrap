@@ -70,6 +70,44 @@ Adding a **builder** means editing this list. Adding a **technology** means
 adding a directory under `technologies/` and touching none of it — see
 `CONTRIBUTING.md`.
 
+## Architecture diagrams
+
+`architectureBuilder` (`src/builders/architectureBuilder.ts`) emits three
+kinds of Mermaid diagram into `docs/architecture.md`, all derived from the
+resolved module selection rather than hand-drawn — no new module-contract
+file was needed for any of them:
+
+- **Component diagram** (`stackDiagram`) — a `flowchart TD` built from
+  `ctx.categories` and the resolved modules: `app → category layer → module`
+  for the tree, plus two kinds of edges beyond it. `requiresEdges` draws a
+  dashed edge for every `manifest.requires` pair the resolver already
+  computed (e.g. `supabase-auth -.->|requires| supabase`) — no guessing,
+  just naming a dependency that already exists. `backboneEdges` draws a
+  generic frontend → backend → database default (`web`/`mobile` →
+  `backend` → `database`, connecting whichever of those three category ids
+  are actually present) — these are the only technology-shaped ids this
+  function is allowed to know about, since they're category ids from
+  `config/categories.json`, not technology ids, and referencing them doesn't
+  break the no-technology-names invariant below.
+- **Sequence diagrams** — no new mechanism at all: any module's
+  `technologies/<id>/architecture.md` can embed a ` ```mermaid ` block
+  directly, and `architectureBuilder` already renders that content verbatim
+  into the doc's "Flows" section. Every auth provider (`supabase-auth`,
+  `clerk`, `auth0`) does exactly this for its own sign-in flow, so two
+  projects with a different auth answer get a genuinely different diagram,
+  not a placeholder with the name swapped in.
+- **Starter ERD** — same mechanism again: `postgresql`, `sqlite` and
+  `firestore` each embed an `erDiagram` block in their own
+  `architecture.md`, under a "Starter data model" heading that says plainly
+  this is a starting point to replace, not a reflection of the eventual real
+  schema (there is no schema to infer at generation time — these modules
+  scaffold no tables).
+
+Because the sequence and ERD content lives entirely in each module's own
+`architecture.md`, `stackDiagram`'s helpers (`backboneEdges`, `requiresEdges`)
+are the only part of this that lives in `src/` — and they only ever look at
+category ids and the already-resolved `requires` graph, never a technology id.
+
 ## The hard invariant: no technology names in `src/`
 
 Every builder iterates the resolved modules and reads well-known filenames

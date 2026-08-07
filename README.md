@@ -24,6 +24,16 @@ package.json   merged dependencies with version conflicts resolved
 README.md  CLAUDE.md  AGENTS.md  GEMINI.md  ai-project.config.json
 ```
 
+`docs/architecture.md` includes Mermaid diagrams, not just prose: a component
+diagram built from the resolved stack (nodes per module, edges from `requires`
+plus a default frontend → backend → database backbone), a sequence diagram
+per module that has one — every auth provider ships a real sign-in flow
+diagram naming that provider, not a generic placeholder — and, for a selected
+database technology, a starter entity-relationship diagram. That ERD is
+explicitly a starting point (nothing here scaffolds real tables), not a
+reflection of your actual schema — GitHub, GitLab and most markdown viewers
+render Mermaid natively.
+
 Plus one rule per selected technology, and the stack-agnostic set
 (architecture, performance, testing, typescript), for every AI coding tool
 the wizard's first question selects — Cursor and Claude Code by default,

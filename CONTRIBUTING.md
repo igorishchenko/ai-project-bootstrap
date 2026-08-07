@@ -94,6 +94,14 @@ test runner.
   files without the glob list living in two places.
 - **`env.md`** documents variables in a markdown table with `Key`, `Required`,
   `Description` and `Example` columns. Prose around the table is ignored.
+- **`architecture.md`** is rendered verbatim into a `### <Module name>`
+  subsection, so a fenced ` ```mermaid ` block in it (a sequence diagram, a
+  starter `erDiagram`, whatever the module's own flow calls for) shows up
+  exactly as written — there is no separate diagram mechanism or file to
+  learn. See `technologies/supabase-auth/architecture.md` for a sequence
+  diagram and `technologies/postgresql/architecture.md` for a starter ERD.
+  If the diagram isn't a reflection of a real generated schema, say so in the
+  prose next to it, the way those two do.
 - **`dependencies.json` and `package.fragment.json` may be templated.** They
   are parsed after rendering, so a module can vary by what else was selected —
   `{{#if has.react-native}}` picks native test tooling, and a web framework
