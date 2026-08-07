@@ -189,7 +189,7 @@ native test tooling).
 
 ## CLI surface
 
-`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches four
+`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches five
 commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
@@ -203,14 +203,65 @@ refreshes a project's output against whatever templates/builders are
 installed now, reporting added/updated/unchanged file counts (see
 "Non-destructive regeneration" above for where that classification comes
 from) and which newly-supported AI providers the project never opted into;
-and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`) checks the
-local machine's tooling — Node/Git/npm always, plus mobile
+`implement` (`src/cli/implement.ts`) is a different shape entirely — it
+doesn't touch `Selection` or run `generate()` at all, see "Implementing a
+feature" below; and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`)
+checks the local machine's tooling — Node/Git/npm always, plus mobile
 (Xcode/Android SDK/Watchman/Java) and backend (Docker) tooling on request —
 before generation, independent of it. Its check functions take an injected
 `DoctorEnv` (command runner, platform, env vars, Node version) rather than
 reading `process` directly, so they're testable without a real toolchain.
-See `.planning/roadmap/` for the commands planned on top of this (`implement`,
-`review`, `analyze`).
+See `.planning/roadmap/` for the commands planned on top of this (`review`,
+`analyze`).
+
+## Implementing a feature: `features/`
+
+`implement` (`src/cli/implement.ts`) is the one command that isn't a
+variation on `generate()` → flush. It doesn't touch `Selection` and it never
+asks a question — it reads a project's already-saved
+`ai-project.config.json` to see which technology answers a feature's
+category, and writes stack-tailored content for exactly that combination.
+
+Content lives under `features/<feature-id>/`, loaded by
+`src/core/registry/loadFeatures.ts` (called directly by `implement` — unlike
+modules and presets, features are never wizard-facing, so nothing else pays
+for loading them):
+
+```
+features/<feature-id>/
+  manifest.json                     { id, name, description, category, providers: [...] }
+  providers/<technology-id>/
+    plan.md                         the step-by-step implementation plan
+    checklist.md                    what to verify before shipping
+    prompts/*.md                    ready to hand to an AI assistant
+    scaffold/**                     mirrored into the project's normal source layout
+```
+
+`manifest.json`'s `category` is which wizard category's answer selects the
+provider (`authentication` reads `"auth"`); `providers` lists which
+technology ids this feature has _real, distinct_ content for — validated
+against the actual module registry at load time, the same way a technology's
+own `requires`/`conflicts` are. There is deliberately no generic
+"else" content for an unsupported provider: `implement` refuses with a clear
+error naming what _is_ supported rather than emitting generic filler with the
+provider's name substituted in. Content is written per-provider precisely so
+two projects with different answers for the same category get genuinely
+different output — see `features/authentication/providers/{supabase-auth,clerk,auth0}/`
+for what that looks like in practice; each is written independently, not
+templated from a shared skeleton.
+
+`implement` builds its own `VirtualFs` (not `generate()`'s builder pipeline —
+there's no per-module content to merge, just one feature's content rendered
+against `{ projectName, projectSlug }`) and reuses the exact same
+fingerprint-preservation mechanism described above, but scoped to the
+feature: fingerprints for what it wrote live in
+`implementation/<feature-id>/.manifest.json`, a small sibling of
+`ai-project.config.json`'s own `generated` map, read and written with the
+same `Fingerprints` type and `preservedPaths()` function — nothing new
+invented for file safety. Scaffold files are skeletons with `TODO` comments
+pointing back to the plan, not working implementations; that boundary is
+deliberate, not a shortcut — see the prompt this feature shipped from
+(`.planning/prompts/06-implement-command.md`) for why.
 
 ## Testing
 

@@ -195,6 +195,67 @@ project originally selected, `upgrade` says so without adding them itself —
 edit `"aiTools"` in `ai-project.config.json` and upgrade again to include
 them. `upgrade --help` covers the rest.
 
+## Implementing a feature
+
+Everything so far scaffolds the project or wires in a technology. `implement`
+goes a step further: it writes a stack-tailored implementation plan, AI
+prompts, a validation checklist and a handful of skeleton files for a
+_specific feature_ — not the whole project, and not a full implementation
+either. You (or your AI assistant, using the generated prompts) write the
+actual logic; `implement` makes sure it's tailored to exactly the stack you
+picked rather than generic advice with the provider name swapped in.
+
+```bash
+npx ai-project-bootstrap implement --list-features
+npx ai-project-bootstrap implement authentication
+npx ai-project-bootstrap implement authentication --dry-run   # preview first
+```
+
+It reads `ai-project.config.json` to see which technology answers the
+feature's category — `authentication` reads `auth`, `payments` reads
+`payments`, and so on — with no question asked. Two projects that answer
+`auth` differently get genuinely different output from the same command:
+
+```bash
+$ ai-project-bootstrap implement authentication   # a project with Supabase Auth selected
+
+Implementing Authentication (Supabase Auth) in my-app…
+
+Feature    Authentication — Supabase Auth
+Plan       implementation/authentication/plan.md
+Checklist  implementation/authentication/checklist.md
+Prompts    1
+    implementation/authentication/prompts/implement.md
+Scaffold   4
+    src/features/auth/authClient.ts
+    src/features/auth/screens/SignInScreen.tsx
+    src/features/auth/screens/SignUpScreen.tsx
+    src/hooks/auth/useAuth.ts
+```
+
+`implementation/authentication/plan.md` opens with session persistence via
+`AsyncStorage` and the Row Level Security policies that actually gate access
+— because this project picked Supabase Auth. Run the identical command
+against a project that picked Clerk instead, and the plan opens with
+`ClerkProvider` and a secure token cache, the scaffold has no `authClient.ts`
+(Clerk's own hooks _are_ the client), and there's a
+`useAuthedFetch.ts` hook attaching a bearer token to your backend instead.
+Same command, same feature, deliberately different output.
+
+Currently covered, each with real content for every provider this project
+supports — not a generic template:
+
+| Feature              | Reads category  | Providers                   |
+| -------------------- | --------------- | --------------------------- |
+| `authentication`     | `auth`          | Supabase Auth, Clerk, Auth0 |
+| `payments`           | `payments`      | RevenueCat, Stripe          |
+| `push-notifications` | `notifications` | Expo Push, OneSignal        |
+
+Re-running is safe — a scaffold file you've hand-edited since it was written
+is left alone, the same fingerprint-based protection `add` and `upgrade`
+use, tracked per feature in `implementation/<feature>/.manifest.json`.
+`implement --help` covers the rest.
+
 ## Checking your environment
 
 `doctor` checks whether this machine can actually build what you are about

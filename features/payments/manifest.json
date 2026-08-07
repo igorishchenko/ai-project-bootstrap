@@ -1,0 +1,7 @@
+{
+  "id": "payments",
+  "name": "Payments",
+  "description": "Charging users — subscriptions or one-off purchases, and the access control that follows from them.",
+  "category": "payments",
+  "providers": ["revenuecat", "stripe"]
+}

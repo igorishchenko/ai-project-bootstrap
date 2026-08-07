@@ -118,6 +118,7 @@ Usage
   npx ai-project-bootstrap [directory] [options]
   npx ai-project-bootstrap add <technology-id> [options]
   npx ai-project-bootstrap upgrade [options]
+  npx ai-project-bootstrap implement <feature-id> [options]
   npx ai-project-bootstrap doctor [options]
 
 The project name doubles as its location: answer "my-app" to generate ./my-app,
@@ -130,6 +131,11 @@ see \`ai-project-bootstrap add --help\` for details.
 Package updated since you generated? Run \`ai-project-bootstrap upgrade\` inside
 the project to refresh its rules, prompts and docs against the same selection
 — see \`ai-project-bootstrap upgrade --help\`.
+
+Ready to build a specific feature — authentication, payments, push
+notifications — tailored to the stack you picked? Run
+\`ai-project-bootstrap implement <feature-id>\` inside the project — see
+\`ai-project-bootstrap implement --help\`.
 
 Not sure this machine can build the stack you have in mind? Run
 \`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.

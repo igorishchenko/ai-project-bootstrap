@@ -189,6 +189,58 @@ export class Reporter {
     }
   }
 
+  implementSummary(input: {
+    targetDir: string;
+    featureName: string;
+    providerName: string;
+    planPath?: string;
+    checklistPath?: string;
+    promptPaths: string[];
+    scaffoldPaths: string[];
+    preserved: string[];
+    dryRun: boolean;
+  }): void {
+    this.write();
+
+    if (input.preserved.length > 0) {
+      this.write(
+        `${pc.cyan('ℹ')} Kept your edits — ${input.preserved.length} file${input.preserved.length > 1 ? 's' : ''} changed since last time:`,
+      );
+      for (const file of input.preserved.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (input.preserved.length > 8) {
+        this.write(pc.dim(`    …and ${input.preserved.length - 8} more`));
+      }
+      this.write();
+    }
+
+    this.write(`${pc.bold('Feature')}    ${input.featureName} — ${input.providerName}`);
+    if (input.planPath) this.write(`${pc.bold('Plan')}       ${input.planPath}`);
+    if (input.checklistPath) this.write(`${pc.bold('Checklist')}  ${input.checklistPath}`);
+    if (input.promptPaths.length > 0) {
+      this.write(`${pc.bold('Prompts')}    ${input.promptPaths.length}`);
+      for (const file of input.promptPaths) this.write(pc.dim(`    ${file}`));
+    }
+    if (input.scaffoldPaths.length > 0) this.fileList('Scaffold', input.scaffoldPaths);
+    this.write();
+    this.write(pc.dim(`  ${input.targetDir}`));
+    this.write();
+
+    if (input.dryRun) {
+      this.write(pc.yellow('Dry run — nothing was written.'));
+      this.write();
+      return;
+    }
+
+    this.write(pc.bold('Done.'));
+    this.write();
+    this.write('Next steps:');
+    this.write(pc.dim(`  Read ${input.planPath ?? 'the plan'}`));
+    if (input.promptPaths[0]) {
+      this.write(pc.dim(`  Hand ${input.promptPaths[0]} to your AI assistant when you're ready`));
+    }
+    this.write();
+  }
+
   list(rows: Array<{ id: string; category: string; name: string }>): void {
     const width = Math.max(...rows.map((row) => row.id.length), 4);
     for (const row of rows) {

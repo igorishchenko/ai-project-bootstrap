@@ -113,6 +113,37 @@ fails CI without anyone writing a test for it. If your module's category is
 new to the "Available technologies" table, run `pnpm docs:tech-table` (or just
 let `pnpm test` tell you it's out of sync) before opening a PR.
 
+## Adding a provider to an `implement` feature, or a new feature
+
+`features/<feature-id>/manifest.json` declares `providers` — technology ids
+this feature has real content for. Adding a provider means a new
+`features/<feature-id>/providers/<technology-id>/` directory with `plan.md`,
+`checklist.md`, `prompts/*.md` and (optionally) `scaffold/**`, following an
+existing sibling as the structural reference — **not** as a template to fill
+in blanks on. The whole point of `implement` is that two providers produce
+genuinely different content, grounded in that specific technology's actual
+APIs and gotchas (its own `cursor-rule.mdc`/`setup.md` are the best source for
+those), not the same prose with a name substituted in. If you're not
+confident about a specific SDK detail, say so in the content and point at the
+current official docs rather than asserting something you're not sure of —
+see how `features/authentication/providers/auth0/plan.md` handles this for
+version-sensitive APIs.
+
+A new feature is the same shape one level up: a `manifest.json` declaring
+`category` (which wizard category's answer selects the provider) and
+`providers`, validated against the real module registry —
+`tests/loadFeatures.test.ts` covers the contract the same way
+`moduleContract.test.ts` covers `technologies/`. Scaffold file paths must
+land inside whatever folder the technology's own `folders.json` already
+declares (never a path a technology's `templates/` could also write to), and
+should be skeletons — a `TODO` and a pointer back to `plan.md`, not a full
+implementation. If you add `scaffold/**` content, actually generate a project
+with that provider selected, run `implement`, and `npm install && npx tsc
+--noEmit && npx eslint .` inside the generated project before opening a PR —
+this is exactly how three real bugs (two bad relative import paths, one
+listener-reference mismatch) were caught while building the first three
+features, none of which `pnpm test` alone would have found.
+
 ## Changing the engine (`src/`)
 
 If you're touching `src/` rather than adding a module, read `ARCHITECTURE.md`

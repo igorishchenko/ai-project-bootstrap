@@ -21,7 +21,8 @@
     "dist",
     "assets",
     "technologies",
-    "config"
+    "config",
+    "features"
   ],
   "engines": {
     "node": ">=18"
