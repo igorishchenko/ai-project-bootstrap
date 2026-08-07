@@ -1,7 +1,7 @@
 {
   "name": "ai-project-bootstrap",
-  "version": "0.6.0",
-  "description": "Work in progress — expect breaking changes. Generate the development environment for AI-assisted development: docs, Cursor rules, Claude skills, prompts and checklists tailored to your stack.",
+  "version": "1.0.0",
+  "description": "Generate the development environment for AI-assisted development: docs, Cursor rules, Claude skills, prompts and checklists tailored to your stack.",
   "type": "module",
   "license": "MIT",
   "keywords": [

@@ -263,10 +263,10 @@ behavior in a builder.
 ## Commit style
 
 Recent history follows Conventional Commits (`feat:`, `fix:`, `chore:`,
-`docs:`) — see `CHANGELOG.md` for how that maps to release notes. Releases are
-tagged `chore: release vX.Y.Z` commits; this package is pre-1.0 and
-"Work in progress — expect breaking changes" per its npm description, so
-`feat:` commits may still land breaking changes without a major bump.
+`docs:`) — see `CHANGELOG.md` for how that maps to release notes. Releases
+are tagged `chore: release vX.Y.Z` commits. From 1.0.0 onward this package
+follows semver for real: a breaking change to the CLI's flags, exit codes,
+or the generated-project contract needs a major version bump, not a `feat:`.
 
 ## Roadmap
 

@@ -1,17 +1,19 @@
 # Changelog
 
 All notable changes to this project are documented here. Format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this package is
-pre-1.0 and "Work in progress — expect breaking changes" per its npm
-description, so a `feat:` entry may include a breaking change without a major
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and, from 1.0.0
+onward, [Semantic Versioning](https://semver.org/) — a breaking change to
+the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
-## [0.6.0] — 2026-08-07
+## [1.0.0] — 2026-08-07
 
-Fourteen prompts from `.planning/prompts/`, reviewed and re-tested together
-as one batch before release rather than individually — see each prompt file
-for the design reasoning behind its piece of this.
+First stable release. Fourteen prompts from `.planning/prompts/`, reviewed
+and re-tested together as one batch — including packing and installing the
+actual npm tarball into a clean project, not just running from source —
+rather than released individually. See each prompt file under
+`.planning/prompts/` for the design reasoning behind its piece of this.
 
 ### Added
 
