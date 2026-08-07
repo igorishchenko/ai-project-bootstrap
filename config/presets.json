@@ -1,0 +1,48 @@
+[
+  {
+    "id": "startup-mvp",
+    "name": "Startup MVP",
+    "description": "Expo + Supabase + RevenueCat + Sentry + PostHog — a fast solo/indie mobile stack.",
+    "choices": {
+      "target": "mobile",
+      "mobile": "expo",
+      "backend": "supabase",
+      "auth": "supabase-auth",
+      "payments": "revenuecat",
+      "analytics": ["posthog"],
+      "crash-reporting": ["sentry"],
+      "testing": ["jest"]
+    }
+  },
+  {
+    "id": "web-saas",
+    "name": "Web SaaS",
+    "description": "Next.js + Supabase + Stripe + Resend + Sentry + PostHog — a solo/small-team web SaaS stack.",
+    "choices": {
+      "target": "web",
+      "web": "nextjs",
+      "backend": "supabase",
+      "auth": "supabase-auth",
+      "payments": "stripe",
+      "email": "resend",
+      "analytics": ["posthog"],
+      "crash-reporting": ["sentry"],
+      "testing": ["jest"]
+    }
+  },
+  {
+    "id": "enterprise",
+    "name": "Enterprise",
+    "description": "Next.js + NestJS + PostgreSQL + GitHub Actions — a self-managed backend for a larger team.",
+    "choices": {
+      "target": "web",
+      "web": "nextjs",
+      "backend": "nestjs",
+      "database": "postgresql",
+      "ci-cd": "github-actions",
+      "crash-reporting": ["sentry"],
+      "monitoring": "betterstack",
+      "testing": ["jest"]
+    }
+  }
+]

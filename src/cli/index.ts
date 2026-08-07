@@ -209,6 +209,23 @@ async function main(argv: string[]): Promise<number> {
     );
   }
 
+  if (flags.preset && flags.config) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      '--preset and --config cannot be used together.',
+      'Both pre-fill the selection — pick one: --preset for a curated starting point, --config to replay a saved one.',
+    );
+  }
+  if (flags.preset && !registry.presets.some((preset) => preset.id === flags.preset)) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      `Unknown preset "${flags.preset}".`,
+      registry.presets.length > 0
+        ? `Available presets: ${registry.presets.map((preset) => preset.id).join(', ')}.`
+        : 'No presets are installed.',
+    );
+  }
+
   reporter.intro(version);
 
   const selection = flags.config
@@ -216,6 +233,8 @@ async function main(argv: string[]): Promise<number> {
     : await runWizard({
         categories: registry.categories,
         modules: registry.modules,
+        presets: registry.presets,
+        presetId: flags.preset,
         name: flags.name,
         // A directory was already given, so the name question starts from it
         // rather than from a generic placeholder.

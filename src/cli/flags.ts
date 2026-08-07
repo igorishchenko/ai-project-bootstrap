@@ -4,6 +4,7 @@ export interface CliFlags {
   out?: string;
   config?: string;
   name?: string;
+  preset?: string;
   yes: boolean;
   dryRun: boolean;
   force: boolean;
@@ -13,8 +14,15 @@ export interface CliFlags {
   version: boolean;
 }
 
-const BOOLEANS = new Set(['--yes', '--dry-run', '--force', '--list-modules', '--help', '--version']);
-const VALUED = new Set(['--out', '--config', '--name', '--skip']);
+const BOOLEANS = new Set([
+  '--yes',
+  '--dry-run',
+  '--force',
+  '--list-modules',
+  '--help',
+  '--version',
+]);
+const VALUED = new Set(['--out', '--config', '--name', '--skip', '--preset']);
 
 /** Minimal argv parser — the CLI has a dozen flags and no need for a library. */
 export function parseFlags(argv: string[]): CliFlags {
@@ -68,17 +76,32 @@ export function parseFlags(argv: string[]): CliFlags {
     if (VALUED.has(arg)) {
       const value = inlineValue ?? argv[++i];
       if (value === undefined) {
-        throw new GeneratorError('INVALID_CONFIG', `${arg} needs a value.`, `Example: ${arg} <value>`);
+        throw new GeneratorError(
+          'INVALID_CONFIG',
+          `${arg} needs a value.`,
+          `Example: ${arg} <value>`,
+        );
       }
       if (arg === '--out') flags.out = value;
       if (arg === '--config') flags.config = value;
       if (arg === '--name') flags.name = value;
-      if (arg === '--skip') flags.skip.push(...value.split(',').map((part) => part.trim()).filter(Boolean));
+      if (arg === '--preset') flags.preset = value;
+      if (arg === '--skip')
+        flags.skip.push(
+          ...value
+            .split(',')
+            .map((part) => part.trim())
+            .filter(Boolean),
+        );
       continue;
     }
 
     if (arg.startsWith('-')) {
-      throw new GeneratorError('INVALID_CONFIG', `Unknown flag ${arg}.`, 'Run --help to see every flag.');
+      throw new GeneratorError(
+        'INVALID_CONFIG',
+        `Unknown flag ${arg}.`,
+        'Run --help to see every flag.',
+      );
     }
 
     // A bare argument is the project directory, matching `npm create` habits.
@@ -106,6 +129,8 @@ Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)
       --name <name>     Project name or path, skips the first wizard question
       --config <file>   Replay a saved ai-project.config.json instead of asking
+      --preset <id>     Start from a curated stack (see config/presets.json);
+                         cannot be combined with --config
   -y, --yes             Accept defaults for every unanswered question
       --dry-run         Print what would be written without touching disk
       --force           Write into a non-empty directory

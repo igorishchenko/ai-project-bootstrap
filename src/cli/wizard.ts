@@ -1,5 +1,5 @@
 import * as prompts from '@clack/prompts';
-import type { CategoryQuestion, LoadedModule, Selection } from '../core/types.js';
+import type { CategoryQuestion, LoadedModule, Preset, Selection } from '../core/types.js';
 import { isGatingQuestion } from '../core/types.js';
 import { groupByCategory } from '../core/registry/loadModules.js';
 import { NONE } from '../core/resolve/validate.js';
@@ -15,6 +15,10 @@ export class WizardCancelled extends Error {
 export interface WizardOptions {
   categories: CategoryQuestion[];
   modules: LoadedModule[];
+  /** Curated bundles offered as a fast start — `config/presets.json`. */
+  presets?: Preset[];
+  /** A preset chosen via `--preset`, skipping the interactive picker. */
+  presetId?: string;
   /** Pre-supplied project name, skipping that question. */
   name?: string;
   /** What the name question starts from — derived from `--out` when given. */
@@ -40,11 +44,25 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
   const projectName =
     options.name ?? (await askProjectName(options.defaultName, options.acceptDefaults));
 
+  const preset = await resolvePreset(options, byId);
+  if (preset) {
+    for (const [categoryId, value] of Object.entries(preset.choices)) {
+      choices[categoryId] = value;
+      for (const id of Array.isArray(value) ? value : [value]) {
+        if (id && id !== NONE) addWithPrerequisites(id, chosen, byId);
+      }
+    }
+  }
+
   // Questions ruled out by an earlier answer. A web-only project never sees the
   // mobile question, so anything needing a mobile platform is off the table too.
   const excluded = new Set<string>();
 
   for (const category of options.categories) {
+    // Already answered by the preset — reviewed via its summary above, not
+    // asked again, so "one click" stays one click for the parts it covers.
+    if (category.id in choices) continue;
+
     if (!shouldAsk(category, choices)) {
       excluded.add(category.id);
       continue;
@@ -232,6 +250,67 @@ async function askProjectName(defaultName?: string, acceptDefaults?: boolean): P
 
   if (prompts.isCancel(answer)) throw new WizardCancelled();
   return answer.trim();
+}
+
+const CUSTOM = '__custom__';
+
+/**
+ * Works out which preset, if any, seeds the selection — and makes sure
+ * choosing one is never a silent shortcut: everything it fills is printed,
+ * and (outside `--yes`) the user gets one explicit chance to back out to a
+ * fully custom run before any of it is applied.
+ */
+async function resolvePreset(
+  options: WizardOptions,
+  byId: Map<string, LoadedModule>,
+): Promise<Preset | undefined> {
+  const presets = options.presets ?? [];
+  if (presets.length === 0) return undefined;
+
+  let preset: Preset | undefined;
+
+  if (options.presetId) {
+    // Already validated against the registry by the caller — this is a
+    // defensive lookup, not the source of truth for "does it exist".
+    preset = presets.find((entry) => entry.id === options.presetId);
+  } else if (!options.acceptDefaults) {
+    const choice = await prompts.select({
+      message: 'Start from a preset?',
+      options: [
+        { value: CUSTOM, label: 'Custom', hint: 'Answer every question yourself' },
+        ...presets.map((entry) => ({
+          value: entry.id,
+          label: entry.name,
+          hint: entry.description,
+        })),
+      ],
+    });
+    if (prompts.isCancel(choice)) throw new WizardCancelled();
+    if (choice === CUSTOM) return undefined;
+    preset = presets.find((entry) => entry.id === choice);
+  }
+
+  if (!preset) return undefined;
+  // `--preset x --yes`: fully non-interactive, so there is nothing to confirm.
+  if (options.acceptDefaults) return preset;
+
+  prompts.note(describePreset(preset, byId), preset.name);
+  const proceed = await prompts.confirm({
+    message: `Use ${preset.name}, and only ask about what's left?`,
+  });
+  if (prompts.isCancel(proceed)) throw new WizardCancelled();
+  return proceed ? preset : undefined;
+}
+
+/** Human-readable summary of what a preset pre-fills, module names not ids. */
+function describePreset(preset: Preset, byId: Map<string, LoadedModule>): string {
+  return Object.entries(preset.choices)
+    .map(([categoryId, value]) => {
+      const ids = Array.isArray(value) ? value : [value];
+      const names = ids.map((id) => byId.get(id)?.manifest.name ?? id).join(', ');
+      return `${categoryId}: ${names}`;
+    })
+    .join('\n');
 }
 
 async function askCategory(

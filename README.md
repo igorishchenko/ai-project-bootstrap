@@ -79,6 +79,31 @@ This table is generated from `technologies/*/manifest.json` — run
 A category with no installed modules is skipped by the wizard, so the catalogue
 can grow without any change to the questions.
 
+## Stack presets
+
+Answering all sixteen categories from scratch is unnecessary for the common
+case. A preset pre-fills the categories it covers — the wizard still shows
+what it filled and lets you back out to a fully custom run before anything is
+asked, and still asks about anything the preset leaves unopinionated.
+
+| Preset        | Fills                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| `startup-mvp` | Expo + Supabase + RevenueCat + Sentry + PostHog — a fast solo/indie mobile stack           |
+| `web-saas`    | Next.js + Supabase + Stripe + Resend + Sentry + PostHog — a solo/small-team web SaaS stack |
+| `enterprise`  | Next.js + NestJS + PostgreSQL + GitHub Actions — a self-managed backend for a larger team  |
+
+```bash
+npx ai-project-bootstrap --preset startup-mvp             # pick a preset, review the rest interactively
+npx ai-project-bootstrap --preset startup-mvp --yes       # fully non-interactive
+```
+
+`--preset` and `--config` cannot be combined — both are ways of pre-filling
+the selection, and mixing them would leave it ambiguous which one wins.
+Presets live in `config/presets.json` and are validated the same way a
+hand-written `--config` file is: every module id must exist, and the
+resulting selection must resolve without a conflict, or the tool refuses to
+start rather than shipping a broken preset.
+
 ## Usage
 
 ```bash
@@ -86,6 +111,7 @@ npx ai-project-bootstrap                          # interactive
 npx ai-project-bootstrap my-app --yes             # accept defaults
 npx ai-project-bootstrap --name ./apps/my-app     # create ./apps/my-app
 npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
+npx ai-project-bootstrap --preset startup-mvp --yes   # generate from a preset, non-interactively
 npx ai-project-bootstrap --dry-run                # show what would be written
 npx ai-project-bootstrap --list-modules
 ```
@@ -95,16 +121,17 @@ in `./my-app`; answer `./apps/my-app` and that folder is created — parents and
 all — with the project named `my-app` inside it. `--out` overrides the location
 without touching the name.
 
-| Flag              | Meaning                                           |
-| ----------------- | ------------------------------------------------- |
-| `-o, --out <dir>` | Target directory (default: the project slug)      |
-| `--name <name>`   | Project name or path, skipping the first question |
-| `--config <file>` | Replay a saved selection instead of asking        |
-| `-y, --yes`       | Accept defaults for every question                |
-| `--dry-run`       | Print the file list without writing anything      |
-| `--force`         | Write into a non-empty directory                  |
-| `--skip <ids>`    | Comma-separated builder ids to skip               |
-| `--list-modules`  | List every available technology                   |
+| Flag              | Meaning                                                          |
+| ----------------- | ---------------------------------------------------------------- |
+| `-o, --out <dir>` | Target directory (default: the project slug)                     |
+| `--name <name>`   | Project name or path, skipping the first question                |
+| `--config <file>` | Replay a saved selection instead of asking                       |
+| `--preset <id>`   | Start from a curated stack — see [Stack presets](#stack-presets) |
+| `-y, --yes`       | Accept defaults for every question                               |
+| `--dry-run`       | Print the file list without writing anything                     |
+| `--force`         | Write into a non-empty directory                                 |
+| `--skip <ids>`    | Comma-separated builder ids to skip                              |
+| `--list-modules`  | List every available technology                                  |
 
 ## Growing a project after the fact
 

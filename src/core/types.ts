@@ -131,6 +131,18 @@ export interface Selection {
   choices: Record<string, string | string[]>;
 }
 
+/**
+ * A curated, named bundle of category answers — `config/presets.json`.
+ * `choices` has the exact same shape as `Selection.choices`, so a preset is
+ * validated and resolved through the same pipeline as a hand-written config.
+ */
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  choices: Record<string, string | string[]>;
+}
+
 /** Everything a builder is given. Builders must not read from disk. */
 export interface BuildContext {
   projectName: string;
