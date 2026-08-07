@@ -1,0 +1,13 @@
+{
+  "id": "habit-tracker",
+  "name": "Habit Tracker",
+  "description": "Daily habits with streaks — a real starter data model, sign-in, and screens wired to Supabase, not just a stack.",
+  "choices": {
+    "target": "mobile",
+    "mobile": "expo",
+    "backend": "supabase",
+    "auth": "supabase-auth",
+    "features": ["dark-theme"],
+    "testing": ["jest"]
+  }
+}

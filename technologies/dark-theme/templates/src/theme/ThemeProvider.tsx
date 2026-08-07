@@ -33,7 +33,10 @@ export function ThemeProvider({ children }: PropsWithChildren): React.JSX.Elemen
     void AsyncStorage.setItem(STORAGE_KEY, next);
   };
 
-  const theme: ThemeMode = preference === 'system' ? (systemScheme ?? 'light') : preference;
+  // react-native's ColorSchemeName also includes "unspecified" (no system
+  // preference set) — anything short of an explicit "dark" falls back to
+  // light, the same as the null/undefined case.
+  const theme: ThemeMode = preference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : preference;
   const value = useMemo(() => ({ theme, preference, setPreference }), [theme, preference]);
 
   // Nothing renders until the stored preference loads — otherwise every cold

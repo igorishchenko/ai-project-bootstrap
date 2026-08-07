@@ -293,7 +293,9 @@ native test tooling).
 ## CLI surface
 
 `src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches seven
-commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
+commands: no subcommand runs the wizard (or replays
+`--config`/`--preset`/`--archetype` — see "Starter templates" below for the
+last one);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
 saved `Selection`, and re-running the same `generate()` → flush path with
@@ -425,6 +427,55 @@ invented for file safety. Scaffold files are skeletons with `TODO` comments
 pointing back to the plan, not working implementations; that boundary is
 deliberate, not a shortcut — see the prompt this feature shipped from
 (`.planning/prompts/06-implement-command.md`) for why.
+
+## Starter templates: `archetypes/`
+
+An archetype composes three things that already exist rather than
+introducing a fourth content-authoring shape: a preset-shaped `choices`
+selection (reusing `validateSelection`/`resolveSelection` — the exact
+pipeline `loadPresets.ts` validates a preset's `choices` through), the
+normal `generate()` builder pipeline (completely unmodified — an archetype
+never touches `Selection`, `BuildContext`, or the builder registry), and a
+second, `implement`-shaped scaffold-writing pass layered on top of the
+_same_ `VirtualFs` `generate()` already produced (`applyArchetype()`,
+`src/cli/archetype.ts`) — not a fresh one, since there's no fingerprinting
+concern here: an archetype only ever runs once, at first generation,
+never against an already-generated project the way `implement` does.
+
+```
+archetypes/<id>/
+  manifest.json           { id, name, description, choices }
+  package.fragment.json   optional, merged into package.json via mergeJson
+  scaffold/**              optional, mirrored into the project root
+```
+
+`loadArchetype()` (`src/core/registry/loadArchetypes.ts`) is deliberately
+not part of `Registry`/`loadRegistry()` — like `loadFeatures()`, nothing
+should pay for reading `scaffold/**` content except `--archetype` itself.
+`src/cli/index.ts` synthesizes a one-off `Preset` object from the
+archetype's manifest (`{id, name, description, choices}` — identical shape
+by design) and passes it to `runWizard()` the same way `--preset` does, so
+prefilling/reviewing an archetype's answers needed zero changes to
+`wizard.ts` — the wizard has no idea "archetype" exists as a concept, only
+"a preset was chosen." The one thing genuinely new: `VirtualFs.mergeJson()`
+doesn't check ownership the way `write()` does (re-tagging instead of
+throwing `PATH_COLLISION`), which is what lets a `package.fragment.json`
+merge safely into a `package.json` the `package` builder already wrote,
+without a special case.
+
+Building the first archetype (`habit-tracker`) surfaced two real,
+previously-undiscovered gaps in the base template shared by every generated
+project — `@types/node` was never installed anywhere despite every
+module's own docs telling users to read `process.env`, and `dark-theme`
+didn't handle react-native's `"unspecified"` `ColorSchemeName` value —
+neither caught by the test suite because nothing had ever generated,
+`npm install`ed and typechecked a project with real application code in it
+before. Both are fixed at the source (`assets/base/dependencies.json` +
+`assets/base/templates/tsconfig.json`'s now-conditional `"types"` array;
+`technologies/dark-theme/templates/src/theme/ThemeProvider.tsx`), not
+special-cased in the archetype — see `CONTRIBUTING.md`'s "Adding an
+archetype" section for why "actually run it" is now a stated part of that
+checklist, not just this one's.
 
 ## Testing
 

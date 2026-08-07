@@ -19,7 +19,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+
+    "types": ["node"{{#if has.jest}}, "jest"{{/if}}]
   },
   "include": ["src", "*.ts", "*.tsx"],
   "exclude": ["node_modules", "dist", "build", "coverage"]

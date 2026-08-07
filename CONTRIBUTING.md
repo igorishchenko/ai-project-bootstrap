@@ -192,6 +192,64 @@ this is exactly how three real bugs (two bad relative import paths, one
 listener-reference mismatch) were caught while building the first three
 features, none of which `pnpm test` alone would have found.
 
+## Adding an archetype
+
+An archetype (`archetypes/<id>/`) is a full app starter: a preset-shaped
+stack selection plus real starter source, selectable via
+`ai-project-bootstrap --archetype <id>`.
+
+```
+archetypes/<id>/
+  manifest.json           required — { id, name, description, choices }
+  package.fragment.json   optional — merged into package.json (mergeJson,
+                           so it's safe even if a builder already wrote the
+                           file — see src/core/vfs/virtualFs.ts)
+  scaffold/**              optional — mirrored into the project root the
+                           same way a technology's templates/** is
+```
+
+`manifest.json`'s `choices` is exactly `config/presets.json`'s `choices`
+shape — copy an existing preset's `choices` as a starting point if the
+archetype's stack is close to one. It's validated through the identical
+`validateSelection` → `resolveSelection` pipeline a preset goes through
+(`src/core/registry/loadArchetypes.ts`), so a `choices` referencing a
+dropped module id or bundling two conflicting ones fails on every test run,
+not just when someone happens to pass `--archetype`.
+
+`scaffold/**` is rendered with the same `{{var}}`/`{{#if}}` engine every
+`technologies/*` template uses, but with only `{ projectName, projectSlug }`
+as data (the same minimal set `implement` uses) — an archetype commits to
+one fixed stack by design, so it never needs `{{#if has.X}}` branching the
+way a stack-agnostic technology module might. **A literal `{{...}}` in a
+comment or doc string gets evaluated too** — it is not just for real
+template variables. Explaining "double-brace syntax" in prose inside a
+scaffold file is exactly how a real instance of this got caught during
+development (see `tests/archetype.test.ts`'s "never leaks the generator
+template syntax" test, and `tests/loadArchetypes.test.ts`'s contract test,
+which checks every archetype's scaffold for this automatically).
+
+Scaffold file paths must not collide with anything a selected technology's
+own `templates/**` could also write — `VirtualFs.write()` throws
+`PATH_COLLISION` if two different owners write the same path (a
+declared-but-empty `folders.json` entry is fine; only actual file writes
+collide). Before opening a PR: generate a project with the archetype
+(`ai-project-bootstrap --archetype <id> --yes`), then `npm install && npm
+run typecheck && npm run lint` **inside the generated project** — this is
+exactly the discipline that caught two real, pre-existing gaps while
+building the first archetype (`@types/node` never installed anywhere in the
+base template, despite every module's docs using `process.env`; `dark-theme`
+not handling react-native's `"unspecified"` `ColorSchemeName` value) that
+`pnpm test` alone did not catch, because nothing had ever generated,
+installed and typechecked a project with real `.ts`/`.tsx` scaffold content
+in it before. Both are now fixed at the source (`assets/base/dependencies.json`
+
+- `assets/base/templates/tsconfig.json`; `technologies/dark-theme/`) rather
+  than worked around in the archetype.
+
+`tests/loadArchetypes.test.ts` covers the contract the same way
+`moduleContract.test.ts` covers `technologies/` — a new archetype folder is
+validated automatically, without anyone writing a dedicated test for it.
+
 ## Changing the engine (`src/`)
 
 If you're touching `src/` rather than adding a module, read `ARCHITECTURE.md`

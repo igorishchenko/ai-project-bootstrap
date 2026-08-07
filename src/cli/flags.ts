@@ -5,6 +5,7 @@ export interface CliFlags {
   config?: string;
   name?: string;
   preset?: string;
+  archetype?: string;
   yes: boolean;
   dryRun: boolean;
   force: boolean;
@@ -22,7 +23,7 @@ const BOOLEANS = new Set([
   '--help',
   '--version',
 ]);
-const VALUED = new Set(['--out', '--config', '--name', '--skip', '--preset']);
+const VALUED = new Set(['--out', '--config', '--name', '--skip', '--preset', '--archetype']);
 
 /** Minimal argv parser — the CLI has a dozen flags and no need for a library. */
 export function parseFlags(argv: string[]): CliFlags {
@@ -86,6 +87,7 @@ export function parseFlags(argv: string[]): CliFlags {
       if (arg === '--config') flags.config = value;
       if (arg === '--name') flags.name = value;
       if (arg === '--preset') flags.preset = value;
+      if (arg === '--archetype') flags.archetype = value;
       if (arg === '--skip')
         flags.skip.push(
           ...value
@@ -150,12 +152,20 @@ prioritized feedback? Run \`ai-project-bootstrap analyze\` inside it — see
 Not sure this machine can build the stack you have in mind? Run
 \`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.
 
+Want more than a stack — a real, running starting point for a specific kind
+of app? \`--archetype <id>\` pre-fills the same way \`--preset\` does, then
+layers real starter screens and a data model on top (see README's "Starter
+templates" section; \`archetypes/\` lists what's installed).
+
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)
       --name <name>     Project name or path, skips the first wizard question
       --config <file>   Replay a saved ai-project.config.json instead of asking
       --preset <id>     Start from a curated stack (see config/presets.json);
-                         cannot be combined with --config
+                         cannot be combined with --config or --archetype
+      --archetype <id>  Start from a full app starter (stack + real starter
+                         screens/data model, see archetypes/); cannot be
+                         combined with --config or --preset
   -y, --yes             Accept defaults for every unanswered question
       --dry-run         Print what would be written without touching disk
       --force           Write into a non-empty directory

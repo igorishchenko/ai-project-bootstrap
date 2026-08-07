@@ -5,11 +5,15 @@ import { builderIds, builders } from '../builders/index.js';
 import { CONFIG_FILENAME } from '../builders/configBuilder.js';
 import { preservedPaths, readFingerprints, removablePaths } from '../core/vfs/preserve.js';
 import { generate } from '../core/pipeline/generate.js';
+import { slugify } from '../core/pipeline/buildContext.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
+import { loadArchetype } from '../core/registry/loadArchetypes.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
+import type { Preset } from '../core/types.js';
 import { ADD_HELP_TEXT, mergeChoice, parseAddFlags, replaceChoice } from './add.js';
 import { runAnalyze } from './analyze.js';
+import { applyArchetype } from './archetype.js';
 import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
 import { runImplement } from './implement.js';
@@ -232,11 +236,15 @@ async function main(argv: string[]): Promise<number> {
     );
   }
 
-  if (flags.preset && flags.config) {
+  if (
+    (flags.preset && flags.config) ||
+    (flags.archetype && flags.config) ||
+    (flags.preset && flags.archetype)
+  ) {
     throw new GeneratorError(
       'INVALID_CONFIG',
-      '--preset and --config cannot be used together.',
-      'Both pre-fill the selection — pick one: --preset for a curated starting point, --config to replay a saved one.',
+      '--preset, --archetype and --config cannot be combined.',
+      'All three pre-fill the selection — pick one.',
     );
   }
   if (flags.preset && !registry.presets.some((preset) => preset.id === flags.preset)) {
@@ -249,15 +257,32 @@ async function main(argv: string[]): Promise<number> {
     );
   }
 
+  // Loaded (and its `choices` validated) up front, so a broken archetype
+  // fails before the wizard asks a single question, not after.
+  const archetype = flags.archetype
+    ? loadArchetype(rootDir, flags.archetype, registry.byId, registry.categories)
+    : undefined;
+
   reporter.intro(version);
+
+  // An archetype's `choices` is exactly `Preset.choices`-shaped — offering it
+  // to the wizard as a one-off preset (never added to `registry.presets`, so
+  // it never appears in the interactive "start from a preset?" list) reuses
+  // prefilling/review behavior instead of a second implementation of it.
+  const archetypePreset: Preset | undefined = archetype && {
+    id: archetype.manifest.id,
+    name: archetype.manifest.name,
+    description: archetype.manifest.description,
+    choices: archetype.manifest.choices,
+  };
 
   const selection = flags.config
     ? loadSelectionFile(flags.config)
     : await runWizard({
         categories: registry.categories,
         modules: registry.modules,
-        presets: registry.presets,
-        presetId: flags.preset,
+        presets: archetypePreset ? [archetypePreset] : registry.presets,
+        presetId: archetypePreset?.id ?? flags.preset,
         name: flags.name,
         // A directory was already given, so the name question starts from it
         // rather than from a generic placeholder.
@@ -282,6 +307,16 @@ async function main(argv: string[]): Promise<number> {
     skip: flags.skip,
     onBuilder: (run) => reporter.step(run),
   });
+
+  // Layered on top of the normal pipeline's output, in the same VirtualFs —
+  // real starter screens and a data model, not a core builder every project
+  // pays for.
+  if (archetype) {
+    applyArchetype(result.vfs, archetype, {
+      projectName: selection.projectName,
+      projectSlug: slugify(selection.projectName),
+    });
+  }
 
   // Regenerating over an existing project must not discard the user's edits.
   // Anything whose contents no longer match the fingerprint recorded when it
@@ -310,6 +345,13 @@ async function main(argv: string[]): Promise<number> {
     costSummary: result.costSummary,
     dryRun: flags.dryRun,
   });
+
+  if (archetype && !flags.dryRun) {
+    reporter.plain(
+      `Started from the ${archetype.manifest.name} starter — see docs/starter-template.md.`,
+    );
+    reporter.plain('');
+  }
 
   return 0;
 }

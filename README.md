@@ -120,12 +120,49 @@ npx ai-project-bootstrap --preset startup-mvp             # pick a preset, revie
 npx ai-project-bootstrap --preset startup-mvp --yes       # fully non-interactive
 ```
 
-`--preset` and `--config` cannot be combined — both are ways of pre-filling
-the selection, and mixing them would leave it ambiguous which one wins.
-Presets live in `config/presets.json` and are validated the same way a
-hand-written `--config` file is: every module id must exist, and the
-resulting selection must resolve without a conflict, or the tool refuses to
-start rather than shipping a broken preset.
+`--preset`, `--archetype` and `--config` cannot be combined — all three are
+ways of pre-filling the selection, and mixing them would leave it ambiguous
+which one wins. Presets live in `config/presets.json` and are validated the
+same way a hand-written `--config` file is: every module id must exist, and
+the resulting selection must resolve without a conflict, or the tool refuses
+to start rather than shipping a broken preset.
+
+## Starter templates
+
+A preset picks a stack. An **archetype** picks a stack _and_ scaffolds a
+real, running starting point on top of it — actual screens wired to an
+actual data model, not just dependencies:
+
+```bash
+npx ai-project-bootstrap --archetype habit-tracker             # pick it, review the rest interactively
+npx ai-project-bootstrap --archetype habit-tracker --yes       # fully non-interactive
+```
+
+| Archetype       | Stack                                        | Scaffolds                                                                                                                                     |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `habit-tracker` | Expo + Supabase + Supabase Auth + Dark Theme | `habits`/`habit_checkins` tables with Row Level Security, email magic-link sign-in, a habit list + add-habit screen with real streak tracking |
+
+`--archetype` pre-fills the wizard exactly the way `--preset` does — same
+review-before-generating flow, same "still asks about anything left
+unopinionated" behavior (payments, analytics, notifications and the rest
+are yours to add with `add <technology-id>` afterward, kept out of the
+default to keep the starter's first-run surface small). What's different is
+what happens after: a second pass writes the archetype's own
+`scaffold/**` — real `.ts`/`.tsx` source and a Supabase migration file, not
+just docs — into the same project, rendered through the identical
+`{{var}}` templating every `technologies/*` module already uses.
+
+Generate one, then read `docs/starter-template.md` in the result — it
+documents exactly what got scaffolded, what's deliberately not wired in (no
+router — this generator never scaffolds one, for any project — see
+`docs/architecture.md`), and how to apply the migration before running it.
+
+Only one archetype ships today, deliberately — see `CONTRIBUTING.md` for
+the full contract if you want to add another. An archetype is
+`archetypes/<id>/manifest.json` (a `choices` selection, shaped exactly like
+a `config/presets.json` entry) plus `archetypes/<id>/scaffold/**`, the same
+way a technology is a `manifest.json` plus `templates/**` — adding one
+touches no code in `src/`.
 
 ## Usage
 
@@ -144,17 +181,18 @@ in `./my-app`; answer `./apps/my-app` and that folder is created — parents and
 all — with the project named `my-app` inside it. `--out` overrides the location
 without touching the name.
 
-| Flag              | Meaning                                                          |
-| ----------------- | ---------------------------------------------------------------- |
-| `-o, --out <dir>` | Target directory (default: the project slug)                     |
-| `--name <name>`   | Project name or path, skipping the first question                |
-| `--config <file>` | Replay a saved selection instead of asking                       |
-| `--preset <id>`   | Start from a curated stack — see [Stack presets](#stack-presets) |
-| `-y, --yes`       | Accept defaults for every question                               |
-| `--dry-run`       | Print the file list without writing anything                     |
-| `--force`         | Write into a non-empty directory                                 |
-| `--skip <ids>`    | Comma-separated builder ids to skip                              |
-| `--list-modules`  | List every available technology                                  |
+| Flag               | Meaning                                                                     |
+| ------------------ | --------------------------------------------------------------------------- |
+| `-o, --out <dir>`  | Target directory (default: the project slug)                                |
+| `--name <name>`    | Project name or path, skipping the first question                           |
+| `--config <file>`  | Replay a saved selection instead of asking                                  |
+| `--preset <id>`    | Start from a curated stack — see [Stack presets](#stack-presets)            |
+| `--archetype <id>` | Start from a full app starter — see [Starter templates](#starter-templates) |
+| `-y, --yes`        | Accept defaults for every question                                          |
+| `--dry-run`        | Print the file list without writing anything                                |
+| `--force`          | Write into a non-empty directory                                            |
+| `--skip <ids>`     | Comma-separated builder ids to skip                                         |
+| `--list-modules`   | List every available technology                                             |
 
 ## Growing a project after the fact
 

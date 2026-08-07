@@ -1,6 +1,7 @@
 {
   "packages": [
     { "name": "typescript", "version": "^6.0.0", "dev": true, "notes": "Capped below 6.1 while typescript-eslint supports <6.1.0." },
+    { "name": "@types/node", "version": "^26.1.0", "dev": true, "notes": "Types for process.env — every module's setup docs use it." },
     { "name": "prettier", "version": "^3.9.0", "dev": true },
     { "name": "eslint", "version": "^10.8.0", "dev": true },
     { "name": "typescript-eslint", "version": "^8.66.0", "dev": true },
