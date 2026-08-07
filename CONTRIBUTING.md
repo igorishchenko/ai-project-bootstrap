@@ -56,7 +56,12 @@ manifest:
   "requires": [],
   "conflicts": [],
   "dependencies": [],
-  "priority": 45
+  "priority": 45,
+  "pricing": {
+    "model": "usage-based",
+    "notes": "No monthly fee. 2.9% + 30¢ per transaction. Checked 2026-08-07.",
+    "url": "https://stripe.com/pricing"
+  }
 }
 ```
 
@@ -69,6 +74,28 @@ manifest:
   `scripts/generate-tech-table.mjs`).
 - `requires` are hard prerequisites, pulled in transitively. `conflicts` are
   mutual exclusions. `dependencies` are soft edges that only affect ordering.
+- `pricing` is optional — omit it entirely for a module with no cost of its
+  own (a testing library, a UI feature); do not force a value just to fill
+  the field. When the underlying service genuinely has a cost:
+  - `model` is one of `"free"` (a real, billable-capable service that
+    happens to cost nothing at typical usage — not the same as omitting
+    `pricing`), `"flat"` (one fixed price), `"freemium"` (a free tier plus a
+    real starting paid price), or `"usage-based"` (price genuinely varies
+    with the built app's own traffic/volume — a per-transaction fee, a
+    revenue share, pure pay-per-unit).
+  - `estimateUsd` is a plain USD number, and only makes sense for
+    `flat`/`freemium` — leave it unset for `free`/`usage-based` rather than
+    inventing a number. A `flat`/`freemium` entry with no `estimateUsd` is
+    treated as "no cost data available" by `summarizeCosts()`
+    (`src/core/pricing.ts`), not silently as $0.
+  - `notes` and `url` matter more than `estimateUsd` — a price goes stale
+    the moment a vendor changes their plans, but a clear note plus a link
+    to verify stays useful regardless. Verify current pricing against the
+    vendor's own page before writing it (not from memory — pricing pages
+    change), and record the date you checked, in the note itself, the way
+    the example above does. There is no automated freshness check; this is
+    a "maintainers keep it honest over time" convention, the same as the
+    rest of the module catalogue.
 
 A question may instead declare fixed `choices` in `config/categories.json`,
 making it a **gating question**: its answer shapes the wizard rather than

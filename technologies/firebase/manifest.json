@@ -6,5 +6,10 @@
   "requires": [],
   "conflicts": ["supabase"],
   "dependencies": [],
-  "priority": 31
+  "priority": 31,
+  "pricing": {
+    "model": "usage-based",
+    "notes": "Spark (free) plan has fixed caps (e.g. 50K Firestore reads/day). Blaze keeps those free allowances, then bills per use (e.g. $0.40/million function invocations) — no flat subscription tier exists. Checked 2026-08-07.",
+    "url": "https://firebase.google.com/pricing"
+  }
 }

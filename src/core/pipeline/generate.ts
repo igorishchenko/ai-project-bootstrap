@@ -6,6 +6,7 @@ import { resolveSelection } from '../resolve/resolveSelection.js';
 import { createBuildContext } from './buildContext.js';
 import { runPipeline, type BuilderRun, type RunOptions } from './runPipeline.js';
 import type { VirtualFs } from '../vfs/virtualFs.js';
+import { summarizeCosts, type CostSummary } from '../pricing.js';
 
 export interface GenerateInput {
   /** Generator root — the directory holding technologies/, assets/, config/. */
@@ -26,6 +27,7 @@ export interface GenerateResult {
   warnings: string[];
   moduleNames: string[];
   autoIncluded: string[];
+  costSummary: CostSummary;
 }
 
 /**
@@ -65,5 +67,6 @@ export function generate(input: GenerateInput): GenerateResult {
     warnings,
     moduleNames: modules.map((module) => module.manifest.name),
     autoIncluded,
+    costSummary: summarizeCosts(modules),
   };
 }

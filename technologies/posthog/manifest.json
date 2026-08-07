@@ -6,5 +6,10 @@
   "requires": [],
   "conflicts": [],
   "dependencies": [],
-  "priority": 70
+  "priority": 70,
+  "pricing": {
+    "model": "usage-based",
+    "notes": "Free tier (no card required): 1M analytics events, 5K session replays, 1M feature-flag requests per month. Beyond that, billing is per-unit (e.g. from $0.00005/event) — no single flat \"paid tier\" price. Checked 2026-08-07.",
+    "url": "https://posthog.com/pricing"
+  }
 }

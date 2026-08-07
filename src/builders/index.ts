@@ -5,6 +5,7 @@ import { envBuilder } from './envBuilder.js';
 import { docsBuilder } from './docsBuilder.js';
 import { architectureBuilder } from './architectureBuilder.js';
 import { roadmapBuilder } from './roadmapBuilder.js';
+import { costsBuilder } from './costsBuilder.js';
 import { configBuilder } from './configBuilder.js';
 import {
   checklistBuilder,
@@ -32,6 +33,7 @@ export const builders: Builder[] = [
   docsBuilder,
   architectureBuilder,
   roadmapBuilder,
+  costsBuilder,
   cursorBuilder,
   copilotBuilder,
   continueBuilder,

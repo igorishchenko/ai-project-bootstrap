@@ -5,6 +5,21 @@ import { GeneratorError } from '../resolve/errors.js';
 /** Module ids are used as filenames and env comments — keep them boring. */
 const idPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/**
+ * Optional — most modules genuinely have no cost of their own (a testing
+ * library, a UI feature) and forcing a value would be more misleading than
+ * omitting one. `estimateUsd` only makes sense for `flat`/`freemium`; a
+ * `usage-based` or `free` module should leave it unset rather than guess.
+ */
+const pricingSchema = z
+  .object({
+    model: z.enum(['free', 'flat', 'usage-based', 'freemium']),
+    estimateUsd: z.number().min(0).optional(),
+    notes: z.string().min(1).optional(),
+    url: z.string().url().optional(),
+  })
+  .optional();
+
 export const manifestSchema = z.object({
   id: z.string().regex(idPattern, 'must be kebab-case (lowercase letters, digits, hyphens)'),
   name: z.string().min(1),
@@ -14,6 +29,7 @@ export const manifestSchema = z.object({
   conflicts: z.array(z.string()).default([]),
   dependencies: z.array(z.string()).default([]),
   priority: z.number().int().min(0).default(50),
+  pricing: pricingSchema,
 });
 
 /**

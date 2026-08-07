@@ -168,6 +168,7 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     modules: result.moduleNames,
     autoIncluded: result.autoIncluded,
     warnings: result.warnings,
+    costSummary: result.costSummary,
     dryRun: flags.dryRun,
   });
 
@@ -306,6 +307,7 @@ async function main(argv: string[]): Promise<number> {
     modules: result.moduleNames,
     autoIncluded: result.autoIncluded,
     warnings: result.warnings,
+    costSummary: result.costSummary,
     dryRun: flags.dryRun,
   });
 

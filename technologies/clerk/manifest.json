@@ -6,5 +6,11 @@
   "requires": [],
   "conflicts": ["supabase-auth"],
   "dependencies": [],
-  "priority": 36
+  "priority": 36,
+  "pricing": {
+    "model": "freemium",
+    "estimateUsd": 25,
+    "notes": "Free tier: up to 50,000 monthly active users. Pro ($25/mo) keeps that allowance but adds usage-based overage pricing and removes dev-tier limits. Checked 2026-08-07.",
+    "url": "https://clerk.com/pricing"
+  }
 }

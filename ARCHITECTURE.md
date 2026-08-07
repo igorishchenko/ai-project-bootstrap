@@ -52,6 +52,7 @@ steps 2–6 — no filesystem access, which is what makes the 40 cases in
 | 40    | `docs`         | `docs/setup.md`, `deployment.md`, `testing.md`, `coding-standards.md`, `release.md` |
 | 50    | `architecture` | `docs/architecture.md`                                                              |
 | 55    | `roadmap`      | `docs/roadmap.md`                                                                   |
+| 56    | `costs`        | `docs/costs.md`                                                                     |
 | 60    | `cursor`       | `.cursor/rules/<id>.mdc`, plus the base module's extra stack-agnostic rules         |
 | 62    | `copilot`      | `.github/copilot-instructions.md` + `.github/instructions/<id>.instructions.md`     |
 | 64    | `continue`     | `.continue/rules/<id>.md`                                                           |
@@ -134,6 +135,43 @@ manifests only, none of the plan/checklist/prompt content or full-registry
 provider validation `loadFeatures()` does, since a feature's `providers`
 legitimately names technology ids this particular project never selected.
 Cheap enough to call on every generation, unlike the full loader.
+
+## Cost estimation
+
+`Manifest.pricing` (`src/core/types.ts`, validated by `manifestSchema.ts`)
+is an optional, manually-curated field — `{ model, estimateUsd?, notes?,
+url? }`, `model` one of `free`/`flat`/`freemium`/`usage-based`. No live
+pricing API, no network call at generation time: this is exactly as fresh
+as the last time a maintainer checked a vendor's pricing page, the same
+"maintainers keep the catalogue honest over time" trust model as every
+other piece of module content. See `CONTRIBUTING.md` for the full field
+contract module authors follow.
+
+`summarizeCosts()` (`src/core/pricing.ts`) is the one function that reads
+this data — a pure `LoadedModule[] → CostSummary` reducer with no CLI or
+builder knowledge, so both consumers below share the exact same bucketing
+logic instead of two implementations quietly drifting apart:
+
+- **`costsBuilder`** (`src/builders/costsBuilder.ts`) writes the full
+  breakdown to `docs/costs.md` at generation time.
+- **`Reporter.summary()`** (`src/cli/reporter.ts`) prints the one-line
+  `Est. cost` summary at the end of `main()` and `runAdd()` — both already
+  had a `GenerateResult` in hand, so `generate()` computes `costSummary`
+  once (via the same `summarizeCosts()`) and both call sites pass it
+  straight through, rather than each recomputing it from `ctx.modules`.
+
+Four buckets, never blended into one number: `estimated` (flat/freemium
+with a real `estimateUsd` — the only ones summed into `totalUsd`),
+`free`, `usageBased` (a real cost, no honest flat number), and `unknown`
+(no `pricing` field at all — the common case, and never treated as $0).
+
+**Extension point, not built here**: `doctor` and `analyze` could each
+surface cost data too (`doctor --for <preset>` naming a preset's rough
+monthly cost before generation; `analyze` estimating cost for a detected
+stack) — both would call the same `summarizeCosts()`, `doctor` on a
+preset's modules, `analyze` on `detectStack()`'s results, mapped back to
+`LoadedModule`s via the registry. Neither integration exists yet; this is
+deliberately scoped to producing the data and the primary summary output.
 
 ## The hard invariant: no technology names in `src/`
 

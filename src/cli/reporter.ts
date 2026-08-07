@@ -3,6 +3,7 @@ import type { BuilderRun } from '../core/pipeline/runPipeline.js';
 import type { CheckResult } from './doctorChecks.js';
 import type { Finding, FindingCategory } from './reviewChecks.js';
 import type { CategoryScore, DetectedTechnology } from './analyzeChecks.js';
+import type { CostSummary } from '../core/pricing.js';
 import { isGeneratorError } from '../core/resolve/errors.js';
 
 /** All user-facing output, kept in one place so the CLI voice stays consistent. */
@@ -37,6 +38,7 @@ export class Reporter {
     modules: string[];
     autoIncluded: string[];
     warnings: string[];
+    costSummary: CostSummary;
     dryRun: boolean;
   }): void {
     this.write();
@@ -76,6 +78,7 @@ export class Reporter {
     this.write(`${pc.bold('Stack')}      ${input.modules.join(', ') || 'baseline only'}`);
     this.write(`${pc.bold('Files')}      ${input.fileCount}`);
     this.write(`${pc.bold('Location')}   ${input.targetDir}`);
+    this.writeCostLine(input.costSummary);
     this.write();
 
     if (input.dryRun) {
@@ -125,6 +128,25 @@ export class Reporter {
     this.write(`${pc.bold(label)}  ${files.length}`);
     for (const file of files.slice(0, 8)) this.write(pc.dim(`    ${file}`));
     if (files.length > 8) this.write(pc.dim(`    …and ${files.length - 8} more`));
+  }
+
+  /** Silent when nothing in the stack has a cost or a usage-based caveat worth surfacing here. */
+  private writeCostLine(costSummary: CostSummary): void {
+    const { estimated, usageBased, totalUsd } = costSummary;
+    if (estimated.length === 0 && usageBased.length === 0) return;
+
+    const parts: string[] = [];
+    if (estimated.length > 0) {
+      parts.push(`$${totalUsd}/mo (${estimated.map((item) => item.moduleName).join(', ')})`);
+    }
+    if (usageBased.length > 0) {
+      parts.push(
+        `${usageBased.length} usage-based service${usageBased.length > 1 ? 's' : ''} not counted`,
+      );
+    }
+
+    this.write(`${pc.bold('Est. cost')}  ${parts.join(' — ')}`);
+    this.write(pc.dim('             published pricing, not a quote — see docs/costs.md'));
   }
 
   upgradeSummary(input: {

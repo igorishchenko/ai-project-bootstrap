@@ -6,5 +6,11 @@
   "requires": [],
   "conflicts": ["sendgrid"],
   "dependencies": [],
-  "priority": 65
+  "priority": 65,
+  "pricing": {
+    "model": "freemium",
+    "estimateUsd": 20,
+    "notes": "Free tier: 3,000 emails/mo (100/day cap). Pro plan starts at $20/mo for 50,000 emails/mo, with per-thousand overage billing beyond that. Checked 2026-08-07.",
+    "url": "https://resend.com/pricing"
+  }
 }

@@ -15,7 +15,7 @@ npx ai-project-bootstrap
 ## What it generates
 
 ```
-docs/          setup, architecture, roadmap, deployment, testing, coding-standards, release
+docs/          setup, architecture, roadmap, costs, deployment, testing, coding-standards, release
 prompts/       nine reusable prompts for common tasks
 checklists/    release, plus whatever the selected technologies contribute
 .github/       CI workflow
@@ -41,6 +41,10 @@ payments, deployment last. A category whose selected module has a matching
 `ai-project-bootstrap implement <feature>` command (authentication, payments,
 push notifications) names it directly. It's explicitly a starting point to
 reorder or split, not a schedule handed down from above.
+
+`docs/costs.md`, and a one-line `Est. cost` summary at the end of the run,
+estimate the monthly cost of the paid services you selected — see
+"Estimating monthly cost" below.
 
 Plus one rule per selected technology, and the stack-agnostic set
 (architecture, performance, testing, typescript), for every AI coding tool
@@ -274,6 +278,47 @@ Re-running is safe — a scaffold file you've hand-edited since it was written
 is left alone, the same fingerprint-based protection `add` and `upgrade`
 use, tracked per feature in `implementation/<feature>/.manifest.json`.
 `implement --help` covers the rest.
+
+## Estimating monthly cost
+
+Every generation prints one line — `Est. cost $134/mo (Supabase, OneSignal, ...) — 3 usage-based services not counted` — and writes the full breakdown to `docs/costs.md`:
+
+```
+## Estimated monthly total: $134/mo
+
+- **Supabase** — $25/mo (paid tier) — [pricing](https://supabase.com/pricing)
+  Free tier: 50,000 MAU, 500MB database, 5GB egress, projects pause after a
+  week idle. Pro ($25/mo) removes pausing and adds daily backups.
+
+## Usage-based (not included in the total above)
+
+- **Stripe** — [pricing](https://stripe.com/pricing)
+  No monthly fee. Standard US card processing is 2.9% + 30¢ per transaction.
+```
+
+The estimate is **only ever a starting point, never a guaranteed figure** —
+every module's pricing data was checked by hand against that vendor's own
+pricing page on a specific date (recorded in its `notes`), and pricing pages
+change. Four buckets, each rendered separately rather than blended into one
+misleading number:
+
+- **Estimated total** — only technologies with a known flat or freemium
+  starting price (`pricing.model: "flat" | "freemium"` and a real
+  `estimateUsd`) are summed. A service declared `flat`/`freemium` but
+  missing a number is treated as unknown, never silently counted as $0.
+- **Usage-based** — bills on your app's own traffic, storage or transaction
+  volume (Stripe's per-transaction fee, RevenueCat's revenue share). There
+  is no honest single number for these, so they're listed with a link
+  instead of forced into the total.
+- **Free** — a real, billable-capable service that happens to cost nothing
+  at typical usage (e.g. Expo Push) — shown for completeness, not omitted.
+- **No cost data available** — the module simply has no `pricing` field.
+  Most modules land here on purpose: a testing library or a UI feature has
+  no vendor to price, so `pricing` stays unset rather than forced to a
+  meaningless value.
+
+Adding pricing data to a module you maintain is documented in
+**[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ## Reviewing a project
 
