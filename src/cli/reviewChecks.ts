@@ -3,7 +3,15 @@ import path from 'node:path';
 import type { LoadedModule } from '../core/types.js';
 
 export type FindingSeverity = 'critical' | 'warning' | 'info';
-export type FindingCategory = 'architecture' | 'security' | 'performance' | 'dx';
+/**
+ * `dx` only ever comes from `review` (drift from today's templates — a
+ * concept that needs `ai-project.config.json` to mean anything); `documentation`
+ * only ever comes from `analyze` (arbitrary repos have no generated docs to
+ * drift from, but doc coverage is exactly what `analyze` can check instead).
+ * One shared union so the two commands' overlapping checks (security,
+ * architecture, performance) return a `Finding[]` either can consume.
+ */
+export type FindingCategory = 'architecture' | 'security' | 'performance' | 'dx' | 'documentation';
 
 export interface Finding {
   category: FindingCategory;
@@ -168,7 +176,10 @@ export function checkHardcodedSecrets(targetDir: string): Finding[] {
   return findings;
 }
 
-const SUPPRESSION = /(eslint-disable|@ts-ignore|@ts-nocheck)/;
+// Anchored to a `//` comment start so this only matches an actual directive
+// — a string or array literal that merely mentions "eslint-disable" (this
+// file's own SUPPRESSION regex, for instance) doesn't count.
+const SUPPRESSION = /\/\/\s*(eslint-disable(?:-next-line|-line)?|@ts-ignore|@ts-nocheck)\b/;
 
 /**
  * The project's own generated rules say never to do this (see CLAUDE.md /

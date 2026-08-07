@@ -114,6 +114,7 @@ const CATEGORY_LABEL: Record<Finding['category'], string> = {
   security: 'Security',
   performance: 'Performance',
   dx: 'DX',
+  documentation: 'Documentation',
 };
 
 function renderReportMarkdown(input: {

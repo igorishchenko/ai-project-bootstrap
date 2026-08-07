@@ -254,7 +254,7 @@ native test tooling).
 
 ## CLI surface
 
-`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches six
+`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches seven
 commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
@@ -286,8 +286,58 @@ already-generated project, and prints the result grouped by category
 checks are pattern-based, not a real analyzer or an LLM call; see
 `reviewChecks.ts` for exactly what each one does and does not catch, and the
 README's "Reviewing a project" section for the same boundary stated for
-users. See `.planning/roadmap/` for the commands planned on top of this
-(`analyze`).
+users. `analyze` (`src/cli/analyze.ts` + `src/cli/analyzeChecks.ts`) is
+`review`'s strictly-harder sibling — see "Analyzing an arbitrary repository"
+below.
+
+## Analyzing an arbitrary repository
+
+`review` gets to assume `ai-project.config.json` exists and names the exact
+stack. `analyze` has neither: it runs against any repository — including
+ones this tool never generated — and has to infer everything from the
+filesystem instead.
+
+**Stack detection** (`detectStack` in `analyzeChecks.ts`) has two signals,
+each carrying its own confidence so a guess is never shown as a fact.
+`high` confidence comes from a `package.json` dependency matching a name in
+a module's own `dependencies.json` — read from the already-parsed
+`LoadedModule.dependencies`, or regex-extracted from the raw
+`dependenciesRaw` text for the one module (`jest`) whose `dependencies.json`
+is templated; the `"name": "..."` fields themselves are never inside a
+`{{#if}}` block, so the regex needs no awareness of the templating syntax at
+all. A package name more than one module declares (`react`, shared by
+`nextjs`, `react-native` and the Vite `react` module) is excluded from
+matching entirely — `ambiguousPackageNames()` computes this once from the
+whole registry, since presence alone can't tell those modules apart.
+`medium` confidence comes from a module's optional `detect.json` — new in
+this prompt, `{ "configFiles": [...] }`, for the handful of modules with no
+npm package of their own (`fastapi`, `github-actions`, `gitlab-ci`,
+`eas-submit`) — read directly from `module.root` at analysis time rather
+than threaded through `LoadedModule` the way `folders`/`env` are, since
+`analyze` is its only consumer.
+
+**Scoring** (`scoreArchitecture`, `scoreSecurity`, `scorePerformance`,
+`scoreDocumentation`) is four independent, fixed rubrics — see the README's
+"Analyzing any repository" section for the exact point values, kept in sync
+by hand since there's no single source both the docs and the code could
+read from without adding indirection for four short functions. Security and
+performance reuse `review`'s own `checkHardcodedSecrets`, `checkEnvGitignored`
+and `checkLintSuppressions` directly (the shared `Finding`/`FindingCategory`
+types in `reviewChecks.ts` gained a `documentation` category so `analyze`'s
+own findings fit the same shape) — a hardcoded secret means the same thing
+whether or not `ai-project.config.json` exists. Architecture and
+documentation have no `review` equivalent (there's no folder-declaring
+`Selection` to check against, and a generated project always has docs), so
+those two are `analyze`-only.
+
+Dependency-vulnerability scanning is deliberately not implemented: a
+trustworthy result needs a live CVE lookup, which conflicts with staying
+fully offline, and `npm audit`'s own false-positive rate makes it unsuitable
+to fold into a score silently. If the target has an `ai-project.config.json`,
+`analyze` prints a one-line pointer at `review` for more precise findings
+but still completes its own generic pass — deliberately not a hard
+short-circuit, so `analyze` remains usable even against this tool's own
+output.
 
 ## Implementing a feature: `features/`
 

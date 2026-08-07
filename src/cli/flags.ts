@@ -120,6 +120,7 @@ Usage
   npx ai-project-bootstrap upgrade [options]
   npx ai-project-bootstrap implement <feature-id> [options]
   npx ai-project-bootstrap review [options]
+  npx ai-project-bootstrap analyze [options]
   npx ai-project-bootstrap doctor [options]
 
 The project name doubles as its location: answer "my-app" to generate ./my-app,
@@ -141,6 +142,10 @@ notifications — tailored to the stack you picked? Run
 Want a static, AI-oriented review of what's already there — architecture,
 security, performance, dx — before you ship? Run \`ai-project-bootstrap review\`
 inside the project — see \`ai-project-bootstrap review --help\`.
+
+Have a repo this tool never generated and want the same kind of scored,
+prioritized feedback? Run \`ai-project-bootstrap analyze\` inside it — see
+\`ai-project-bootstrap analyze --help\`.
 
 Not sure this machine can build the stack you have in mind? Run
 \`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.

@@ -196,6 +196,17 @@ describe('checkLintSuppressions', () => {
 
     expect(checkLintSuppressions(dir)).toEqual([]);
   });
+
+  it('does not flag the marker as plain data — a string or array literal mentioning it, not a directive', () => {
+    const dir = tempDir();
+    write(
+      dir,
+      'src/markers.ts',
+      `export const SUPPRESSION_MARKERS = ['eslint-disable', '@ts-ignore', '@ts-nocheck'];\n`,
+    );
+
+    expect(checkLintSuppressions(dir)).toEqual([]);
+  });
 });
 
 describe('checkStaleFiles', () => {

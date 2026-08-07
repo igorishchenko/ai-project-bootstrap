@@ -330,6 +330,61 @@ Exit code is non-zero once any finding is at or above `--fail-on`'s severity
 (`critical`, `warning` or `info`; default `critical`) — safe to wire into CI.
 `review --help` covers the rest.
 
+## Analyzing any repository
+
+`review` needs `ai-project.config.json` to know the stack. `analyze` doesn't
+— it works against **any** repository, including ones this tool never
+generated, inferring the stack from `package.json` dependencies and known
+config files instead:
+
+```bash
+npx ai-project-bootstrap analyze
+npx ai-project-bootstrap analyze --dir ../someone-elses-repo
+npx ai-project-bootstrap analyze --report   # also write analyze-report.md
+```
+
+```
+Detected stack
+  ◆ Next.js (Web framework) — high confidence
+      package.json dependency "next"
+
+Architecture  70/100
+  ! No tests found.
+      → Even a handful of tests around the riskiest logic catches regressions a README never will.
+```
+
+**Detection is a guess, and says so.** Every entry names its own evidence and
+confidence: `high` means an exact `package.json` dependency match; `medium`
+means only a config file's presence (e.g. `requirements.txt` says "some
+Python framework," not specifically which). A package name declared by more
+than one technology — `react` alone can't tell Next.js, Vite and React
+Native apart — is never used as a signal at all, rather than guessed at.
+
+**Scoring rubric** — four categories, each out of 100, fixed and additive
+(or subtractive for security) rather than a black box:
+
+| Category          | Points come from (out of 100)                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture**  | A recognized source directory — `src`, `app`, `lib`, `server` or `api` (30); tests present (30); a lint config (20); `package.json` declaring both a `build` script and a `test`/`lint` script (20) |
+| **Security**      | Starts at 100. `-25` per hardcoded-looking credential, `-30` for an ungitignored `.env`, `-5` per lint-suppression comment (capped at `-20` total), `-10` for no `.gitignore` at all                |
+| **Performance**   | `.gitignore` excludes `node_modules` (30); a recognized bundler/build config exists (40); no committed image over 1MB (30)                                                                          |
+| **Documentation** | `README.md` (40); `CONTRIBUTING.md` (20); a `LICENSE` file (15); a `docs/` directory with markdown content (15); `package.json`'s `description` filled in (10)                                      |
+
+Security and performance checks are the same functions `review` uses — a
+hardcoded secret or an ungitignored `.env` means the same thing whether or
+not the repo has an `ai-project.config.json`. Architecture and documentation
+scoring is JS/TS-shaped throughout (a Python or Go repo will score low on
+"source directory" and "lint config" regardless of how well-organized it
+actually is) — an honest limitation, not hidden.
+
+**What it deliberately excludes**: dependency-vulnerability scanning
+(`npm audit` and similar need a live registry lookup — this command stays
+fully offline; run it yourself for that) and any auto-fixing — `analyze`
+reports, the same boundary `review` draws. If the target has
+`ai-project.config.json`, `analyze` says so and points at `review` for more
+precise, stack-aware findings, but still runs its own generic pass rather
+than refusing. `analyze --help` covers the rest.
+
 ## Checking your environment
 
 `doctor` checks whether this machine can actually build what you are about
@@ -362,8 +417,8 @@ machine, before anything has been generated at all.
 technologies/<id>/
   manifest.json          required — everything else is optional
   setup.md  cursor-rule.mdc  claude-skill.md  env.md  folders.json
-  package.fragment.json  dependencies.json  prompts/*.md  checklists/*.md
-  templates/**           → mirrored into the project root
+  package.fragment.json  dependencies.json  detect.json  prompts/*.md
+  checklists/*.md  templates/**   → mirrored into the project root
 ```
 
 A missing file means the module contributes nothing to that builder, and new

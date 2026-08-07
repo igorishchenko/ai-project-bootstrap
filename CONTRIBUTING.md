@@ -37,6 +37,8 @@ technologies/<id>/
   folders.json           → project folders
   package.fragment.json  → package.json
   dependencies.json      → dependencies + install commands
+  detect.json            → signals `analyze` uses to guess this technology
+                            in a repo with no ai-project.config.json
   prompts/*.md           → prompts/
   checklists/*.md        → checklists/
   templates/**           → mirrored into the project root
@@ -102,6 +104,17 @@ test runner.
   diagram and `technologies/postgresql/architecture.md` for a starter ERD.
   If the diagram isn't a reflection of a real generated schema, say so in the
   prose next to it, the way those two do.
+- **`detect.json`** is optional and only needed when `dependencies.json` has
+  no npm package that uniquely identifies this technology (a CI config, a
+  non-JS framework) — `analyze` already matches package names from
+  `dependencies.json` itself for every module that has one, so most modules
+  need no `detect.json` at all. Shape: `{ "configFiles": ["eas.json"] }`,
+  paths relative to the analyzed repo's root; presence of any listed path
+  is a medium-confidence signal (see `technologies/fastapi/detect.json` or
+  `technologies/gitlab-ci/detect.json`). A package name declared by more
+  than one module (`react`, shared by `nextjs` and `react-native`) is never
+  used as a detection signal by either, since it can't tell them apart —
+  no module-side action needed for that, `analyze` excludes it automatically.
 - **`dependencies.json` and `package.fragment.json` may be templated.** They
   are parsed after rendering, so a module can vary by what else was selected —
   `{{#if has.react-native}}` picks native test tooling, and a web framework

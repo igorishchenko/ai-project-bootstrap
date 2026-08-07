@@ -9,6 +9,7 @@ import { loadRegistry } from '../core/registry/loadModules.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import { ADD_HELP_TEXT, mergeChoice, parseAddFlags, replaceChoice } from './add.js';
+import { runAnalyze } from './analyze.js';
 import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
 import { runImplement } from './implement.js';
@@ -191,6 +192,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (argv[0] === 'review') {
     return runReview(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'analyze') {
+    return runAnalyze(argv.slice(1), rootDir, reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);

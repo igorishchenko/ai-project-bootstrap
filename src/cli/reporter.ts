@@ -2,6 +2,7 @@ import pc from 'picocolors';
 import type { BuilderRun } from '../core/pipeline/runPipeline.js';
 import type { CheckResult } from './doctorChecks.js';
 import type { Finding, FindingCategory } from './reviewChecks.js';
+import type { CategoryScore, DetectedTechnology } from './analyzeChecks.js';
 import { isGeneratorError } from '../core/resolve/errors.js';
 
 /** All user-facing output, kept in one place so the CLI voice stays consistent. */
@@ -255,6 +256,7 @@ export class Reporter {
       security: 'Security',
       performance: 'Performance',
       dx: 'DX',
+      documentation: 'Documentation',
     };
     const markers: Record<Finding['severity'], string> = {
       critical: pc.red('✖'),
@@ -313,6 +315,66 @@ export class Reporter {
       this.write(pc.green('Nothing at or above the threshold.'));
     }
     this.write();
+  }
+
+  analyzeSummary(input: {
+    detected: DetectedTechnology[];
+    scores: Record<'architecture' | 'security' | 'performance' | 'documentation', CategoryScore>;
+    overall: number;
+  }): void {
+    const order: Array<{
+      key: 'architecture' | 'security' | 'performance' | 'documentation';
+      label: string;
+    }> = [
+      { key: 'architecture', label: 'Architecture' },
+      { key: 'security', label: 'Security' },
+      { key: 'performance', label: 'Performance' },
+      { key: 'documentation', label: 'Documentation' },
+    ];
+    const markers: Record<Finding['severity'], string> = {
+      critical: pc.red('✖'),
+      warning: pc.yellow('!'),
+      info: pc.cyan('ℹ'),
+    };
+    const scoreColor = (score: number): ((text: string) => string) =>
+      score >= 80 ? pc.green : score >= 50 ? pc.yellow : pc.red;
+
+    this.write();
+    this.write(pc.bold('Detected stack'));
+    if (input.detected.length === 0) {
+      this.write(
+        pc.dim('  Nothing recognized — no package.json dependency or known config file matched.'),
+      );
+    } else {
+      for (const tech of input.detected) {
+        const confidence = tech.confidence === 'high' ? pc.cyan('high') : pc.dim('medium');
+        this.write(
+          `  ${pc.cyan('◆')} ${tech.name} ${pc.dim(`(${tech.categoryLabel})`)} — ${confidence} confidence`,
+        );
+        this.write(pc.dim(`      ${tech.signal}`));
+      }
+    }
+    this.write();
+
+    const overallColor = scoreColor(input.overall);
+    this.write(`${pc.bold('Overall')}  ${overallColor(`${input.overall}/100`)}`);
+    this.write();
+
+    for (const { key, label } of order) {
+      const result = input.scores[key];
+      const color = scoreColor(result.score);
+      this.write(`${pc.bold(label)}  ${color(`${result.score}/100`)}`);
+      if (result.findings.length === 0) {
+        this.write(pc.dim('  No issues found.'));
+      } else {
+        for (const finding of result.findings) {
+          this.write(`  ${markers[finding.severity]} ${finding.summary}`);
+          if (finding.location) this.write(pc.dim(`      ${finding.location}`));
+          if (finding.suggestion) this.write(pc.dim(`      → ${finding.suggestion}`));
+        }
+      }
+      this.write();
+    }
   }
 
   list(rows: Array<{ id: string; category: string; name: string }>): void {
