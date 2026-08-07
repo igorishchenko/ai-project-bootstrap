@@ -189,7 +189,7 @@ native test tooling).
 
 ## CLI surface
 
-`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches five
+`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches six
 commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
@@ -205,14 +205,24 @@ installed now, reporting added/updated/unchanged file counts (see
 from) and which newly-supported AI providers the project never opted into;
 `implement` (`src/cli/implement.ts`) is a different shape entirely — it
 doesn't touch `Selection` or run `generate()` at all, see "Implementing a
-feature" below; and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`)
+feature" below; `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`)
 checks the local machine's tooling — Node/Git/npm always, plus mobile
 (Xcode/Android SDK/Watchman/Java) and backend (Docker) tooling on request —
 before generation, independent of it. Its check functions take an injected
 `DoctorEnv` (command runner, platform, env vars, Node version) rather than
-reading `process` directly, so they're testable without a real toolchain.
-See `.planning/roadmap/` for the commands planned on top of this (`review`,
-`analyze`).
+reading `process` directly, so they're testable without a real toolchain; and
+`review` (`src/cli/review.ts` + `src/cli/reviewChecks.ts`) runs a dry-run
+`generate()` (for the same added/updated classification `upgrade` reports,
+here read as "drifted from today's templates" rather than acted on) plus a
+handful of filesystem checks — missing declared folders, an unprotected
+`.env`, hardcoded-looking secrets, suppressed lint rules — against an
+already-generated project, and prints the result grouped by category
+(architecture, security, performance, dx) instead of writing anything. Its
+checks are pattern-based, not a real analyzer or an LLM call; see
+`reviewChecks.ts` for exactly what each one does and does not catch, and the
+README's "Reviewing a project" section for the same boundary stated for
+users. See `.planning/roadmap/` for the commands planned on top of this
+(`analyze`).
 
 ## Implementing a feature: `features/`
 

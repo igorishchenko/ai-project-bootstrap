@@ -256,6 +256,62 @@ is left alone, the same fingerprint-based protection `add` and `upgrade`
 use, tracked per feature in `implementation/<feature>/.manifest.json`.
 `implement --help` covers the rest.
 
+## Reviewing a project
+
+`review` runs a static, AI-oriented pass over an already-generated project and
+reports findings across four categories — architecture, security,
+performance, dx — instead of raw linter output:
+
+```bash
+npx ai-project-bootstrap review
+npx ai-project-bootstrap review --report            # also write review-report.md
+npx ai-project-bootstrap review --fail-on warning   # for CI — see exit codes below
+```
+
+```
+Security
+  ✖ .env exists but is not listed in .gitignore.
+      .gitignore
+      → Add ".env" to .gitignore immediately — real secrets are one `git add .` away from being committed.
+  ! eslint-disable suppresses a check instead of fixing the cause.
+      src/lib/analytics.ts:12
+      → Fix the underlying issue, or leave a comment explaining why this one is a deliberate exception.
+
+Performance
+  ℹ .cursor/rules/nextjs.mdc (Next.js)
+```
+
+What it checks, honestly:
+
+- **Architecture** — a folder a selected technology declares (`folders.json`)
+  that no longer exists on disk.
+- **Security** — `.env` present but not gitignored; a credential-shaped
+  string literal assigned directly in `src/`, `server/`, `app/` or `api/`
+  (never a value read from `process.env` or a placeholder like
+  `"your-api-key"`); an `eslint-disable`, `@ts-ignore` or `@ts-nocheck`
+  comment, none of which the generated `eslint` config flags on its own.
+- **Performance** — pointers to the stack-specific rule file already
+  generated for each selected technology (wherever it actually exists on
+  disk, given the AI tools this project chose), not pass/fail findings.
+  Reliably checking real performance concerns — unnecessary re-renders, N+1
+  queries, bundle size — needs runtime profiling or a bundler pass, neither
+  of which a static scan can do.
+- **DX** — generated files that would come out differently if regenerated
+  with today's templates (the same diff `upgrade --dry-run` would show).
+
+What it does **not** do: this is pattern-based static analysis — grep-like
+checks, config validation, existence checks — not a general-purpose static
+analyzer, and not an LLM call (the package has no AI-provider dependency).
+It will miss anything that needs actual type information, control-flow
+analysis, or judgment about your specific domain. It doesn't check whether
+`.env` itself is filled in — that's `npm run doctor` inside the generated
+project — and it doesn't modify anything; run `upgrade` to act on a `dx`
+finding.
+
+Exit code is non-zero once any finding is at or above `--fail-on`'s severity
+(`critical`, `warning` or `info`; default `critical`) — safe to wire into CI.
+`review --help` covers the rest.
+
 ## Checking your environment
 
 `doctor` checks whether this machine can actually build what you are about

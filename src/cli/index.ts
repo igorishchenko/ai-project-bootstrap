@@ -12,6 +12,7 @@ import { ADD_HELP_TEXT, mergeChoice, parseAddFlags, replaceChoice } from './add.
 import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
 import { runImplement } from './implement.js';
+import { runReview } from './review.js';
 import { runUpgrade } from './upgrade.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
@@ -187,6 +188,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (argv[0] === 'implement') {
     return runImplement(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'review') {
+    return runReview(argv.slice(1), rootDir, reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);

@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import type { BuilderRun } from '../core/pipeline/runPipeline.js';
 import type { CheckResult } from './doctorChecks.js';
+import type { Finding, FindingCategory } from './reviewChecks.js';
 import { isGeneratorError } from '../core/resolve/errors.js';
 
 /** All user-facing output, kept in one place so the CLI voice stays consistent. */
@@ -237,6 +238,79 @@ export class Reporter {
     this.write(pc.dim(`  Read ${input.planPath ?? 'the plan'}`));
     if (input.promptPaths[0]) {
       this.write(pc.dim(`  Hand ${input.promptPaths[0]} to your AI assistant when you're ready`));
+    }
+    this.write();
+  }
+
+  reviewFindings(input: {
+    findings: Finding[];
+    performancePointers: string[];
+    checklists: string[];
+    failOnThreshold: string;
+    failed: boolean;
+  }): void {
+    const order: FindingCategory[] = ['architecture', 'security', 'performance', 'dx'];
+    const labels: Record<FindingCategory, string> = {
+      architecture: 'Architecture',
+      security: 'Security',
+      performance: 'Performance',
+      dx: 'DX',
+    };
+    const markers: Record<Finding['severity'], string> = {
+      critical: pc.red('✖'),
+      warning: pc.yellow('!'),
+      info: pc.cyan('ℹ'),
+    };
+
+    this.write();
+
+    for (const category of order) {
+      if (category === 'performance') {
+        this.write(pc.bold(labels.performance));
+        if (input.performancePointers.length === 0) {
+          this.write(pc.dim('  No stack-specific guidance found for this project.'));
+        } else {
+          for (const pointer of input.performancePointers)
+            this.write(`  ${pc.cyan('ℹ')} ${pointer}`);
+        }
+        this.write();
+        continue;
+      }
+
+      const inCategory = input.findings.filter((finding) => finding.category === category);
+      this.write(pc.bold(labels[category]));
+      if (inCategory.length === 0) {
+        this.write(pc.dim('  No issues found.'));
+      } else {
+        for (const finding of inCategory) {
+          this.write(`  ${markers[finding.severity]} ${finding.summary}`);
+          if (finding.location) this.write(pc.dim(`      ${finding.location}`));
+          if (finding.suggestion) this.write(pc.dim(`      → ${finding.suggestion}`));
+        }
+      }
+      this.write();
+    }
+
+    if (input.checklists.length > 0) {
+      this.write(pc.bold('Recommended before shipping'));
+      for (const checklist of input.checklists) this.write(`  ${pc.dim('•')} ${checklist}`);
+      this.write();
+    }
+
+    const critical = input.findings.filter((finding) => finding.severity === 'critical').length;
+    const warning = input.findings.filter((finding) => finding.severity === 'warning').length;
+    const info = input.findings.filter((finding) => finding.severity === 'info').length;
+    this.write(
+      pc.dim(
+        `${critical} critical, ${warning} warning, ${info} info — failing on ${input.failOnThreshold} and above`,
+      ),
+    );
+    this.write();
+
+    if (input.failed) {
+      this.write(pc.red('Findings at or above the threshold were found.'));
+    } else {
+      this.write(pc.green('Nothing at or above the threshold.'));
     }
     this.write();
   }
