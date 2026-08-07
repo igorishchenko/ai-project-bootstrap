@@ -30,12 +30,24 @@ export class Reporter {
     targetDir: string;
     fileCount: number;
     preserved: string[];
+    /** Deleted because the technology that owned them is no longer selected — see `add --replace`. */
+    removed?: string[];
     modules: string[];
     autoIncluded: string[];
     warnings: string[];
     dryRun: boolean;
   }): void {
     this.write();
+
+    if (input.removed && input.removed.length > 0) {
+      const verb = input.dryRun ? 'Would remove' : 'Removed';
+      this.write(
+        `${pc.red('✖')} ${verb} — no longer part of this project: ${input.removed.length} file${input.removed.length > 1 ? 's' : ''}:`,
+      );
+      for (const file of input.removed.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (input.removed.length > 8) this.write(pc.dim(`    …and ${input.removed.length - 8} more`));
+      this.write();
+    }
 
     if (input.preserved.length > 0) {
       this.write(

@@ -151,11 +151,27 @@ a normal `--config` regeneration, so anything you have hand-edited since it
 was generated is left alone.
 
 A category that only allows one choice (payments, database, backend, ...) can
-be filled in when empty, but not swapped once answered: replacing an
-already-selected technology would leave its old files behind, since
-regeneration only ever adds or preserves — it never deletes. Multi-select
-categories (analytics, testing, crash-reporting) just grow. `add --help`
-covers the rest.
+be filled in when empty, or swapped out with `--replace`:
+
+```bash
+npx ai-project-bootstrap add supabase --replace
+npx ai-project-bootstrap add supabase --replace --dry-run   # preview first
+```
+
+No need to name what's being replaced — with one answer per single-select
+category, it's inferred from the project itself. This deletes the old
+technology's own files (`.cursor/rules/<id>.mdc`, `.claude/skills/<id>/`, and
+so on for every AI provider — see [What it generates](#what-it-generates))
+and regenerates merged output (`package.json`, `.env.example`, ...) from
+scratch, so it reflects only what's still selected. If any of the old
+technology's own files were hand-edited since generation, the whole replace
+is refused and nothing changes — move or remove them yourself, then run it
+again. (Directories left empty by a replace aren't cleaned up automatically —
+a cosmetic gap, not a correctness one.)
+
+Multi-select categories (analytics, testing, crash-reporting) just grow —
+`--replace` doesn't apply to them, and there's no `add`-side way to remove a
+single item from one yet. `add --help` covers the rest.
 
 ## Upgrading a project
 

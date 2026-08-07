@@ -124,9 +124,7 @@ content against its recorded fingerprint:
 
 - **Unchanged since generation** → safe to overwrite with the new output.
 - **Changed** (a human edited it) → left alone. Regeneration only ever adds or
-  preserves; it never silently overwrites hand-written work, and today it
-  never deletes files either (see `.planning/prompts/05-replace-technology.md`
-  for the one place that constraint currently blocks a feature).
+  preserves; it never silently overwrites hand-written work.
 
 This is the mechanism that makes `add <technology-id>` (`src/cli/add.ts`) and
 `upgrade` (`src/cli/upgrade.ts`) safe to run against a project someone has
@@ -135,6 +133,25 @@ non-preserved file as `added`, `updated` or `unchanged` by comparing the
 freshly rendered content against whatever is currently on disk (not the
 fingerprint — a separate comparison) — `upgrade` is what surfaces that
 breakdown, but the data is computed for every flush, dry-run included.
+
+Regeneration deleting a file is otherwise deliberately impossible — the one
+exception is `add <id> --replace`, which needs to remove whatever the
+technology it's swapping out exclusively owned. Rather than trying to track
+"which builder wrote which file for which module" (impossible for merged
+output like `package.json`, which every module's deps flow through),
+`removablePaths` (`preserve.ts`, alongside `preservedPaths`) diffs the file
+set recorded at the _previous_ generation against what the _new_ selection
+actually produces: anything that vanishes is a candidate for deletion, split
+by the same fingerprint check `preservedPaths` uses — untouched since
+generation is safe to delete, hand-edited blocks the entire replace (nothing
+is deleted or written) rather than silently keeping or losing it. Merged
+output never "vanishes" this way — it persists with different (correctly
+recomputed) content — so it needs no special-casing at all, just the normal
+flush. Deletion runs _before_ the flush that writes the new
+`ai-project.config.json`, so a failure partway through leaves the old config
+— and so the old selection — as the source of truth for a retry. Cleaning up
+directories left empty by a deletion is out of scope; a stale empty directory
+is a cosmetic issue, not a correctness one.
 
 ## Selection resolution: `requires`, `conflicts`, `dependencies`
 
@@ -177,7 +194,10 @@ commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
 `add` (`src/cli/add.ts`) retrofits one more technology into an
 already-generated project by loading `ai-project.config.json`, mutating the
 saved `Selection`, and re-running the same `generate()` → flush path with
-`force: true`; `upgrade` (`src/cli/upgrade.ts`) is the same
+`force: true` — or, with `--replace`, swaps out a single-select category's
+existing answer instead of requiring it empty, deleting the old technology's
+own files first (see "Non-destructive regeneration" above for exactly how);
+`upgrade` (`src/cli/upgrade.ts`) is the same
 `generate()` → flush path again, but _without_ mutating the selection — it
 refreshes a project's output against whatever templates/builders are
 installed now, reporting added/updated/unchanged file counts (see

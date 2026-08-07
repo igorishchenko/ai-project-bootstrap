@@ -45,6 +45,66 @@ export function preservedPaths(
   return preserved.sort();
 }
 
+export interface RemovablePaths {
+  /** Vanished from this generation, untouched since the last one — safe to delete. */
+  safe: string[];
+  /** Vanished from this generation, but hand-edited since — must not be silently deleted. */
+  handEdited: string[];
+}
+
+/**
+ * Works out which previously-generated files a new generation no longer
+ * produces at all — the file set for `add --replace` to consider deleting.
+ *
+ * A path counts as "vanished" when it was recorded before but isn't among
+ * `currentFiles` this time — dropping a technology from the selection is
+ * exactly what makes its own `.cursor/rules/<id>.mdc`, `.claude/skills/<id>/`,
+ * etc. stop being produced, while merged output (`package.json`,
+ * `.env.example`, ...) keeps existing with different content instead of
+ * vanishing, so those never appear here — the normal fingerprint-preserving
+ * flush already regenerates them correctly from whatever is still selected.
+ *
+ * Splits vanished paths the same way `preservedPaths` splits everything
+ * else: matching the recorded fingerprint means nobody touched it since it
+ * was written, so it is safe to delete; a mismatch means a human edited it,
+ * and deleting that silently would be exactly the kind of data loss this
+ * whole mechanism exists to prevent.
+ *
+ * Without `recorded` (no fingerprint history — an unusually old or
+ * hand-assembled config), there is no way to tell "vanished" from "never
+ * ours to begin with", so nothing is reported as removable.
+ */
+export function removablePaths(
+  targetDir: string,
+  recorded: Fingerprints | undefined,
+  currentFiles: readonly string[],
+): RemovablePaths {
+  if (!recorded || Object.keys(recorded).length === 0) return { safe: [], handEdited: [] };
+
+  const current = new Set(currentFiles);
+  const vanished = Object.keys(recorded).filter((relative) => !current.has(relative));
+
+  const safe: string[] = [];
+  const handEdited: string[] = [];
+
+  for (const relative of vanished) {
+    const full = path.join(targetDir, ...relative.split('/'));
+    if (!fs.existsSync(full)) continue; // already gone — nothing to do
+
+    let onDisk: string;
+    try {
+      onDisk = fs.readFileSync(full, 'utf8');
+    } catch {
+      continue; // unreadable or binary — leave it alone rather than guess
+    }
+
+    if (fingerprint(onDisk) === recorded[relative]) safe.push(relative);
+    else handEdited.push(relative);
+  }
+
+  return { safe: safe.sort(), handEdited: handEdited.sort() };
+}
+
 /** Reads the `generated` fingerprints from a project's config, if present. */
 export function readFingerprints(configFile: string): Fingerprints | undefined {
   if (!fs.existsSync(configFile)) return undefined;

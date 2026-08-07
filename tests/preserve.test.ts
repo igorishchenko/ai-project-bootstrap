@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { preservedPaths, readFingerprints } from '../src/core/vfs/preserve.js';
+import { preservedPaths, readFingerprints, removablePaths } from '../src/core/vfs/preserve.js';
 import { fingerprint } from '../src/core/vfs/fingerprint.js';
 import { VirtualFs } from '../src/core/vfs/virtualFs.js';
 
@@ -66,6 +66,68 @@ describe('preservedPaths', () => {
 
     expect(preservedPaths(dir, ['docs/setup.md'], undefined)).toEqual([]);
     expect(preservedPaths(dir, ['docs/setup.md'], {})).toEqual([]);
+  });
+});
+
+describe('removablePaths', () => {
+  it('reports a vanished, untouched file as safe to delete', () => {
+    const dir = tempDir();
+    write(dir, '.cursor/rules/firebase.mdc', 'as generated');
+
+    const result = removablePaths(
+      dir,
+      { '.cursor/rules/firebase.mdc': fingerprint('as generated') },
+      [], // the new generation no longer produces this file at all
+    );
+
+    expect(result.safe).toEqual(['.cursor/rules/firebase.mdc']);
+    expect(result.handEdited).toEqual([]);
+  });
+
+  it('refuses to classify a hand-edited vanished file as safe', () => {
+    const dir = tempDir();
+    write(dir, '.cursor/rules/firebase.mdc', 'MY EDIT, not what was generated');
+
+    const result = removablePaths(
+      dir,
+      { '.cursor/rules/firebase.mdc': fingerprint('as generated') },
+      [],
+    );
+
+    expect(result.handEdited).toEqual(['.cursor/rules/firebase.mdc']);
+    expect(result.safe).toEqual([]);
+  });
+
+  it('does not consider a file that the new generation still produces', () => {
+    const dir = tempDir();
+    write(dir, 'package.json', 'as generated');
+
+    // package.json persists across a replace (merged output, not deleted) —
+    // it's in currentFiles, so it must never show up here even though its
+    // content will differ once the new selection is generated.
+    const result = removablePaths(dir, { 'package.json': fingerprint('as generated') }, [
+      'package.json',
+    ]);
+
+    expect(result.safe).toEqual([]);
+    expect(result.handEdited).toEqual([]);
+  });
+
+  it('ignores a vanished file that is already gone from disk', () => {
+    const dir = tempDir();
+
+    const result = removablePaths(dir, { '.cursor/rules/firebase.mdc': 'abc' }, []);
+
+    expect(result.safe).toEqual([]);
+    expect(result.handEdited).toEqual([]);
+  });
+
+  it('reports nothing removable without fingerprint history', () => {
+    const dir = tempDir();
+    write(dir, '.cursor/rules/firebase.mdc', 'anything');
+
+    expect(removablePaths(dir, undefined, []).safe).toEqual([]);
+    expect(removablePaths(dir, {}, []).safe).toEqual([]);
   });
 });
 
