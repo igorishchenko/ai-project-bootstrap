@@ -1,5 +1,6 @@
 import pc from 'picocolors';
 import type { BuilderRun } from '../core/pipeline/runPipeline.js';
+import type { CheckResult } from './doctorChecks.js';
 import { isGeneratorError } from '../core/resolve/errors.js';
 
 /** All user-facing output, kept in one place so the CLI voice stays consistent. */
@@ -83,10 +84,35 @@ export class Reporter {
     this.write();
   }
 
+  checks(results: CheckResult[]): void {
+    this.write();
+    for (const result of results) {
+      if (result.ok) {
+        this.write(`${pc.green('✔')} ${result.name}${pc.dim(` — ${result.detail}`)}`);
+        continue;
+      }
+      const marker = result.severity === 'required' ? pc.red('✖') : pc.yellow('!');
+      this.write(`${marker} ${result.name}${pc.dim(` — ${result.detail}`)}`);
+      if (result.hint) this.write(pc.dim(`    → ${result.hint}`));
+    }
+    this.write();
+  }
+
+  doctorSummary(ready: boolean): void {
+    if (ready) {
+      this.write(pc.green('Ready.') + ' Nothing required is missing.');
+    } else {
+      this.write(pc.red('Not ready.') + ' Fix the items marked ✖ above before generating.');
+    }
+    this.write();
+  }
+
   list(rows: Array<{ id: string; category: string; name: string }>): void {
     const width = Math.max(...rows.map((row) => row.id.length), 4);
     for (const row of rows) {
-      this.write(`${pc.bold(row.id.padEnd(width))}  ${pc.dim(row.category.padEnd(16))}  ${row.name}`);
+      this.write(
+        `${pc.bold(row.id.padEnd(width))}  ${pc.dim(row.category.padEnd(16))}  ${row.name}`,
+      );
     }
   }
 

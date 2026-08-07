@@ -9,6 +9,7 @@ import { loadRegistry } from '../core/registry/loadModules.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import type { Selection } from '../core/types.js';
 import { ADD_HELP_TEXT, mergeChoice, parseAddFlags } from './add.js';
+import { runDoctor } from './doctor.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
@@ -173,6 +174,9 @@ async function main(argv: string[]): Promise<number> {
 
   if (argv[0] === 'add') {
     return runAdd(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'doctor') {
+    return runDoctor(argv.slice(1), rootDir, reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);

@@ -165,13 +165,19 @@ native test tooling).
 
 ## CLI surface
 
-`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches two
-commands: no subcommand runs the wizard (or replays `--config`), and `add`
-(`src/cli/add.ts`) retrofits one more technology into an already-generated
-project by loading `ai-project.config.json`, mutating the saved `Selection`,
-and re-running the same `generate()` → flush path with `force: true`. See
-`.planning/roadmap/` for the commands planned on top of this (`doctor`,
-`upgrade`, `implement`, `review`, `analyze`).
+`src/cli/index.ts` is the entrypoint (`main()`). Today it dispatches three
+commands: no subcommand runs the wizard (or replays `--config`/`--preset`);
+`add` (`src/cli/add.ts`) retrofits one more technology into an
+already-generated project by loading `ai-project.config.json`, mutating the
+saved `Selection`, and re-running the same `generate()` → flush path with
+`force: true`; and `doctor` (`src/cli/doctor.ts` + `src/cli/doctorChecks.ts`)
+checks the local machine's tooling — Node/Git/npm always, plus mobile
+(Xcode/Android SDK/Watchman/Java) and backend (Docker) tooling on request —
+before generation, independent of it. Its check functions take an injected
+`DoctorEnv` (command runner, platform, env vars, Node version) rather than
+reading `process` directly, so they're testable without a real toolchain.
+See `.planning/roadmap/` for the commands planned on top of this (`upgrade`,
+`implement`, `review`, `analyze`).
 
 ## Testing
 

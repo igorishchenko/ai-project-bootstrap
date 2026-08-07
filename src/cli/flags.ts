@@ -117,6 +117,7 @@ ai-project-bootstrap — bootstrap the development environment for AI-assisted d
 Usage
   npx ai-project-bootstrap [directory] [options]
   npx ai-project-bootstrap add <technology-id> [options]
+  npx ai-project-bootstrap doctor [options]
 
 The project name doubles as its location: answer "my-app" to generate ./my-app,
 or "./apps/my-app" to create that folder and name the project "my-app".
@@ -124,6 +125,9 @@ or "./apps/my-app" to create that folder and name the project "my-app".
 Already have a generated project and want one more technology in it? Run
 \`ai-project-bootstrap add <technology-id>\` inside it instead of starting over —
 see \`ai-project-bootstrap add --help\` for details.
+
+Not sure this machine can build the stack you have in mind? Run
+\`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.
 
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)

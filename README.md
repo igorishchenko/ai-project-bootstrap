@@ -157,6 +157,30 @@ regeneration only ever adds or preserves — it never deletes. Multi-select
 categories (analytics, testing, crash-reporting) just grow. `add --help`
 covers the rest.
 
+## Checking your environment
+
+`doctor` checks whether this machine can actually build what you are about
+to generate — before you spend a wizard run finding out the hard way:
+
+```bash
+npx ai-project-bootstrap doctor              # Node, Git, npm, Bun — always
+npx ai-project-bootstrap doctor --mobile     # + Xcode, Android SDK, Watchman, Java
+npx ai-project-bootstrap doctor --backend    # + Docker
+npx ai-project-bootstrap doctor --all        # everything
+npx ai-project-bootstrap doctor --for startup-mvp   # exactly what that preset needs
+```
+
+Node, Git and npm are the only checks that affect the exit code — everything
+else (Bun, Xcode, Android SDK, Watchman, Java, Docker) is informational, since
+this machine may simply not be the one you use for that platform. With no
+flags, an interactive terminal is asked which extra tooling to check; a
+non-interactive one (CI, a pipe) runs the universal checks only. `doctor
+--help` covers the rest.
+
+This is separate from the `npm run doctor` a _generated_ project ships with,
+which checks that project's own `.env` and setup — this one checks the
+machine, before anything has been generated at all.
+
 ## Adding a technology
 
 **Create one folder. Change no code.**
