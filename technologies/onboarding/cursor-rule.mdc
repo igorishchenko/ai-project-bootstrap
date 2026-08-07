@@ -1,0 +1,19 @@
+---
+description: Onboarding flow conventions
+globs: ["src/features/onboarding/**/*.ts", "src/features/onboarding/**/*.tsx"]
+alwaysApply: false
+---
+
+# Onboarding Flow
+
+- `completed` from `useOnboarding()` is `boolean | undefined` — `undefined`
+  means "still loading from storage," not "not onboarded." Routing on
+  `completed === false` before the load finishes sends every fresh install
+  through onboarding twice; check for `undefined` first and render nothing
+  (or a splash) until it resolves.
+- `complete()` runs on **both** finishing the last step and skipping. Skip is
+  not "ask again next launch" — it is "user chose not to see this," and it
+  should be persisted exactly the same way finishing is.
+- Step *content* (`OnboardingStep[]`) is a prop, not hardcoded in
+  `OnboardingFlow` — add or reorder steps where the flow is rendered, not
+  inside the component.

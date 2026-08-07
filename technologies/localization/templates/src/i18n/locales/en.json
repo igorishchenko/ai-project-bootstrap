@@ -1,0 +1,12 @@
+{
+  "common": {
+    "welcome": "Welcome, {name}!",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "onboarding": {
+    "title": "Get started"
+  },
+  "items_one": "{count} item",
+  "items_other": "{count} items"
+}

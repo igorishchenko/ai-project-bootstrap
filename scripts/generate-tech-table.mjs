@@ -21,6 +21,7 @@ const CATEGORY_LABELS = {
   backend: 'Backend',
   auth: 'Auth',
   database: 'Database',
+  features: 'Features',
   payments: 'Payments',
   analytics: 'Analytics',
   'crash-reporting': 'Crash reporting',

@@ -1,0 +1,12 @@
+{
+  "common": {
+    "welcome": "¡Bienvenido, {name}!",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "onboarding": {
+    "title": "Empecemos"
+  },
+  "items_one": "{count} elemento",
+  "items_other": "{count} elementos"
+}

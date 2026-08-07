@@ -73,6 +73,14 @@
     "order": 40
   },
   {
+    "id": "features",
+    "label": "Cross-cutting features",
+    "type": "multi",
+    "required": false,
+    "allowNone": true,
+    "order": 45
+  },
+  {
     "id": "payments",
     "label": "Payments",
     "type": "single",

@@ -70,23 +70,24 @@ project carries the documentation, rules and scripts for each.
 
 <!-- TECH_TABLE:START -->
 
-| Category        | Modules                                      |
-| --------------- | -------------------------------------------- |
-| Mobile          | React Native, Expo                           |
-| Web             | Next.js, React (Vite)                        |
-| Backend         | Supabase, Firebase, FastAPI, NestJS          |
-| Auth            | Supabase Auth, Clerk, Auth0                  |
-| Database        | SQLite, PostgreSQL (self-managed), Firestore |
-| Payments        | RevenueCat, Stripe                           |
-| Analytics       | PostHog                                      |
-| Crash reporting | Sentry, Crashlytics                          |
-| Notifications   | Expo Push, OneSignal                         |
-| Storage         | Supabase Storage, Cloudflare R2              |
-| Email           | Resend, SendGrid                             |
-| Monitoring      | Better Stack                                 |
-| CI/CD           | GitHub Actions, GitLab CI                    |
-| Testing         | Jest, Detox                                  |
-| Deployment      | EAS Submit, Fastlane                         |
+| Category        | Modules                                          |
+| --------------- | ------------------------------------------------ |
+| Mobile          | React Native, Expo                               |
+| Web             | Next.js, React (Vite)                            |
+| Backend         | Supabase, Firebase, FastAPI, NestJS              |
+| Auth            | Supabase Auth, Clerk, Auth0                      |
+| Database        | SQLite, PostgreSQL (self-managed), Firestore     |
+| Features        | Dark Theme, Onboarding Flow, Localization (i18n) |
+| Payments        | RevenueCat, Stripe                               |
+| Analytics       | PostHog                                          |
+| Crash reporting | Sentry, Crashlytics                              |
+| Notifications   | Expo Push, OneSignal                             |
+| Storage         | Supabase Storage, Cloudflare R2                  |
+| Email           | Resend, SendGrid                                 |
+| Monitoring      | Better Stack                                     |
+| CI/CD           | GitHub Actions, GitLab CI                        |
+| Testing         | Jest, Detox                                      |
+| Deployment      | EAS Submit, Fastlane                             |
 
 <!-- TECH_TABLE:END -->
 
@@ -99,7 +100,7 @@ can grow without any change to the questions.
 
 ## Stack presets
 
-Answering all sixteen categories from scratch is unnecessary for the common
+Answering all seventeen categories from scratch is unnecessary for the common
 case. A preset pre-fills the categories it covers — the wizard still shows
 what it filled and lets you back out to a fully custom run before anything is
 asked, and still asks about anything the preset leaves unopinionated.
