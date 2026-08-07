@@ -2,4 +2,5 @@ dist
 node_modules
 assets
 technologies
+archetypes
 tests/__snapshots__

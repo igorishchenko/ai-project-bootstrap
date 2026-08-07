@@ -259,6 +259,18 @@ describe('add, end to end', () => {
   });
 });
 
+/** Mirrors `pruneEmptyDirectories` in src/cli/index.ts — see there for why it exists. */
+function pruneEmptyDirectories(dir: string, root: string): void {
+  let current = dir;
+  while (true) {
+    const relative = path.relative(root, current);
+    if (!relative || relative.startsWith('..')) return;
+    if (!fs.existsSync(current) || fs.readdirSync(current).length > 0) return;
+    fs.rmdirSync(current);
+    current = path.dirname(current);
+  }
+}
+
 /**
  * Mirrors `runAdd`'s --replace branch in src/cli/index.ts step for step, so
  * these tests exercise the same sequence a real `add <id> --replace` run
@@ -289,8 +301,13 @@ function applyReplace(
   }
 
   if (!dryRun) {
-    for (const relative of safe)
-      fs.rmSync(path.join(targetDir, ...relative.split('/')), { force: true });
+    const parentDirs = new Set<string>();
+    for (const relative of safe) {
+      const full = path.join(targetDir, ...relative.split('/'));
+      fs.rmSync(full, { force: true });
+      parentDirs.add(path.dirname(full));
+    }
+    for (const dir of parentDirs) pruneEmptyDirectories(dir, targetDir);
   }
 
   const preserve = new Set(preservedPaths(targetDir, newFiles, recorded));
@@ -342,10 +359,10 @@ describe('add --replace, end to end', () => {
     expect(removed).toContain('.cursor/rules/firebase.mdc');
     expect(removed).toContain('.claude/skills/firebase/SKILL.md');
     expect(fs.existsSync(path.join(targetDir, '.cursor/rules/firebase.mdc'))).toBe(false);
-    // The file is deleted; the (now-empty) directory is deliberately left
-    // alone — cleaning up empty scaffolding directories is out of scope, see
-    // the note in ARCHITECTURE.md / the --replace section of README.md.
     expect(fs.existsSync(path.join(targetDir, '.claude/skills/firebase/SKILL.md'))).toBe(false);
+    // The directory a removed file left empty is pruned too — see
+    // pruneEmptyDirectories in src/cli/index.ts.
+    expect(fs.existsSync(path.join(targetDir, '.claude/skills/firebase'))).toBe(false);
 
     expect(flushed.files).toContain('.cursor/rules/supabase.mdc');
     expect(fs.existsSync(path.join(targetDir, '.cursor/rules/supabase.mdc'))).toBe(true);

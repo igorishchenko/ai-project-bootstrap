@@ -252,9 +252,13 @@ output never "vanishes" this way — it persists with different (correctly
 recomputed) content — so it needs no special-casing at all, just the normal
 flush. Deletion runs _before_ the flush that writes the new
 `ai-project.config.json`, so a failure partway through leaves the old config
-— and so the old selection — as the source of truth for a retry. Cleaning up
-directories left empty by a deletion is out of scope; a stale empty directory
-is a cosmetic issue, not a correctness one.
+— and so the old selection — as the source of truth for a retry.
+`pruneEmptyDirectories()` (`src/cli/index.ts`) then walks up from each
+removed file's directory, removing it and any now-empty ancestor up to (not
+including) the project root — a directory a removed file left empty (e.g.
+`.claude/skills/<old-id>/`) doesn't linger on disk. It only ever removes a
+directory it finds genuinely empty, so unrelated content already there is
+never touched.
 
 ## Selection resolution: `requires`, `conflicts`, `dependencies`
 

@@ -50,6 +50,18 @@ function readVersion(rootDir: string): string {
   return readGeneratorPackageInfo(rootDir).version;
 }
 
+/** Removes `dir` and each ancestor up to (not including) `root` while they're empty. */
+function pruneEmptyDirectories(dir: string, root: string): void {
+  let current = dir;
+  while (true) {
+    const relative = path.relative(root, current);
+    if (!relative || relative.startsWith('..')) return; // reached or passed the project root
+    if (!fs.existsSync(current) || fs.readdirSync(current).length > 0) return;
+    fs.rmdirSync(current);
+    current = path.dirname(current);
+  }
+}
+
 /**
  * Adds one technology to a project that was already generated.
  *
@@ -149,9 +161,17 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     }
     removed = safe;
     if (!flags.dryRun) {
+      const parentDirs = new Set<string>();
       for (const relative of removed) {
-        fs.rmSync(path.join(targetDir, ...relative.split('/')), { force: true });
+        const full = path.join(targetDir, ...relative.split('/'));
+        fs.rmSync(full, { force: true });
+        parentDirs.add(path.dirname(full));
       }
+      // A removed file's own directory (e.g. `.claude/skills/<old-id>/`) is
+      // otherwise left behind, empty, on disk — walk up from each pruning
+      // anything now empty, stopping at the first non-empty dir or the
+      // project root.
+      for (const dir of parentDirs) pruneEmptyDirectories(dir, targetDir);
     }
   }
 
