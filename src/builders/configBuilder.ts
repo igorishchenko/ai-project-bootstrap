@@ -12,6 +12,11 @@ export const CONFIG_FILENAME = 'ai-project.config.json';
  * fingerprints are compared against what is on disk, so files you have edited
  * are left alone instead of being silently overwritten. Runs last, once every
  * other builder has written its output.
+ *
+ * `generatorVersion` records which release of this package produced the
+ * output, so `upgrade` can report what it is upgrading from — and so a
+ * project generated before this field existed just reads as `undefined`
+ * rather than failing.
  */
 export const configBuilder: Builder = {
   id: 'config',
@@ -33,6 +38,7 @@ export const configBuilder: Builder = {
 
     vfs.writeJson(CONFIG_FILENAME, {
       projectName: ctx.selection.projectName,
+      generatorVersion: ctx.generatorVersion,
       choices,
       generated,
     });

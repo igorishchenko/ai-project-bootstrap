@@ -6,5 +6,11 @@
   "requires": [],
   "conflicts": ["resend"],
   "dependencies": [],
-  "priority": 66
+  "priority": 66,
+  "pricing": {
+    "model": "freemium",
+    "estimateUsd": 19.95,
+    "notes": "No permanent free tier — a 60-day trial only (100 emails/day). Cheapest paid tier (Essentials) is $19.95/mo for up to 50,000 emails. Checked 2026-08-07.",
+    "url": "https://www.twilio.com/en-us/products/email-api/pricing"
+  }
 }

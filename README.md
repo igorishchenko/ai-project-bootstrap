@@ -15,44 +15,154 @@ npx ai-project-bootstrap
 ## What it generates
 
 ```
-docs/          setup, architecture, deployment, testing, coding-standards, release
-.cursor/rules/ one rule per selected technology, plus the stack-agnostic set
-.claude/skills/ one skill per selected technology, plus architecture/testing/performance
+docs/          setup, architecture, roadmap, costs, deployment, testing, coding-standards, release
 prompts/       nine reusable prompts for common tasks
 checklists/    release, plus whatever the selected technologies contribute
 .github/       CI workflow
 .env.example   every variable from every module, documented and deduplicated
 package.json   merged dependencies with version conflicts resolved
-README.md  CLAUDE.md  AGENTS.md  ai-project.config.json
+README.md  CLAUDE.md  AGENTS.md  GEMINI.md  ai-project.config.json
 ```
+
+`docs/architecture.md` includes Mermaid diagrams, not just prose: a component
+diagram built from the resolved stack (nodes per module, edges from `requires`
+plus a default frontend → backend → database backbone), a sequence diagram
+per module that has one — every auth provider ships a real sign-in flow
+diagram naming that provider, not a generic placeholder — and, for a selected
+database technology, a starter entity-relationship diagram. That ERD is
+explicitly a starting point (nothing here scaffolds real tables), not a
+reflection of your actual schema — GitHub, GitLab and most markdown viewers
+render Mermaid natively.
+
+`docs/roadmap.md` is a suggested build order for exactly the stack you
+selected, grouped into weeks (capped at three items each) using
+`config/categories.json`'s own category ordering — backend and auth before
+payments, deployment last. A category whose selected module has a matching
+`ai-project-bootstrap implement <feature>` command (authentication, payments,
+push notifications) names it directly. It's explicitly a starting point to
+reorder or split, not a schedule handed down from above.
+
+`docs/costs.md`, and a one-line `Est. cost` summary at the end of the run,
+estimate the monthly cost of the paid services you selected — see
+"Estimating monthly cost" below.
+
+Plus one rule per selected technology, and the stack-agnostic set
+(architecture, performance, testing, typescript), for every AI coding tool
+the wizard's first question selects — Cursor and Claude Code by default,
+or whichever combination you answer with:
+
+| Tool           | Where                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| Cursor         | `.cursor/rules/<id>.mdc`                                                                       |
+| Claude Code    | `.claude/skills/<id>/SKILL.md`                                                                 |
+| GitHub Copilot | `.github/copilot-instructions.md` (project-wide) + `.github/instructions/<id>.instructions.md` |
+| Continue.dev   | `.continue/rules/<id>.md`                                                                      |
+| Cline          | `.clinerules/<id>.md`                                                                          |
+| Roo Code       | `.roo/rules/<id>.md`                                                                           |
+
+All six render the same source content (`technologies/<id>/cursor-rule.mdc`)
+into each tool's own format — a module author writes one rule, not six.
+OpenAI Codex reads the generated `AGENTS.md` directly, and Gemini CLI reads
+the generated `GEMINI.md`, so neither needs a per-technology directory.
 
 ## Available technologies
 
-The first question asks what you are building — **mobile**, **web**, or **both**
-— and the rest of the wizard follows from it. Choosing both asks for a mobile
-platform and then a web framework, and the generated project carries the
-documentation, rules and scripts for each.
+After asking which AI tools you use, the wizard asks what you are building —
+**mobile**, **web**, or **both** — and the rest follows from that. Choosing
+both asks for a mobile platform and then a web framework, and the generated
+project carries the documentation, rules and scripts for each.
 
-| Category | Modules |
-| --- | --- |
-| Mobile | React Native, Expo |
-| Web | Next.js, React (Vite) |
-| Backend | Supabase |
-| Auth | Supabase Auth, Clerk |
-| Database | SQLite, PostgreSQL |
-| Payments | RevenueCat |
-| Analytics | PostHog |
-| Crash reporting | Sentry |
-| Notifications | Expo Push, OneSignal |
-| Storage | Supabase Storage, Cloudflare R2 |
-| Email | Resend, SendGrid |
-| Monitoring | Better Stack |
-| CI/CD | GitHub Actions, GitLab CI |
-| Testing | Jest, Detox |
-| Deployment | EAS Submit, Fastlane |
+<!-- TECH_TABLE:START -->
+
+| Category        | Modules                                          |
+| --------------- | ------------------------------------------------ |
+| Mobile          | React Native, Expo                               |
+| Web             | Next.js, React (Vite)                            |
+| Backend         | Supabase, Firebase, FastAPI, NestJS              |
+| Auth            | Supabase Auth, Clerk, Auth0                      |
+| Database        | SQLite, PostgreSQL (self-managed), Firestore     |
+| Features        | Dark Theme, Onboarding Flow, Localization (i18n) |
+| Payments        | RevenueCat, Stripe                               |
+| Analytics       | PostHog                                          |
+| Crash reporting | Sentry, Crashlytics                              |
+| Notifications   | Expo Push, OneSignal                             |
+| Storage         | Supabase Storage, Cloudflare R2                  |
+| Email           | Resend, SendGrid                                 |
+| Monitoring      | Better Stack                                     |
+| CI/CD           | GitHub Actions, GitLab CI                        |
+| Testing         | Jest, Detox                                      |
+| Deployment      | EAS Submit, Fastlane                             |
+
+<!-- TECH_TABLE:END -->
+
+This table is generated from `technologies/*/manifest.json` — run
+`pnpm docs:tech-table` after adding or removing a module, and
+`tests/techTable.test.ts` fails CI if it ever drifts out of sync.
 
 A category with no installed modules is skipped by the wizard, so the catalogue
 can grow without any change to the questions.
+
+## Stack presets
+
+Answering all seventeen categories from scratch is unnecessary for the common
+case. A preset pre-fills the categories it covers — the wizard still shows
+what it filled and lets you back out to a fully custom run before anything is
+asked, and still asks about anything the preset leaves unopinionated.
+
+| Preset        | Fills                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| `startup-mvp` | Expo + Supabase + RevenueCat + Sentry + PostHog — a fast solo/indie mobile stack           |
+| `web-saas`    | Next.js + Supabase + Stripe + Resend + Sentry + PostHog — a solo/small-team web SaaS stack |
+| `enterprise`  | Next.js + NestJS + PostgreSQL + GitHub Actions — a self-managed backend for a larger team  |
+
+```bash
+npx ai-project-bootstrap --preset startup-mvp             # pick a preset, review the rest interactively
+npx ai-project-bootstrap --preset startup-mvp --yes       # fully non-interactive
+```
+
+`--preset`, `--archetype` and `--config` cannot be combined — all three are
+ways of pre-filling the selection, and mixing them would leave it ambiguous
+which one wins. Presets live in `config/presets.json` and are validated the
+same way a hand-written `--config` file is: every module id must exist, and
+the resulting selection must resolve without a conflict, or the tool refuses
+to start rather than shipping a broken preset.
+
+## Starter templates
+
+A preset picks a stack. An **archetype** picks a stack _and_ scaffolds a
+real, running starting point on top of it — actual screens wired to an
+actual data model, not just dependencies:
+
+```bash
+npx ai-project-bootstrap --archetype habit-tracker             # pick it, review the rest interactively
+npx ai-project-bootstrap --archetype habit-tracker --yes       # fully non-interactive
+```
+
+| Archetype       | Stack                                        | Scaffolds                                                                                                                                     |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `habit-tracker` | Expo + Supabase + Supabase Auth + Dark Theme | `habits`/`habit_checkins` tables with Row Level Security, email magic-link sign-in, a habit list + add-habit screen with real streak tracking |
+
+`--archetype` pre-fills the wizard exactly the way `--preset` does — same
+review-before-generating flow, same "still asks about anything left
+unopinionated" behavior (payments, analytics, notifications and the rest
+are yours to add with `add <technology-id>` afterward, kept out of the
+default to keep the starter's first-run surface small). What's different is
+what happens after: a second pass writes the archetype's own
+`scaffold/**` — real `.ts`/`.tsx` source and a Supabase migration file, not
+just docs — into the same project, rendered through the identical
+`{{var}}` templating every `technologies/*` module already uses.
+
+Generate one, then read `docs/starter-template.md` in the result — it
+documents exactly what got scaffolded, what's deliberately not wired in (no
+router — this generator never scaffolds one, for any project — see
+`docs/architecture.md`), and how to apply the migration before running it.
+
+Only one archetype ships today, deliberately — see `CONTRIBUTING.md` for
+the full contract if you want to add another. An archetype is
+`archetypes/<id>/manifest.json` (a `choices` selection, shaped exactly like
+a `config/presets.json` entry) plus `archetypes/<id>/scaffold/**`, the same
+way a technology is a `manifest.json` plus `templates/**` — adding one
+touches no code in `src/`.
 
 ## Usage
 
@@ -61,6 +171,7 @@ npx ai-project-bootstrap                          # interactive
 npx ai-project-bootstrap my-app --yes             # accept defaults
 npx ai-project-bootstrap --name ./apps/my-app     # create ./apps/my-app
 npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
+npx ai-project-bootstrap --preset startup-mvp --yes   # generate from a preset, non-interactively
 npx ai-project-bootstrap --dry-run                # show what would be written
 npx ai-project-bootstrap --list-modules
 ```
@@ -70,16 +181,18 @@ in `./my-app`; answer `./apps/my-app` and that folder is created — parents and
 all — with the project named `my-app` inside it. `--out` overrides the location
 without touching the name.
 
-| Flag | Meaning |
-| --- | --- |
-| `-o, --out <dir>` | Target directory (default: the project slug) |
-| `--name <name>` | Project name or path, skipping the first question |
-| `--config <file>` | Replay a saved selection instead of asking |
-| `-y, --yes` | Accept defaults for every question |
-| `--dry-run` | Print the file list without writing anything |
-| `--force` | Write into a non-empty directory |
-| `--skip <ids>` | Comma-separated builder ids to skip |
-| `--list-modules` | List every available technology |
+| Flag               | Meaning                                                                     |
+| ------------------ | --------------------------------------------------------------------------- |
+| `-o, --out <dir>`  | Target directory (default: the project slug)                                |
+| `--name <name>`    | Project name or path, skipping the first question                           |
+| `--config <file>`  | Replay a saved selection instead of asking                                  |
+| `--preset <id>`    | Start from a curated stack — see [Stack presets](#stack-presets)            |
+| `--archetype <id>` | Start from a full app starter — see [Starter templates](#starter-templates) |
+| `-y, --yes`        | Accept defaults for every question                                          |
+| `--dry-run`        | Print the file list without writing anything                                |
+| `--force`          | Write into a non-empty directory                                            |
+| `--skip <ids>`     | Comma-separated builder ids to skip                                         |
+| `--list-modules`   | List every available technology                                             |
 
 ## Growing a project after the fact
 
@@ -99,11 +212,286 @@ a normal `--config` regeneration, so anything you have hand-edited since it
 was generated is left alone.
 
 A category that only allows one choice (payments, database, backend, ...) can
-be filled in when empty, but not swapped once answered: replacing an
-already-selected technology would leave its old files behind, since
-regeneration only ever adds or preserves — it never deletes. Multi-select
-categories (analytics, testing, crash-reporting) just grow. `add --help`
-covers the rest.
+be filled in when empty, or swapped out with `--replace`:
+
+```bash
+npx ai-project-bootstrap add supabase --replace
+npx ai-project-bootstrap add supabase --replace --dry-run   # preview first
+```
+
+No need to name what's being replaced — with one answer per single-select
+category, it's inferred from the project itself. This deletes the old
+technology's own files (`.cursor/rules/<id>.mdc`, `.claude/skills/<id>/`, and
+so on for every AI provider — see [What it generates](#what-it-generates))
+and regenerates merged output (`package.json`, `.env.example`, ...) from
+scratch, so it reflects only what's still selected. If any of the old
+technology's own files were hand-edited since generation, the whole replace
+is refused and nothing changes — move or remove them yourself, then run it
+again. (Directories left empty by a replace aren't cleaned up automatically —
+a cosmetic gap, not a correctness one.)
+
+Multi-select categories (analytics, testing, crash-reporting) just grow —
+`--replace` doesn't apply to them, and there's no `add`-side way to remove a
+single item from one yet. `add --help` covers the rest.
+
+## Upgrading a project
+
+`add` brings in something new; `upgrade` refreshes what is already there —
+bring a project's rules, prompts, docs and hygiene config up to date with
+whatever version of `ai-project-bootstrap` is installed now, using the exact
+same selection it was generated with:
+
+```bash
+cd my-app
+npx ai-project-bootstrap upgrade
+npx ai-project-bootstrap upgrade --dry-run       # preview first
+npx ai-project-bootstrap upgrade --dir ../my-app # from elsewhere
+```
+
+It reports what actually changed — added, updated, and how many files were
+already current — and, same as `add`, never touches a file you have
+hand-edited since it was generated. Nothing is added to or removed from the
+stack; that's what `add` is for. If newer AI tools are supported than this
+project originally selected, `upgrade` says so without adding them itself —
+edit `"aiTools"` in `ai-project.config.json` and upgrade again to include
+them. `upgrade --help` covers the rest.
+
+## Implementing a feature
+
+Everything so far scaffolds the project or wires in a technology. `implement`
+goes a step further: it writes a stack-tailored implementation plan, AI
+prompts, a validation checklist and a handful of skeleton files for a
+_specific feature_ — not the whole project, and not a full implementation
+either. You (or your AI assistant, using the generated prompts) write the
+actual logic; `implement` makes sure it's tailored to exactly the stack you
+picked rather than generic advice with the provider name swapped in.
+
+```bash
+npx ai-project-bootstrap implement --list-features
+npx ai-project-bootstrap implement authentication
+npx ai-project-bootstrap implement authentication --dry-run   # preview first
+```
+
+It reads `ai-project.config.json` to see which technology answers the
+feature's category — `authentication` reads `auth`, `payments` reads
+`payments`, and so on — with no question asked. Two projects that answer
+`auth` differently get genuinely different output from the same command:
+
+```bash
+$ ai-project-bootstrap implement authentication   # a project with Supabase Auth selected
+
+Implementing Authentication (Supabase Auth) in my-app…
+
+Feature    Authentication — Supabase Auth
+Plan       implementation/authentication/plan.md
+Checklist  implementation/authentication/checklist.md
+Prompts    1
+    implementation/authentication/prompts/implement.md
+Scaffold   4
+    src/features/auth/authClient.ts
+    src/features/auth/screens/SignInScreen.tsx
+    src/features/auth/screens/SignUpScreen.tsx
+    src/hooks/auth/useAuth.ts
+```
+
+`implementation/authentication/plan.md` opens with session persistence via
+`AsyncStorage` and the Row Level Security policies that actually gate access
+— because this project picked Supabase Auth. Run the identical command
+against a project that picked Clerk instead, and the plan opens with
+`ClerkProvider` and a secure token cache, the scaffold has no `authClient.ts`
+(Clerk's own hooks _are_ the client), and there's a
+`useAuthedFetch.ts` hook attaching a bearer token to your backend instead.
+Same command, same feature, deliberately different output.
+
+Currently covered, each with real content for every provider this project
+supports — not a generic template:
+
+| Feature              | Reads category  | Providers                   |
+| -------------------- | --------------- | --------------------------- |
+| `authentication`     | `auth`          | Supabase Auth, Clerk, Auth0 |
+| `payments`           | `payments`      | RevenueCat, Stripe          |
+| `push-notifications` | `notifications` | Expo Push, OneSignal        |
+
+Re-running is safe — a scaffold file you've hand-edited since it was written
+is left alone, the same fingerprint-based protection `add` and `upgrade`
+use, tracked per feature in `implementation/<feature>/.manifest.json`.
+`implement --help` covers the rest.
+
+## Estimating monthly cost
+
+Every generation prints one line — `Est. cost $134/mo (Supabase, OneSignal, ...) — 3 usage-based services not counted` — and writes the full breakdown to `docs/costs.md`:
+
+```
+## Estimated monthly total: $134/mo
+
+- **Supabase** — $25/mo (paid tier) — [pricing](https://supabase.com/pricing)
+  Free tier: 50,000 MAU, 500MB database, 5GB egress, projects pause after a
+  week idle. Pro ($25/mo) removes pausing and adds daily backups.
+
+## Usage-based (not included in the total above)
+
+- **Stripe** — [pricing](https://stripe.com/pricing)
+  No monthly fee. Standard US card processing is 2.9% + 30¢ per transaction.
+```
+
+The estimate is **only ever a starting point, never a guaranteed figure** —
+every module's pricing data was checked by hand against that vendor's own
+pricing page on a specific date (recorded in its `notes`), and pricing pages
+change. Four buckets, each rendered separately rather than blended into one
+misleading number:
+
+- **Estimated total** — only technologies with a known flat or freemium
+  starting price (`pricing.model: "flat" | "freemium"` and a real
+  `estimateUsd`) are summed. A service declared `flat`/`freemium` but
+  missing a number is treated as unknown, never silently counted as $0.
+- **Usage-based** — bills on your app's own traffic, storage or transaction
+  volume (Stripe's per-transaction fee, RevenueCat's revenue share). There
+  is no honest single number for these, so they're listed with a link
+  instead of forced into the total.
+- **Free** — a real, billable-capable service that happens to cost nothing
+  at typical usage (e.g. Expo Push) — shown for completeness, not omitted.
+- **No cost data available** — the module simply has no `pricing` field.
+  Most modules land here on purpose: a testing library or a UI feature has
+  no vendor to price, so `pricing` stays unset rather than forced to a
+  meaningless value.
+
+Adding pricing data to a module you maintain is documented in
+**[CONTRIBUTING.md](CONTRIBUTING.md)**.
+
+## Reviewing a project
+
+`review` runs a static, AI-oriented pass over an already-generated project and
+reports findings across four categories — architecture, security,
+performance, dx — instead of raw linter output:
+
+```bash
+npx ai-project-bootstrap review
+npx ai-project-bootstrap review --report            # also write review-report.md
+npx ai-project-bootstrap review --fail-on warning   # for CI — see exit codes below
+```
+
+```
+Security
+  ✖ .env exists but is not listed in .gitignore.
+      .gitignore
+      → Add ".env" to .gitignore immediately — real secrets are one `git add .` away from being committed.
+  ! eslint-disable suppresses a check instead of fixing the cause.
+      src/lib/analytics.ts:12
+      → Fix the underlying issue, or leave a comment explaining why this one is a deliberate exception.
+
+Performance
+  ℹ .cursor/rules/nextjs.mdc (Next.js)
+```
+
+What it checks, honestly:
+
+- **Architecture** — a folder a selected technology declares (`folders.json`)
+  that no longer exists on disk.
+- **Security** — `.env` present but not gitignored; a credential-shaped
+  string literal assigned directly in `src/`, `server/`, `app/` or `api/`
+  (never a value read from `process.env` or a placeholder like
+  `"your-api-key"`); an `eslint-disable`, `@ts-ignore` or `@ts-nocheck`
+  comment, none of which the generated `eslint` config flags on its own.
+- **Performance** — pointers to the stack-specific rule file already
+  generated for each selected technology (wherever it actually exists on
+  disk, given the AI tools this project chose), not pass/fail findings.
+  Reliably checking real performance concerns — unnecessary re-renders, N+1
+  queries, bundle size — needs runtime profiling or a bundler pass, neither
+  of which a static scan can do.
+- **DX** — generated files that would come out differently if regenerated
+  with today's templates (the same diff `upgrade --dry-run` would show).
+
+What it does **not** do: this is pattern-based static analysis — grep-like
+checks, config validation, existence checks — not a general-purpose static
+analyzer, and not an LLM call (the package has no AI-provider dependency).
+It will miss anything that needs actual type information, control-flow
+analysis, or judgment about your specific domain. It doesn't check whether
+`.env` itself is filled in — that's `npm run doctor` inside the generated
+project — and it doesn't modify anything; run `upgrade` to act on a `dx`
+finding.
+
+Exit code is non-zero once any finding is at or above `--fail-on`'s severity
+(`critical`, `warning` or `info`; default `critical`) — safe to wire into CI.
+`review --help` covers the rest.
+
+## Analyzing any repository
+
+`review` needs `ai-project.config.json` to know the stack. `analyze` doesn't
+— it works against **any** repository, including ones this tool never
+generated, inferring the stack from `package.json` dependencies and known
+config files instead:
+
+```bash
+npx ai-project-bootstrap analyze
+npx ai-project-bootstrap analyze --dir ../someone-elses-repo
+npx ai-project-bootstrap analyze --report   # also write analyze-report.md
+```
+
+```
+Detected stack
+  ◆ Next.js (Web framework) — high confidence
+      package.json dependency "next"
+
+Architecture  70/100
+  ! No tests found.
+      → Even a handful of tests around the riskiest logic catches regressions a README never will.
+```
+
+**Detection is a guess, and says so.** Every entry names its own evidence and
+confidence: `high` means an exact `package.json` dependency match; `medium`
+means only a config file's presence (e.g. `requirements.txt` says "some
+Python framework," not specifically which). A package name declared by more
+than one technology — `react` alone can't tell Next.js, Vite and React
+Native apart — is never used as a signal at all, rather than guessed at.
+
+**Scoring rubric** — four categories, each out of 100, fixed and additive
+(or subtractive for security) rather than a black box:
+
+| Category          | Points come from (out of 100)                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture**  | A recognized source directory — `src`, `app`, `lib`, `server` or `api` (30); tests present (30); a lint config (20); `package.json` declaring both a `build` script and a `test`/`lint` script (20) |
+| **Security**      | Starts at 100. `-25` per hardcoded-looking credential, `-30` for an ungitignored `.env`, `-5` per lint-suppression comment (capped at `-20` total), `-10` for no `.gitignore` at all                |
+| **Performance**   | `.gitignore` excludes `node_modules` (30); a recognized bundler/build config exists (40); no committed image over 1MB (30)                                                                          |
+| **Documentation** | `README.md` (40); `CONTRIBUTING.md` (20); a `LICENSE` file (15); a `docs/` directory with markdown content (15); `package.json`'s `description` filled in (10)                                      |
+
+Security and performance checks are the same functions `review` uses — a
+hardcoded secret or an ungitignored `.env` means the same thing whether or
+not the repo has an `ai-project.config.json`. Architecture and documentation
+scoring is JS/TS-shaped throughout (a Python or Go repo will score low on
+"source directory" and "lint config" regardless of how well-organized it
+actually is) — an honest limitation, not hidden.
+
+**What it deliberately excludes**: dependency-vulnerability scanning
+(`npm audit` and similar need a live registry lookup — this command stays
+fully offline; run it yourself for that) and any auto-fixing — `analyze`
+reports, the same boundary `review` draws. If the target has
+`ai-project.config.json`, `analyze` says so and points at `review` for more
+precise, stack-aware findings, but still runs its own generic pass rather
+than refusing. `analyze --help` covers the rest.
+
+## Checking your environment
+
+`doctor` checks whether this machine can actually build what you are about
+to generate — before you spend a wizard run finding out the hard way:
+
+```bash
+npx ai-project-bootstrap doctor              # Node, Git, npm, Bun — always
+npx ai-project-bootstrap doctor --mobile     # + Xcode, Android SDK, Watchman, Java
+npx ai-project-bootstrap doctor --backend    # + Docker
+npx ai-project-bootstrap doctor --all        # everything
+npx ai-project-bootstrap doctor --for startup-mvp   # exactly what that preset needs
+```
+
+Node, Git and npm are the only checks that affect the exit code — everything
+else (Bun, Xcode, Android SDK, Watchman, Java, Docker) is informational, since
+this machine may simply not be the one you use for that platform. With no
+flags, an interactive terminal is asked which extra tooling to check; a
+non-interactive one (CI, a pipe) runs the universal checks only. `doctor
+--help` covers the rest.
+
+This is separate from the `npm run doctor` a _generated_ project ships with,
+which checks that project's own `.env` and setup — this one checks the
+machine, before anything has been generated at all.
 
 ## Adding a technology
 
@@ -112,84 +500,16 @@ covers the rest.
 ```
 technologies/<id>/
   manifest.json          required — everything else is optional
-  setup.md               → a section in docs/setup.md
-  ios.md  android.md     → platform subsections of that section
-  architecture.md        → a section in docs/architecture.md
-  cursor-rule.mdc        → .cursor/rules/<id>.mdc
-  claude-skill.md        → .claude/skills/<id>/SKILL.md
-  env.md                 → .env.example
-  folders.json           → project folders
-  package.fragment.json  → package.json
-  dependencies.json      → dependencies + install commands
-  prompts/*.md           → prompts/
-  checklists/*.md        → checklists/
-  templates/**           → mirrored into the project root
+  setup.md  cursor-rule.mdc  claude-skill.md  env.md  folders.json
+  package.fragment.json  dependencies.json  detect.json  prompts/*.md
+  checklists/*.md  templates/**   → mirrored into the project root
 ```
 
-A missing file means the module contributes nothing to that builder. The
-manifest:
-
-```json
-{
-  "id": "stripe",
-  "name": "Stripe",
-  "category": "payments",
-  "description": "Card payments and subscriptions.",
-  "requires": [],
-  "conflicts": [],
-  "dependencies": [],
-  "priority": 45
-}
-```
-
-`category` must exist in `config/categories.json` — that file declares the
-wizard's questions, and options are derived from the modules found on disk. A
-category with no installed modules is skipped rather than shown empty.
-
-A question may instead declare fixed `choices`, making it a **gating question**:
-its answer shapes the wizard rather than selecting a technology. Other questions
-opt in with `showWhen`, and a question ruled out this way also removes any module
-that would have pulled one of its modules in — a web-only project is never
-offered a mobile-only test runner.
-
-```jsonc
-{ "id": "target", "label": "What are you building?", "type": "single",
-  "required": true, "allowNone": false, "order": 5,
-  "choices": [{ "value": "mobile", "label": "Mobile app" },
-              { "value": "hybrid", "label": "Both" }] }
-
-{ "id": "mobile", "label": "Mobile platform", …, "showWhen": { "target": ["mobile", "hybrid"] } }
-```
-
-`requires` are hard prerequisites, pulled in transitively. `conflicts` are
-mutual exclusions. `dependencies` are soft edges that only affect ordering.
-
-### Conventions inside a module
-
-- **`claude-skill.md`** is plain content — no frontmatter. The builder writes
-  it to `.claude/skills/<id>/SKILL.md`, the directory shape Claude Code
-  requires to discover a skill at all, and synthesises the frontmatter itself:
-  `description` from the manifest, `paths` from the same `globs` the module's
-  `cursor-rule.mdc` already declares. Cursor and Claude activate on the same
-  files without the glob list living in two places.
-- **`env.md`** documents variables in a markdown table with `Key`, `Required`,
-  `Description` and `Example` columns. Prose around the table is ignored.
-- **`dependencies.json` and `package.fragment.json` may be templated.** They are
-  parsed after rendering, so a module can vary by what else was selected —
-  `{{#if has.react-native}}` picks native test tooling, and a web framework
-  namespaces its `start` script when a mobile platform already defines one.
-- **`templates/`** has three reserved subtrees: `root/` (project root),
-  `github/` (`.github/`) and `hygiene/` (lint, format and hook configs).
-  Everything else mirrors to the project root at its own path.
-- **`_name`** in a template path becomes `.name` on output — npm rewrites a
-  packaged `.gitignore`, so sources store `_gitignore`.
-- Every text asset is rendered with `{{var}}`, `{{#if}}`, `{{#unless}}` and
-  `{{#each}}` against the full stack, so module content can adapt to what else
-  was selected.
-
-New modules are picked up by the test suite automatically — `tests/moduleContract.test.ts`
-iterates the directory, so a malformed module fails CI without anyone writing a
-test for it.
+A missing file means the module contributes nothing to that builder, and new
+modules are picked up by the test suite automatically —
+`tests/moduleContract.test.ts` iterates the directory, so a malformed module
+fails CI without anyone writing a test for it. Full file contract, templating
+conventions and the gating-question mechanism: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ## Architecture
 
@@ -197,18 +517,11 @@ test for it.
 Wizard → Selection → Validation → Resolution → Builders → Virtual FS → Disk
 ```
 
-- `src/core/registry/` — discovers modules and parses the file contract
-- `src/core/resolve/` — validation, `requires` closure, conflicts, cycle
-  detection, deterministic ordering
-- `src/core/vfs/` — an in-memory tree; nothing touches disk until every builder
-  has succeeded, so a failure leaves no half-written project
-- `src/core/merge/` — package.json, dependencies (semver conflicts), env, folders
-- `src/builders/` — fourteen independent builders, each owning one output area
-
-**No file under `src/` names a technology.** Builders iterate the resolved
-modules and read well-known filenames; they never branch on a module id. That
+**No file under `src/` names a technology** — builders iterate the resolved
+modules and read well-known filenames, never branching on a module id. That
 constraint is what lets the catalogue grow to hundreds of technologies without
-the engine changing.
+the engine changing. Full pipeline, builder registry and the fingerprint-based
+preservation mechanism: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ## Development
 
@@ -222,3 +535,6 @@ pnpm typecheck
 
 Generation is deterministic — no timestamps, no absolute paths, stable
 ordering — so the same selection always produces byte-identical output.
+Contribution workflow: **[CONTRIBUTING.md](CONTRIBUTING.md)**. Release
+history: **[CHANGELOG.md](CHANGELOG.md)**. Planned features and how to pick
+one up: **[.planning/](.planning/README.md)**.

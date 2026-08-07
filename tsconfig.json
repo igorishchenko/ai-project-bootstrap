@@ -18,7 +18,10 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true
+    "noEmit": true,
+
+    "allowJs": true,
+    "checkJs": false
   },
-  "include": ["src", "tests", "*.config.ts"]
+  "include": ["src", "tests", "scripts", "*.config.ts"]
 }

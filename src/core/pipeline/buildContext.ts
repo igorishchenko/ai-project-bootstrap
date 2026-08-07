@@ -16,23 +16,27 @@ export function slugify(name: string): string {
 }
 
 export function createBuildContext(input: {
+  rootDir: string;
   projectName: string;
   targetDir: string;
   selection: Selection;
   modules: LoadedModule[];
   categories: CategoryQuestion[];
   base?: LoadedModule;
+  generatorVersion: string;
 }): BuildContext {
   // Base always leads, so its content frames every merged document.
   const modules = input.base ? [input.base, ...input.modules] : [...input.modules];
 
   const ctx: BuildContext = {
+    rootDir: input.rootDir,
     projectName: input.projectName,
     targetDir: input.targetDir,
     selection: input.selection,
     modules,
     categories: input.categories,
     warnings: [],
+    generatorVersion: input.generatorVersion,
   };
 
   // `dependencies.json` may branch on the rest of the stack, so it is rendered

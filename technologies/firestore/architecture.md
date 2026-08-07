@@ -22,3 +22,25 @@ Storing `authorName` on the post is not sloppiness — there is no join, and
 fetching each author separately turns one query into N. The cost is that
 renaming a user must update every post that copied the name, so keep duplicated
 fields few and slow to change.
+
+### Starter data model
+
+Nothing here scaffolds real collections — this is a starting point to
+replace, not a reflection of your actual schema. Drawn as an ER diagram for
+familiarity, but there is no real foreign key: `authorId` is a copied value,
+not an enforced relationship, which is exactly the tradeoff above.
+
+```mermaid
+erDiagram
+  USERS ||--o{ POSTS : "authorId (copied, not joined)"
+  USERS {
+    string id PK
+    string name
+  }
+  POSTS {
+    string id PK
+    string title
+    string authorId
+    string authorName
+  }
+```

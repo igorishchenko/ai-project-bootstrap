@@ -1,0 +1,21 @@
+---
+description: Dark theme conventions
+globs: ["src/theme/**/*.ts", "src/theme/**/*.tsx"]
+alwaysApply: false
+---
+
+# Dark Theme
+
+- Read colors through `useTheme()` / `themeTokens[theme]` — never hardcode a
+  hex value in a component. A hardcoded `#ffffff` background is invisible in
+  light mode and a solid white box in dark mode.
+- Three states, not two: `light`, `dark`, `system`. Default to `system` —
+  overriding it should be something a user opts into, not the starting state.
+- The provider renders nothing (mobile) or nothing themed (web, via
+  `data-theme`) until the stored preference loads. Do not remove that guard
+  to "fix" a perceived flash — removing it reintroduces the flash it exists
+  to prevent.
+- On web, toggle the theme via the `data-theme` attribute on
+  `<html>`/`documentElement`, never a class — it is what `[data-theme="dark"]`
+  selectors in CSS expect, and changing the mechanism silently breaks every
+  rule written against it.

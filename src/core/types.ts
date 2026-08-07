@@ -5,6 +5,20 @@
  * technology. Technologies are data discovered at runtime from `technologies/`.
  */
 
+/**
+ * Published pricing for a module's underlying service, as of whenever a
+ * maintainer last checked — never inferred, always manually verified against
+ * the vendor's own pricing page. `estimateUsd` only applies to `flat` and
+ * `freemium`; `usage-based` and `free` modules leave it unset rather than
+ * guess at a number that depends on the built app's own traffic.
+ */
+export interface Pricing {
+  model: 'free' | 'flat' | 'usage-based' | 'freemium';
+  estimateUsd?: number;
+  notes?: string;
+  url?: string;
+}
+
 /** Metadata every module exposes via `manifest.json`. */
 export interface Manifest {
   id: string;
@@ -19,6 +33,8 @@ export interface Manifest {
   dependencies: string[];
   /** Lower runs first. Used for deterministic ordering of merged output. */
   priority: number;
+  /** Unset when the module has no cost of its own, or none worth stating. */
+  pricing?: Pricing;
 }
 
 /** A single environment variable declared by a module's `env.md` table. */
@@ -111,6 +127,12 @@ export interface CategoryQuestion {
    * id; the question is shown when *any* listed value was chosen.
    */
   showWhen?: Record<string, string[]>;
+  /**
+   * Pre-checked options for a multi-select gating question: used as the
+   * initial selection shown interactively, and as the answer `--yes` accepts.
+   * Ignored for single-select questions, which take their first choice.
+   */
+  defaultChoices?: string[];
 }
 
 /** True for a question whose answer is a wizard branch, not a module id. */
@@ -125,8 +147,22 @@ export interface Selection {
   choices: Record<string, string | string[]>;
 }
 
+/**
+ * A curated, named bundle of category answers — `config/presets.json`.
+ * `choices` has the exact same shape as `Selection.choices`, so a preset is
+ * validated and resolved through the same pipeline as a hand-written config.
+ */
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  choices: Record<string, string | string[]>;
+}
+
 /** Everything a builder is given. Builders must not read from disk. */
 export interface BuildContext {
+  /** Generator root — the directory holding technologies/, assets/, features/, config/. */
+  rootDir: string;
   projectName: string;
   targetDir: string;
   selection: Selection;
@@ -135,6 +171,8 @@ export interface BuildContext {
   categories: CategoryQuestion[];
   /** Non-fatal notes surfaced in the final report. */
   warnings: string[];
+  /** The generator's own version at build time — recorded so `upgrade` can compare. */
+  generatorVersion: string;
 }
 
 export interface Builder {

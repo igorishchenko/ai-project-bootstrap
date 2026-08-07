@@ -12,10 +12,17 @@ export interface FlushOptions {
 }
 
 export interface FlushResult {
+  /** Every non-preserved file that was (or, with `dryRun`, would be) written. */
   files: string[];
   directories: string[];
   /** Files that existed and were left untouched because of `preserve`. */
   preserved: string[];
+  /** Of `files`: did not exist on disk before this flush. */
+  added: string[];
+  /** Of `files`: existed, with different content — genuinely overwritten. */
+  updated: string[];
+  /** Of `files`: existed with byte-identical content — written, but nothing changed. */
+  unchanged: string[];
 }
 
 /**
@@ -102,11 +109,25 @@ export class VirtualFs implements VirtualFsLike {
   flush(targetDir: string, options: FlushOptions = {}): FlushResult {
     const preserve = options.preserve ?? new Set<string>();
     const preserved = [...this.files.keys()].filter((file) => preserve.has(file)).sort();
+    const files = [...this.files.keys()].filter((file) => !preserve.has(file)).sort();
+
+    const added: string[] = [];
+    const updated: string[] = [];
+    const unchanged: string[] = [];
+    for (const file of files) {
+      const current = readIfExists(path.join(targetDir, ...file.split('/')));
+      if (current === undefined) added.push(file);
+      else if (current === this.files.get(file)) unchanged.push(file);
+      else updated.push(file);
+    }
 
     const result: FlushResult = {
-      files: [...this.files.keys()].filter((file) => !preserve.has(file)).sort(),
+      files,
       directories: [...this.directories].sort(),
       preserved,
+      added,
+      updated,
+      unchanged,
     };
 
     if (options.dryRun) return result;
@@ -148,4 +169,13 @@ function normalize(filePath: string): string {
     );
   }
   return cleaned === '.' ? '' : cleaned;
+}
+
+/** The file's current contents, or `undefined` if it doesn't exist or can't be read as text. */
+function readIfExists(fullPath: string): string | undefined {
+  try {
+    return fs.readFileSync(fullPath, 'utf8');
+  } catch {
+    return undefined;
+  }
 }

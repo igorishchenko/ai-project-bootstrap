@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CategoryQuestion, LoadedModule, Manifest } from '../types.js';
+import type { CategoryQuestion, LoadedModule, Manifest, Preset } from '../types.js';
 import { parseManifest } from './manifestSchema.js';
 import { loadModuleAssets } from './moduleAssets.js';
+import { loadPresets } from './loadPresets.js';
 import { GeneratorError } from '../resolve/errors.js';
 
 /** The always-on pseudo-module holding stack-agnostic content. */
@@ -15,6 +16,8 @@ export interface Registry {
   base?: LoadedModule;
   categories: CategoryQuestion[];
   byId: Map<string, LoadedModule>;
+  /** Curated stack bundles from `config/presets.json`, already validated. */
+  presets: Preset[];
 }
 
 function readJson<T>(file: string): T {
@@ -96,7 +99,9 @@ export function loadRegistry(rootDir: string): Registry {
     base = loadModuleAssets(baseManifest, baseDir, true);
   }
 
-  return { modules, base, categories, byId };
+  const presets = loadPresets(rootDir, categories, byId);
+
+  return { modules, base, categories, byId, presets };
 }
 
 function loadCategories(file: string): CategoryQuestion[] {
@@ -123,7 +128,10 @@ export function groupByCategory(modules: LoadedModule[]): Map<string, LoadedModu
     grouped.set(module.manifest.category, list);
   }
   for (const list of grouped.values()) {
-    list.sort((a, b) => a.manifest.priority - b.manifest.priority || a.manifest.id.localeCompare(b.manifest.id));
+    list.sort(
+      (a, b) =>
+        a.manifest.priority - b.manifest.priority || a.manifest.id.localeCompare(b.manifest.id),
+    );
   }
   return grouped;
 }

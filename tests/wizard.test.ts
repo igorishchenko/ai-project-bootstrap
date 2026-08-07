@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { CategoryQuestion } from '../src/core/types.js';
+import type { CategoryQuestion, Preset } from '../src/core/types.js';
 import { makeModule } from './helpers/modules.js';
 
 /**
@@ -7,7 +7,9 @@ import { makeModule } from './helpers/modules.js';
  * question and only then being told the combination is invalid is not a choice.
  */
 const asked: Array<{ message: string; values: string[] }> = [];
+const notes: Array<{ message: string; title?: string }> = [];
 let answers: Record<string, string | string[]> = {};
+let confirmAnswer = true;
 
 vi.mock('@clack/prompts', () => ({
   isCancel: () => false,
@@ -26,13 +28,27 @@ vi.mock('@clack/prompts', () => ({
     asked.push({ message, values: options.map((option) => option.value) });
     return answers[message] ?? [];
   },
+  confirm: async ({ message }: { message: string }) => {
+    asked.push({ message, values: [] });
+    return confirmAnswer;
+  },
+  note: (message: string, title?: string) => {
+    notes.push({ message, title });
+  },
 }));
 
 const { runWizard } = await import('../src/cli/wizard.js');
 
 const categories: CategoryQuestion[] = [
   { id: 'backend', label: 'Backend', type: 'single', required: false, allowNone: true, order: 10 },
-  { id: 'database', label: 'Database', type: 'single', required: false, allowNone: true, order: 20 },
+  {
+    id: 'database',
+    label: 'Database',
+    type: 'single',
+    required: false,
+    allowNone: true,
+    order: 20,
+  },
   { id: 'auth', label: 'Auth', type: 'single', required: false, allowNone: true, order: 30 },
   {
     id: 'analytics',
@@ -48,7 +64,12 @@ const modules = [
   makeModule({ id: 'supabase', name: 'Supabase', category: 'backend' }),
   makeModule({ id: 'postgresql', name: 'Postgres', category: 'database', conflicts: ['supabase'] }),
   makeModule({ id: 'sqlite', name: 'SQLite', category: 'database' }),
-  makeModule({ id: 'supabase-auth', name: 'Supabase Auth', category: 'auth', requires: ['supabase'] }),
+  makeModule({
+    id: 'supabase-auth',
+    name: 'Supabase Auth',
+    category: 'auth',
+    requires: ['supabase'],
+  }),
   makeModule({ id: 'clerk', name: 'Clerk', category: 'auth', conflicts: ['supabase-auth'] }),
   makeModule({ id: 'posthog', name: 'PostHog', category: 'analytics' }),
 ];
@@ -98,7 +119,9 @@ const optionsFor = (label: string): string[] =>
 
 beforeEach(() => {
   asked.length = 0;
+  notes.length = 0;
   answers = {};
+  confirmAnswer = true;
 });
 
 describe('runWizard', () => {
@@ -142,7 +165,12 @@ describe('runWizard', () => {
   it('skips a category left with no compatible options', async () => {
     const narrow = [
       makeModule({ id: 'supabase', name: 'Supabase', category: 'backend' }),
-      makeModule({ id: 'postgresql', name: 'Postgres', category: 'database', conflicts: ['supabase'] }),
+      makeModule({
+        id: 'postgresql',
+        name: 'Postgres',
+        category: 'database',
+        conflicts: ['supabase'],
+      }),
     ];
     answers = { Backend: 'supabase' };
 
@@ -201,6 +229,68 @@ describe('runWizard', () => {
     expect(selection.choices.target).toBe('hybrid');
   });
 
+  it('records a multi-select gating answer (e.g. which AI tools) as an array, not a module', async () => {
+    const withAiTools: CategoryQuestion[] = [
+      {
+        id: 'aiTools',
+        label: 'Which AI coding tools do you use?',
+        type: 'multi',
+        required: false,
+        allowNone: false,
+        order: 1,
+        defaultChoices: ['cursor', 'claude'],
+        choices: [
+          { value: 'cursor', label: 'Cursor' },
+          { value: 'claude', label: 'Claude Code' },
+          { value: 'copilot', label: 'GitHub Copilot' },
+        ],
+      },
+      ...targeted,
+    ];
+    answers = {
+      'Which AI coding tools do you use?': ['copilot'],
+      'What are you building?': 'mobile',
+    };
+
+    const selection = await runWizard({
+      categories: withAiTools,
+      modules: platforms,
+      name: 'Test',
+    });
+
+    expect(selection.choices.aiTools).toEqual(['copilot']);
+  });
+
+  it("accepts a multi-select gating question's defaultChoices under --yes", async () => {
+    const withAiTools: CategoryQuestion[] = [
+      {
+        id: 'aiTools',
+        label: 'Which AI coding tools do you use?',
+        type: 'multi',
+        required: false,
+        allowNone: false,
+        order: 1,
+        defaultChoices: ['cursor', 'claude'],
+        choices: [
+          { value: 'cursor', label: 'Cursor' },
+          { value: 'claude', label: 'Claude Code' },
+        ],
+      },
+      ...targeted,
+    ];
+
+    const selection = await runWizard({
+      categories: withAiTools,
+      modules: platforms,
+      name: 'Test',
+      acceptDefaults: true,
+    });
+
+    expect(selection.choices.aiTools).toEqual(['cursor', 'claude']);
+    // --yes must never prompt at all.
+    expect(asked).toEqual([]);
+  });
+
   it('does not offer a module that would contradict an earlier answer', async () => {
     // Choosing web-only means no mobile platform, so a mobile-only tool must
     // not be offered — accepting it would silently add React Native.
@@ -211,7 +301,14 @@ describe('runWizard', () => {
     ];
     const categoriesWithTesting = [
       ...targeted,
-      { id: 'testing', label: 'Testing', type: 'multi' as const, required: false, allowNone: true, order: 50 },
+      {
+        id: 'testing',
+        label: 'Testing',
+        type: 'multi' as const,
+        required: false,
+        allowNone: true,
+        order: 50,
+      },
     ];
     answers = { 'What are you building?': 'web', 'Web framework': 'nextish' };
 
@@ -231,5 +328,145 @@ describe('runWizard', () => {
     const byId = new Map(modules.map((module) => [module.manifest.id, module]));
 
     expect(() => resolveSelection(selection, byId)).not.toThrow();
+  });
+});
+
+describe('presets', () => {
+  const presetCategories: CategoryQuestion[] = [...targeted, ...categories];
+  // 'alt-mobile' sorts before 'rn' (same priority, alphabetical tiebreak), so
+  // it — not the preset's choice — is what "accept every default" would pick.
+  // That makes "was the preset actually applied?" a real, checkable question
+  // rather than a coincidence of fixture ordering.
+  const presetModules = [
+    makeModule({ id: 'alt-mobile', name: 'Alt Mobile', category: 'mobile' }),
+    makeModule({ id: 'rn', name: 'RN', category: 'mobile' }),
+    ...modules,
+  ];
+  const preset: Preset = {
+    id: 'mobile-starter',
+    name: 'Mobile Starter',
+    description: 'A quick mobile stack.',
+    choices: { target: 'mobile', mobile: 'rn', backend: 'supabase' },
+  };
+
+  it('applies a preset chosen via --preset without asking the categories it covers', async () => {
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      presetId: preset.id,
+      name: 'Test',
+    });
+
+    expect(selection.choices.target).toBe('mobile');
+    expect(selection.choices.mobile).toBe('rn');
+    expect(selection.choices.backend).toBe('supabase');
+    expect(asked.map((entry) => entry.message)).not.toContain('Mobile platform');
+    expect(asked.map((entry) => entry.message)).not.toContain('Backend');
+  });
+
+  it('still asks about categories the preset leaves unopinionated', async () => {
+    answers = { Database: 'sqlite' };
+
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      presetId: preset.id,
+      name: 'Test',
+    });
+
+    expect(asked.map((entry) => entry.message)).toContain('Database');
+    expect(selection.choices.database).toBe('sqlite');
+  });
+
+  it('shows a summary of what the preset fills before asking to proceed', async () => {
+    await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      presetId: preset.id,
+      name: 'Test',
+    });
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.title).toBe(preset.name);
+    // Module names, not raw ids — "RN" rather than "rn".
+    expect(notes[0]?.message).toContain('RN');
+    expect(asked.map((entry) => entry.message)).toContain(
+      `Use ${preset.name}, and only ask about what's left?`,
+    );
+  });
+
+  it('declining the confirmation falls back to a fully custom run', async () => {
+    confirmAnswer = false;
+
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      presetId: preset.id,
+      name: 'Test',
+    });
+
+    // Every category is asked from scratch and answered with its own first
+    // option — "alt-mobile", not the preset's "rn".
+    expect(asked.map((entry) => entry.message)).toContain('Mobile platform');
+    expect(selection.choices.mobile).toBe('alt-mobile');
+  });
+
+  it('offers the interactive picker when no --preset flag was given, defaulting to Custom', async () => {
+    // The mock returns the first option when no answer is set, and "Custom"
+    // is always listed first — so an unattended run never silently adopts one.
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      name: 'Test',
+    });
+
+    expect(asked.map((entry) => entry.message)).toContain('Start from a preset?');
+    expect(selection.choices.mobile).toBe('alt-mobile');
+  });
+
+  it('picking a preset by name from the interactive picker applies it the same way', async () => {
+    answers = { 'Start from a preset?': preset.id };
+
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      name: 'Test',
+    });
+
+    expect(selection.choices.mobile).toBe('rn');
+  });
+
+  it('--preset with --yes applies the preset non-interactively, with no confirmation prompt', async () => {
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      presetId: preset.id,
+      name: 'Test',
+      acceptDefaults: true,
+    });
+
+    expect(selection.choices.mobile).toBe('rn');
+    expect(notes).toHaveLength(0);
+    expect(asked).toEqual([]);
+  });
+
+  it('--yes without --preset never adopts one, matching pre-existing default behavior', async () => {
+    const selection = await runWizard({
+      categories: presetCategories,
+      modules: presetModules,
+      presets: [preset],
+      name: 'Test',
+      acceptDefaults: true,
+    });
+
+    expect(selection.choices.mobile).toBe('alt-mobile');
+    expect(notes).toHaveLength(0);
   });
 });

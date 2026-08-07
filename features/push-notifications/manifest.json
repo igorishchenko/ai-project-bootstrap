@@ -1,0 +1,7 @@
+{
+  "id": "push-notifications",
+  "name": "Push Notifications",
+  "description": "Requesting permission, registering a device, and sending a notification a user actually wants.",
+  "category": "notifications",
+  "providers": ["expo-notifications", "onesignal"]
+}

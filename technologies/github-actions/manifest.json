@@ -6,5 +6,10 @@
   "requires": [],
   "conflicts": ["gitlab-ci"],
   "dependencies": [],
-  "priority": 90
+  "priority": 90,
+  "pricing": {
+    "model": "usage-based",
+    "notes": "Private repos get 2,000 free Actions minutes/month (public repos are unlimited/free); beyond that it's metered per-minute, or GitHub Team ($4/user/mo) raises the free allowance to 3,000 minutes/month. Checked 2026-08-07.",
+    "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions"
+  }
 }

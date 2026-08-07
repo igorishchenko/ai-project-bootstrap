@@ -1,0 +1,7 @@
+{
+  "id": "authentication",
+  "name": "Authentication",
+  "description": "Sign-in, sign-up, session handling and access control.",
+  "category": "auth",
+  "providers": ["supabase-auth", "clerk", "auth0"]
+}

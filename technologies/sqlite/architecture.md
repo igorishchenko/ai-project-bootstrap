@@ -25,3 +25,24 @@ consequence is that two copies of the data exist, so **the conflict rule must be
 decided deliberately** — last-write-wins on a timestamp is usually enough, but
 it silently discards one side, and that is worth stating here rather than
 leaving it implicit in the sync code.
+
+### Starter data model
+
+Nothing here scaffolds real tables — this is a starting point to replace, not
+a reflection of your actual schema. Every locally-cached row needs its own
+sync bookkeeping if last-write-wins is going to work at all:
+
+```mermaid
+erDiagram
+  RECORDS ||--|| SYNC_META : "tracked by"
+  RECORDS {
+    text id PK
+    text data
+    text updated_at
+  }
+  SYNC_META {
+    text record_id PK, FK
+    text last_synced_at
+    integer dirty
+  }
+```

@@ -1,0 +1,10 @@
+{
+  "id": "onboarding",
+  "name": "Onboarding Flow",
+  "category": "features",
+  "description": "A first-run walkthrough that shows once, with a persisted \"seen it\" flag and a real skip path.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 20
+}

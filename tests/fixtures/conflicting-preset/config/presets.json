@@ -1,0 +1,13 @@
+[
+  {
+    "id": "conflicting",
+    "name": "Conflicting",
+    "description": "Bundles two modules that declare a conflict with each other.",
+    "choices": {
+      "target": "web",
+      "web": "nextjs",
+      "backend": "supabase",
+      "database": "postgresql"
+    }
+  }
+]

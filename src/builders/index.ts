@@ -4,6 +4,8 @@ import { packageBuilder } from './packageBuilder.js';
 import { envBuilder } from './envBuilder.js';
 import { docsBuilder } from './docsBuilder.js';
 import { architectureBuilder } from './architectureBuilder.js';
+import { roadmapBuilder } from './roadmapBuilder.js';
+import { costsBuilder } from './costsBuilder.js';
 import { configBuilder } from './configBuilder.js';
 import {
   checklistBuilder,
@@ -15,6 +17,7 @@ import {
   readmeBuilder,
   templateBuilder,
 } from './assetBuilders.js';
+import { clineBuilder, continueBuilder, copilotBuilder, rooBuilder } from './aiProviderBuilders.js';
 
 /**
  * The builder registry.
@@ -29,7 +32,13 @@ export const builders: Builder[] = [
   envBuilder,
   docsBuilder,
   architectureBuilder,
+  roadmapBuilder,
+  costsBuilder,
   cursorBuilder,
+  copilotBuilder,
+  continueBuilder,
+  clineBuilder,
+  rooBuilder,
   claudeBuilder,
   promptBuilder,
   checklistBuilder,

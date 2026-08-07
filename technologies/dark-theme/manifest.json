@@ -1,0 +1,10 @@
+{
+  "id": "dark-theme",
+  "name": "Dark Theme",
+  "category": "features",
+  "description": "System-aware light/dark theming with a manual override, one hook for the whole app.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 10
+}

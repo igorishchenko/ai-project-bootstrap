@@ -15,6 +15,15 @@ export const RESERVED_TEMPLATE_PREFIXES = {
   github: 'github/',
   /** Repo hygiene dotfiles, rendered to the project root. */
   hygiene: 'hygiene/',
+  /**
+   * The base module's extra stack-agnostic Cursor rules (architecture,
+   * performance, testing, typescript) — owned by `cursorBuilder`, which gates
+   * them on the same `aiTools` answer as every other Cursor output, rather
+   * than the generic template builder mirroring them unconditionally.
+   */
+  cursorRules: '_cursor/rules/',
+  /** The base module's extra stack-agnostic Claude skills — owned by `claudeBuilder`, same reasoning. */
+  claudeSkills: '_claude/skills/',
 } as const;
 
 const ALL_PREFIXES = Object.values(RESERVED_TEMPLATE_PREFIXES);

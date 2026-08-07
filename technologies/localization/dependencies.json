@@ -1,0 +1,12 @@
+{
+  "packages": [
+    { "name": "i18next", "version": "^25.7.0" },
+    { "name": "react-i18next", "version": "^16.2.0" }
+{{#if has.react-native}}    ,{ "name": "expo-localization", "version": "^17.0.0", "native": true }
+{{/if}}{{#unless has.react-native}}    ,{ "name": "i18next-browser-languagedetector", "version": "^8.2.0" }
+{{/unless}}  ],
+  "install": [
+{{#if has.react-native}}    "npx expo install i18next react-i18next expo-localization"
+{{/if}}{{#unless has.react-native}}    "npm install i18next react-i18next i18next-browser-languagedetector"
+{{/unless}}  ]
+}

@@ -3,12 +3,22 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { builderIds, builders } from '../builders/index.js';
 import { CONFIG_FILENAME } from '../builders/configBuilder.js';
-import { preservedPaths, readFingerprints } from '../core/vfs/preserve.js';
+import { preservedPaths, readFingerprints, removablePaths } from '../core/vfs/preserve.js';
 import { generate } from '../core/pipeline/generate.js';
+import { slugify } from '../core/pipeline/buildContext.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
+import { loadArchetype } from '../core/registry/loadArchetypes.js';
+import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
-import type { Selection } from '../core/types.js';
-import { ADD_HELP_TEXT, mergeChoice, parseAddFlags } from './add.js';
+import type { Preset } from '../core/types.js';
+import { ADD_HELP_TEXT, mergeChoice, parseAddFlags, replaceChoice } from './add.js';
+import { runAnalyze } from './analyze.js';
+import { applyArchetype } from './archetype.js';
+import { loadSelectionFile } from './configFile.js';
+import { runDoctor } from './doctor.js';
+import { runImplement } from './implement.js';
+import { runReview } from './review.js';
+import { runUpgrade } from './upgrade.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
@@ -37,39 +47,19 @@ function findGeneratorRoot(): string {
 }
 
 function readVersion(rootDir: string): string {
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
-      version?: string;
-    };
-    return pkg.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
+  return readGeneratorPackageInfo(rootDir).version;
 }
 
-function loadSelectionFile(file: string): Selection {
-  if (!fs.existsSync(file)) {
-    throw new GeneratorError('INVALID_CONFIG', `No such config file: ${file}`);
+/** Removes `dir` and each ancestor up to (not including) `root` while they're empty. */
+function pruneEmptyDirectories(dir: string, root: string): void {
+  let current = dir;
+  while (true) {
+    const relative = path.relative(root, current);
+    if (!relative || relative.startsWith('..')) return; // reached or passed the project root
+    if (!fs.existsSync(current) || fs.readdirSync(current).length > 0) return;
+    fs.rmdirSync(current);
+    current = path.dirname(current);
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (error) {
-    throw new GeneratorError(
-      'INVALID_CONFIG',
-      `${file} is not valid JSON: ${(error as Error).message}`,
-    );
-  }
-
-  const selection = parsed as Partial<Selection>;
-  if (typeof selection?.projectName !== 'string' || typeof selection?.choices !== 'object') {
-    throw new GeneratorError(
-      'INVALID_CONFIG',
-      `${file} is not a valid selection.`,
-      'It needs a "projectName" string and a "choices" object — see ai-project.config.json in a generated project.',
-    );
-  }
-  return { projectName: selection.projectName, choices: selection.choices ?? {} };
 }
 
 /**
@@ -125,10 +115,22 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     );
   }
 
-  mergeChoice(selection, module, category);
+  let oldId: string | undefined;
+  if (flags.replace) {
+    oldId = replaceChoice(selection, module, category);
+  } else {
+    mergeChoice(selection, module, category);
+  }
+  const oldModule = oldId ? registry.byId.get(oldId) : undefined;
 
   reporter.intro(readVersion(rootDir));
-  reporter.plain(`Adding ${module.manifest.name} to ${selection.projectName}…\n`);
+  reporter.plain(
+    oldId
+      ? `Replacing ${oldModule?.manifest.name ?? oldId} with ${module.manifest.name} in ${selection.projectName}…\n`
+      : `Adding ${module.manifest.name} to ${selection.projectName}…\n`,
+  );
+
+  const recorded = readFingerprints(configFile);
 
   const result = generate({
     rootDir,
@@ -139,11 +141,39 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     onBuilder: (run) => reporter.step(run),
   });
 
+  const newFiles = result.vfs.snapshot().files;
+
   // Same safety net as a normal regeneration: anything whose contents no
   // longer match what was recorded at generation is the user's, not ours.
-  const preserve = new Set(
-    preservedPaths(targetDir, result.vfs.snapshot().files, readFingerprints(configFile)),
-  );
+  const preserve = new Set(preservedPaths(targetDir, newFiles, recorded));
+
+  // A plain `add` never removes anything — only --replace can make a
+  // previously-generated file stop being produced at all.
+  let removed: string[] = [];
+  if (oldId) {
+    const { safe, handEdited } = removablePaths(targetDir, recorded, newFiles);
+    if (handEdited.length > 0) {
+      throw new GeneratorError(
+        'INVALID_CONFIG',
+        `Cannot replace ${oldModule?.manifest.name ?? oldId} — ${handEdited.length} of its file${handEdited.length > 1 ? 's have' : ' has'} been hand-edited since generation.`,
+        `Move or remove ${handEdited.join(', ')} yourself, then run "add ${module.manifest.id} --replace" again. Nothing was changed.`,
+      );
+    }
+    removed = safe;
+    if (!flags.dryRun) {
+      const parentDirs = new Set<string>();
+      for (const relative of removed) {
+        const full = path.join(targetDir, ...relative.split('/'));
+        fs.rmSync(full, { force: true });
+        parentDirs.add(path.dirname(full));
+      }
+      // A removed file's own directory (e.g. `.claude/skills/<old-id>/`) is
+      // otherwise left behind, empty, on disk — walk up from each pruning
+      // anything now empty, stopping at the first non-empty dir or the
+      // project root.
+      for (const dir of parentDirs) pruneEmptyDirectories(dir, targetDir);
+    }
+  }
 
   const flushed = result.vfs.flush(targetDir, {
     dryRun: flags.dryRun,
@@ -158,9 +188,11 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     targetDir,
     fileCount: flushed.files.length,
     preserved: flushed.preserved,
+    removed,
     modules: result.moduleNames,
     autoIncluded: result.autoIncluded,
     warnings: result.warnings,
+    costSummary: result.costSummary,
     dryRun: flags.dryRun,
   });
 
@@ -173,6 +205,21 @@ async function main(argv: string[]): Promise<number> {
 
   if (argv[0] === 'add') {
     return runAdd(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'doctor') {
+    return runDoctor(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'upgrade') {
+    return runUpgrade(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'implement') {
+    return runImplement(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'review') {
+    return runReview(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'analyze') {
+    return runAnalyze(argv.slice(1), rootDir, reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);
@@ -209,13 +256,53 @@ async function main(argv: string[]): Promise<number> {
     );
   }
 
+  if (
+    (flags.preset && flags.config) ||
+    (flags.archetype && flags.config) ||
+    (flags.preset && flags.archetype)
+  ) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      '--preset, --archetype and --config cannot be combined.',
+      'All three pre-fill the selection — pick one.',
+    );
+  }
+  if (flags.preset && !registry.presets.some((preset) => preset.id === flags.preset)) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      `Unknown preset "${flags.preset}".`,
+      registry.presets.length > 0
+        ? `Available presets: ${registry.presets.map((preset) => preset.id).join(', ')}.`
+        : 'No presets are installed.',
+    );
+  }
+
+  // Loaded (and its `choices` validated) up front, so a broken archetype
+  // fails before the wizard asks a single question, not after.
+  const archetype = flags.archetype
+    ? loadArchetype(rootDir, flags.archetype, registry.byId, registry.categories)
+    : undefined;
+
   reporter.intro(version);
+
+  // An archetype's `choices` is exactly `Preset.choices`-shaped — offering it
+  // to the wizard as a one-off preset (never added to `registry.presets`, so
+  // it never appears in the interactive "start from a preset?" list) reuses
+  // prefilling/review behavior instead of a second implementation of it.
+  const archetypePreset: Preset | undefined = archetype && {
+    id: archetype.manifest.id,
+    name: archetype.manifest.name,
+    description: archetype.manifest.description,
+    choices: archetype.manifest.choices,
+  };
 
   const selection = flags.config
     ? loadSelectionFile(flags.config)
     : await runWizard({
         categories: registry.categories,
         modules: registry.modules,
+        presets: archetypePreset ? [archetypePreset] : registry.presets,
+        presetId: archetypePreset?.id ?? flags.preset,
         name: flags.name,
         // A directory was already given, so the name question starts from it
         // rather than from a generic placeholder.
@@ -241,6 +328,16 @@ async function main(argv: string[]): Promise<number> {
     onBuilder: (run) => reporter.step(run),
   });
 
+  // Layered on top of the normal pipeline's output, in the same VirtualFs —
+  // real starter screens and a data model, not a core builder every project
+  // pays for.
+  if (archetype) {
+    applyArchetype(result.vfs, archetype, {
+      projectName: selection.projectName,
+      projectSlug: slugify(selection.projectName),
+    });
+  }
+
   // Regenerating over an existing project must not discard the user's edits.
   // Anything whose contents no longer match the fingerprint recorded when it
   // was generated is theirs, not ours.
@@ -265,8 +362,16 @@ async function main(argv: string[]): Promise<number> {
     modules: result.moduleNames,
     autoIncluded: result.autoIncluded,
     warnings: result.warnings,
+    costSummary: result.costSummary,
     dryRun: flags.dryRun,
   });
+
+  if (archetype && !flags.dryRun) {
+    reporter.plain(
+      `Started from the ${archetype.manifest.name} starter — see docs/starter-template.md.`,
+    );
+    reporter.plain('');
+  }
 
   return 0;
 }

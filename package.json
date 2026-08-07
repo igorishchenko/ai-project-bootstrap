@@ -1,7 +1,7 @@
 {
   "name": "ai-project-bootstrap",
-  "version": "0.5.0",
-  "description": "Work in progress — expect breaking changes. Generate the development environment for AI-assisted development: docs, Cursor rules, Claude skills, prompts and checklists tailored to your stack.",
+  "version": "1.0.0",
+  "description": "Generate and maintain an AI-assisted dev environment tailored to your stack: rules for Cursor, Claude Code and 6 more AI tools, docs, prompts, cost estimates and starter templates, plus review, analyze, implement, doctor and upgrade commands.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -21,7 +21,9 @@
     "dist",
     "assets",
     "technologies",
-    "config"
+    "config",
+    "features",
+    "archetypes"
   ],
   "engines": {
     "node": ">=18"
@@ -39,7 +41,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "docs:tech-table": "node scripts/generate-tech-table.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",

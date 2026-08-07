@@ -1,0 +1,26 @@
+---
+description: Localization (i18n) conventions
+globs: ["src/i18n/**/*.ts", "src/i18n/**/*.tsx", "src/i18n/locales/**/*.json"]
+alwaysApply: false
+---
+
+# Localization (i18n)
+
+- User-facing text goes through `t('namespace.key')` — never a hardcoded
+  English string in a component. A hardcoded string is invisible to every
+  locale except the one the author was looking at.
+- Interpolation uses single braces — `{name}`, `{count}` — instead of
+  i18next's normal default, because this project's own generator claims the
+  double-brace delimiter for its own templates at generation time. The
+  locale JSON files and the `i18next.init()` config in `src/i18n/index.ts`
+  were changed together to avoid the collision. Do not "fix" one without the
+  other — reverting the interpolation delimiter without also reverting every
+  locale file breaks every interpolated string at once, silently (i18next
+  just stops substituting).
+- Add a key to **every** locale file at the same time — `en.json` and
+  `es.json` are meant to stay in lockstep. A key present only in `en.json`
+  silently falls back to English for every other locale (correct behavior,
+  but worth noticing rather than assuming was intentional).
+- Plural keys follow i18next's `_one`/`_other` suffix convention
+  (`items_one`, `items_other`) — `t('items', { count })` picks the right one
+  automatically. Do not hand-roll a plural check with a ternary.

@@ -43,6 +43,7 @@ describe('generate', () => {
     for (const doc of [
       'docs/setup.md',
       'docs/architecture.md',
+      'docs/roadmap.md',
       'docs/deployment.md',
       'docs/testing.md',
       'docs/coding-standards.md',
@@ -54,7 +55,13 @@ describe('generate', () => {
 
   it('produces the root files an assistant reads first', () => {
     expect(files).toEqual(
-      expect.arrayContaining(['README.md', 'CLAUDE.md', 'AGENTS.md', '.env.example', 'package.json']),
+      expect.arrayContaining([
+        'README.md',
+        'CLAUDE.md',
+        'AGENTS.md',
+        '.env.example',
+        'package.json',
+      ]),
     );
   });
 
@@ -85,7 +92,9 @@ describe('generate', () => {
     const revenuecatRule = read('.cursor/rules/revenuecat.mdc');
     const globsMatch = revenuecatRule.match(/^globs:\s*(\[.*\])\s*$/m);
     expect(globsMatch).not.toBeNull();
-    expect(revenuecatSkill).toContain(`paths: ${JSON.stringify(JSON.parse(globsMatch?.[1] ?? '[]'))}`);
+    expect(revenuecatSkill).toContain(
+      `paths: ${JSON.stringify(JSON.parse(globsMatch?.[1] ?? '[]'))}`,
+    );
   });
 
   it('writes no rule for a technology that was not selected', () => {
@@ -281,7 +290,9 @@ describe('generate', () => {
     const env = read('.env.example');
 
     // Every key doctor treats as required must be documented and reachable.
-    const entries = [...doctor.matchAll(/\{ key: '([A-Z0-9_]+)', owner: '([^']*)', anchor: '([^']*)' \}/g)];
+    const entries = [
+      ...doctor.matchAll(/\{ key: '([A-Z0-9_]+)', owner: '([^']*)', anchor: '([^']*)' \}/g),
+    ];
     expect(entries.length).toBeGreaterThan(0);
 
     for (const [, key, owner, anchor] of entries) {
@@ -292,7 +303,7 @@ describe('generate', () => {
     }
   });
 
-  it('does not let one module silently take over another module\'s npm script', () => {
+  it("does not let one module silently take over another module's npm script", () => {
     // Regression: expo shipped a "doctor" script that replaced the base one,
     // so `npm run doctor` ran expo-doctor and the generated script became
     // unreachable — invisible in the merged package.json.
@@ -353,7 +364,7 @@ describe('generate', () => {
     expect(run(reordered).vfs.snapshot().files).toEqual(files);
   });
 
-  it('honours --skip by omitting that builder\'s output', () => {
+  it("honours --skip by omitting that builder's output", () => {
     const skipped = generate({
       rootDir: ROOT,
       targetDir: '/virtual/out',
@@ -367,8 +378,9 @@ describe('generate', () => {
 
     expect(skipped.runs.find((run) => run.id === 'cursor')?.ran).toBe(false);
     expect(skippedFiles).not.toContain('.cursor/rules/expo.mdc');
-    // The stack-agnostic rules ship as base templates, so they are unaffected.
-    expect(skippedFiles).toContain('.cursor/rules/typescript.mdc');
+    // cursorBuilder owns every .cursor/rules/* file, stack-agnostic ones
+    // included, so skipping it omits all of them — not just per-technology ones.
+    expect(skippedFiles).not.toContain('.cursor/rules/typescript.mdc');
   });
 
   it('generates a project from the required category alone', () => {
@@ -436,7 +448,8 @@ describe('commands a generated project documents', () => {
   });
 
   const scriptsOf = (result: ReturnType<typeof run>): Record<string, string> =>
-    (JSON.parse(result.vfs.read('package.json') as string) as { scripts: Record<string, string> }).scripts;
+    (JSON.parse(result.vfs.read('package.json') as string) as { scripts: Record<string, string> })
+      .scripts;
 
   /** Every `npm run x` / `npm test` a generated file asks the reader to run. */
   const invoked = (result: ReturnType<typeof run>): Map<string, string[]> => {
@@ -482,7 +495,7 @@ describe('commands a generated project documents', () => {
     expect(workflow(withoutTests)).toContain('name: Lint and typecheck');
   });
 
-  it('leaves the workflow\'s own ${{ }} expressions for the runner to resolve', () => {
+  it("leaves the workflow's own ${{ }} expressions for the runner to resolve", () => {
     // Regression: the template engine consumed them, collapsing the
     // concurrency group to "$-$" so unrelated branches cancelled each other.
     expect(withTests.vfs.read('.github/workflows/ci.yml')).toContain(

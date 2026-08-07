@@ -6,5 +6,10 @@
   "requires": [],
   "conflicts": ["github-actions"],
   "dependencies": [],
-  "priority": 91
+  "priority": 91,
+  "pricing": {
+    "model": "usage-based",
+    "notes": "GitLab.com free tier: 400 CI/CD compute minutes/month. Extra minutes are purchasable a la carte, or GitLab Premium ($29/user/mo) raises the included allowance to 10,000 minutes/month. Checked 2026-08-07.",
+    "url": "https://about.gitlab.com/pricing/"
+  }
 }

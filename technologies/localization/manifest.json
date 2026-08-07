@@ -1,0 +1,10 @@
+{
+  "id": "localization",
+  "name": "Localization (i18n)",
+  "category": "features",
+  "description": "Multi-language text via i18next, with device-locale detection and a typed translation key.",
+  "requires": [],
+  "conflicts": [],
+  "dependencies": [],
+  "priority": 30
+}

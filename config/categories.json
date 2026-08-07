@@ -1,5 +1,23 @@
 [
   {
+    "id": "aiTools",
+    "label": "Which AI coding tools do you use?",
+    "type": "multi",
+    "required": false,
+    "allowNone": false,
+    "order": 1,
+    "defaultChoices": ["cursor", "claude"],
+    "choices": [
+      { "value": "cursor", "label": "Cursor" },
+      { "value": "claude", "label": "Claude Code" },
+      { "value": "copilot", "label": "GitHub Copilot" },
+      { "value": "gemini-cli", "label": "Gemini CLI" },
+      { "value": "continue", "label": "Continue.dev" },
+      { "value": "cline", "label": "Cline" },
+      { "value": "roo", "label": "Roo Code" }
+    ]
+  },
+  {
     "id": "target",
     "label": "What are you building?",
     "type": "single",
@@ -53,6 +71,14 @@
     "required": false,
     "allowNone": true,
     "order": 40
+  },
+  {
+    "id": "features",
+    "label": "Cross-cutting features",
+    "type": "multi",
+    "required": false,
+    "allowNone": true,
+    "order": 45
   },
   {
     "id": "payments",

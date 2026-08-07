@@ -4,6 +4,8 @@ export interface CliFlags {
   out?: string;
   config?: string;
   name?: string;
+  preset?: string;
+  archetype?: string;
   yes: boolean;
   dryRun: boolean;
   force: boolean;
@@ -13,8 +15,15 @@ export interface CliFlags {
   version: boolean;
 }
 
-const BOOLEANS = new Set(['--yes', '--dry-run', '--force', '--list-modules', '--help', '--version']);
-const VALUED = new Set(['--out', '--config', '--name', '--skip']);
+const BOOLEANS = new Set([
+  '--yes',
+  '--dry-run',
+  '--force',
+  '--list-modules',
+  '--help',
+  '--version',
+]);
+const VALUED = new Set(['--out', '--config', '--name', '--skip', '--preset', '--archetype']);
 
 /** Minimal argv parser — the CLI has a dozen flags and no need for a library. */
 export function parseFlags(argv: string[]): CliFlags {
@@ -68,17 +77,33 @@ export function parseFlags(argv: string[]): CliFlags {
     if (VALUED.has(arg)) {
       const value = inlineValue ?? argv[++i];
       if (value === undefined) {
-        throw new GeneratorError('INVALID_CONFIG', `${arg} needs a value.`, `Example: ${arg} <value>`);
+        throw new GeneratorError(
+          'INVALID_CONFIG',
+          `${arg} needs a value.`,
+          `Example: ${arg} <value>`,
+        );
       }
       if (arg === '--out') flags.out = value;
       if (arg === '--config') flags.config = value;
       if (arg === '--name') flags.name = value;
-      if (arg === '--skip') flags.skip.push(...value.split(',').map((part) => part.trim()).filter(Boolean));
+      if (arg === '--preset') flags.preset = value;
+      if (arg === '--archetype') flags.archetype = value;
+      if (arg === '--skip')
+        flags.skip.push(
+          ...value
+            .split(',')
+            .map((part) => part.trim())
+            .filter(Boolean),
+        );
       continue;
     }
 
     if (arg.startsWith('-')) {
-      throw new GeneratorError('INVALID_CONFIG', `Unknown flag ${arg}.`, 'Run --help to see every flag.');
+      throw new GeneratorError(
+        'INVALID_CONFIG',
+        `Unknown flag ${arg}.`,
+        'Run --help to see every flag.',
+      );
     }
 
     // A bare argument is the project directory, matching `npm create` habits.
@@ -94,6 +119,11 @@ ai-project-bootstrap — bootstrap the development environment for AI-assisted d
 Usage
   npx ai-project-bootstrap [directory] [options]
   npx ai-project-bootstrap add <technology-id> [options]
+  npx ai-project-bootstrap upgrade [options]
+  npx ai-project-bootstrap implement <feature-id> [options]
+  npx ai-project-bootstrap review [options]
+  npx ai-project-bootstrap analyze [options]
+  npx ai-project-bootstrap doctor [options]
 
 The project name doubles as its location: answer "my-app" to generate ./my-app,
 or "./apps/my-app" to create that folder and name the project "my-app".
@@ -102,10 +132,40 @@ Already have a generated project and want one more technology in it? Run
 \`ai-project-bootstrap add <technology-id>\` inside it instead of starting over —
 see \`ai-project-bootstrap add --help\` for details.
 
+Package updated since you generated? Run \`ai-project-bootstrap upgrade\` inside
+the project to refresh its rules, prompts and docs against the same selection
+— see \`ai-project-bootstrap upgrade --help\`.
+
+Ready to build a specific feature — authentication, payments, push
+notifications — tailored to the stack you picked? Run
+\`ai-project-bootstrap implement <feature-id>\` inside the project — see
+\`ai-project-bootstrap implement --help\`.
+
+Want a static, AI-oriented review of what's already there — architecture,
+security, performance, dx — before you ship? Run \`ai-project-bootstrap review\`
+inside the project — see \`ai-project-bootstrap review --help\`.
+
+Have a repo this tool never generated and want the same kind of scored,
+prioritized feedback? Run \`ai-project-bootstrap analyze\` inside it — see
+\`ai-project-bootstrap analyze --help\`.
+
+Not sure this machine can build the stack you have in mind? Run
+\`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.
+
+Want more than a stack — a real, running starting point for a specific kind
+of app? \`--archetype <id>\` pre-fills the same way \`--preset\` does, then
+layers real starter screens and a data model on top (see README's "Starter
+templates" section; \`archetypes/\` lists what's installed).
+
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)
       --name <name>     Project name or path, skips the first wizard question
       --config <file>   Replay a saved ai-project.config.json instead of asking
+      --preset <id>     Start from a curated stack (see config/presets.json);
+                         cannot be combined with --config or --archetype
+      --archetype <id>  Start from a full app starter (stack + real starter
+                         screens/data model, see archetypes/); cannot be
+                         combined with --config or --preset
   -y, --yes             Accept defaults for every unanswered question
       --dry-run         Print what would be written without touching disk
       --force           Write into a non-empty directory

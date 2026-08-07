@@ -1,0 +1,11 @@
+[
+  {
+    "id": "bogus",
+    "name": "Bogus",
+    "description": "References a module that does not exist.",
+    "choices": {
+      "target": "mobile",
+      "backend": "this-module-does-not-exist"
+    }
+  }
+]
