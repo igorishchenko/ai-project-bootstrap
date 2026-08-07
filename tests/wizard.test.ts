@@ -32,7 +32,14 @@ const { runWizard } = await import('../src/cli/wizard.js');
 
 const categories: CategoryQuestion[] = [
   { id: 'backend', label: 'Backend', type: 'single', required: false, allowNone: true, order: 10 },
-  { id: 'database', label: 'Database', type: 'single', required: false, allowNone: true, order: 20 },
+  {
+    id: 'database',
+    label: 'Database',
+    type: 'single',
+    required: false,
+    allowNone: true,
+    order: 20,
+  },
   { id: 'auth', label: 'Auth', type: 'single', required: false, allowNone: true, order: 30 },
   {
     id: 'analytics',
@@ -48,7 +55,12 @@ const modules = [
   makeModule({ id: 'supabase', name: 'Supabase', category: 'backend' }),
   makeModule({ id: 'postgresql', name: 'Postgres', category: 'database', conflicts: ['supabase'] }),
   makeModule({ id: 'sqlite', name: 'SQLite', category: 'database' }),
-  makeModule({ id: 'supabase-auth', name: 'Supabase Auth', category: 'auth', requires: ['supabase'] }),
+  makeModule({
+    id: 'supabase-auth',
+    name: 'Supabase Auth',
+    category: 'auth',
+    requires: ['supabase'],
+  }),
   makeModule({ id: 'clerk', name: 'Clerk', category: 'auth', conflicts: ['supabase-auth'] }),
   makeModule({ id: 'posthog', name: 'PostHog', category: 'analytics' }),
 ];
@@ -142,7 +154,12 @@ describe('runWizard', () => {
   it('skips a category left with no compatible options', async () => {
     const narrow = [
       makeModule({ id: 'supabase', name: 'Supabase', category: 'backend' }),
-      makeModule({ id: 'postgresql', name: 'Postgres', category: 'database', conflicts: ['supabase'] }),
+      makeModule({
+        id: 'postgresql',
+        name: 'Postgres',
+        category: 'database',
+        conflicts: ['supabase'],
+      }),
     ];
     answers = { Backend: 'supabase' };
 
@@ -201,6 +218,68 @@ describe('runWizard', () => {
     expect(selection.choices.target).toBe('hybrid');
   });
 
+  it('records a multi-select gating answer (e.g. which AI tools) as an array, not a module', async () => {
+    const withAiTools: CategoryQuestion[] = [
+      {
+        id: 'aiTools',
+        label: 'Which AI coding tools do you use?',
+        type: 'multi',
+        required: false,
+        allowNone: false,
+        order: 1,
+        defaultChoices: ['cursor', 'claude'],
+        choices: [
+          { value: 'cursor', label: 'Cursor' },
+          { value: 'claude', label: 'Claude Code' },
+          { value: 'copilot', label: 'GitHub Copilot' },
+        ],
+      },
+      ...targeted,
+    ];
+    answers = {
+      'Which AI coding tools do you use?': ['copilot'],
+      'What are you building?': 'mobile',
+    };
+
+    const selection = await runWizard({
+      categories: withAiTools,
+      modules: platforms,
+      name: 'Test',
+    });
+
+    expect(selection.choices.aiTools).toEqual(['copilot']);
+  });
+
+  it("accepts a multi-select gating question's defaultChoices under --yes", async () => {
+    const withAiTools: CategoryQuestion[] = [
+      {
+        id: 'aiTools',
+        label: 'Which AI coding tools do you use?',
+        type: 'multi',
+        required: false,
+        allowNone: false,
+        order: 1,
+        defaultChoices: ['cursor', 'claude'],
+        choices: [
+          { value: 'cursor', label: 'Cursor' },
+          { value: 'claude', label: 'Claude Code' },
+        ],
+      },
+      ...targeted,
+    ];
+
+    const selection = await runWizard({
+      categories: withAiTools,
+      modules: platforms,
+      name: 'Test',
+      acceptDefaults: true,
+    });
+
+    expect(selection.choices.aiTools).toEqual(['cursor', 'claude']);
+    // --yes must never prompt at all.
+    expect(asked).toEqual([]);
+  });
+
   it('does not offer a module that would contradict an earlier answer', async () => {
     // Choosing web-only means no mobile platform, so a mobile-only tool must
     // not be offered — accepting it would silently add React Native.
@@ -211,7 +290,14 @@ describe('runWizard', () => {
     ];
     const categoriesWithTesting = [
       ...targeted,
-      { id: 'testing', label: 'Testing', type: 'multi' as const, required: false, allowNone: true, order: 50 },
+      {
+        id: 'testing',
+        label: 'Testing',
+        type: 'multi' as const,
+        required: false,
+        allowNone: true,
+        order: 50,
+      },
     ];
     answers = { 'What are you building?': 'web', 'Web framework': 'nextish' };
 

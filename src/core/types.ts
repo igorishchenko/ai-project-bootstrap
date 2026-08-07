@@ -111,6 +111,12 @@ export interface CategoryQuestion {
    * id; the question is shown when *any* listed value was chosen.
    */
   showWhen?: Record<string, string[]>;
+  /**
+   * Pre-checked options for a multi-select gating question: used as the
+   * initial selection shown interactively, and as the answer `--yes` accepts.
+   * Ignored for single-select questions, which take their first choice.
+   */
+  defaultChoices?: string[];
 }
 
 /** True for a question whose answer is a wizard branch, not a module id. */

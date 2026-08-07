@@ -71,9 +71,7 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
     if (answer === undefined) continue;
 
     // "None" is an affordance, not a module — drop it before it is persisted.
-    const cleaned = Array.isArray(answer)
-      ? answer.filter((id) => id !== NONE)
-      : answer;
+    const cleaned = Array.isArray(answer) ? answer.filter((id) => id !== NONE) : answer;
 
     choices[category.id] = cleaned;
     for (const id of Array.isArray(cleaned) ? cleaned : [cleaned]) {
@@ -120,8 +118,7 @@ function isCompatible(
     // contradicting an answer the user already gave.
     if (
       !chosen.has(incomingId) &&
-      (excluded.has(manifest.category) ||
-        contradictsAnswer(manifest.category, incomingId, choices))
+      (excluded.has(manifest.category) || contradictsAnswer(manifest.category, incomingId, choices))
     ) {
       return false;
     }
@@ -182,13 +179,31 @@ function shouldAsk(
 async function askGating(
   category: CategoryQuestion,
   acceptDefaults?: boolean,
-): Promise<string | undefined> {
+): Promise<string | string[] | undefined> {
   const options = (category.choices ?? []).map((choice) => ({
     value: choice.value,
     label: choice.label,
     ...(choice.hint ? { hint: choice.hint } : {}),
   }));
   if (options.length === 0) return undefined;
+
+  // A multi-select gating question (e.g. "which AI tools do you use?") picks
+  // from several fixed branches at once rather than choosing exactly one.
+  if (category.type === 'multi') {
+    const defaults = (category.defaultChoices ?? []).filter((value) =>
+      options.some((option) => option.value === value),
+    );
+    if (acceptDefaults) return defaults;
+
+    const answer = await prompts.multiselect({
+      message: category.label,
+      options,
+      required: category.required,
+      initialValues: defaults,
+    });
+    if (prompts.isCancel(answer)) throw new WizardCancelled();
+    return answer as string[];
+  }
 
   if (acceptDefaults) return options[0]?.value;
 

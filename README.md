@@ -16,22 +16,39 @@ npx ai-project-bootstrap
 
 ```
 docs/          setup, architecture, deployment, testing, coding-standards, release
-.cursor/rules/ one rule per selected technology, plus the stack-agnostic set
-.claude/skills/ one skill per selected technology, plus architecture/testing/performance
 prompts/       nine reusable prompts for common tasks
 checklists/    release, plus whatever the selected technologies contribute
 .github/       CI workflow
 .env.example   every variable from every module, documented and deduplicated
 package.json   merged dependencies with version conflicts resolved
-README.md  CLAUDE.md  AGENTS.md  ai-project.config.json
+README.md  CLAUDE.md  AGENTS.md  GEMINI.md  ai-project.config.json
 ```
+
+Plus one rule per selected technology, and the stack-agnostic set
+(architecture, performance, testing, typescript), for every AI coding tool
+the wizard's first question selects — Cursor and Claude Code by default,
+or whichever combination you answer with:
+
+| Tool           | Where                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| Cursor         | `.cursor/rules/<id>.mdc`                                                                       |
+| Claude Code    | `.claude/skills/<id>/SKILL.md`                                                                 |
+| GitHub Copilot | `.github/copilot-instructions.md` (project-wide) + `.github/instructions/<id>.instructions.md` |
+| Continue.dev   | `.continue/rules/<id>.md`                                                                      |
+| Cline          | `.clinerules/<id>.md`                                                                          |
+| Roo Code       | `.roo/rules/<id>.md`                                                                           |
+
+All six render the same source content (`technologies/<id>/cursor-rule.mdc`)
+into each tool's own format — a module author writes one rule, not six.
+OpenAI Codex reads the generated `AGENTS.md` directly, and Gemini CLI reads
+the generated `GEMINI.md`, so neither needs a per-technology directory.
 
 ## Available technologies
 
-The first question asks what you are building — **mobile**, **web**, or **both**
-— and the rest of the wizard follows from it. Choosing both asks for a mobile
-platform and then a web framework, and the generated project carries the
-documentation, rules and scripts for each.
+After asking which AI tools you use, the wizard asks what you are building —
+**mobile**, **web**, or **both** — and the rest follows from that. Choosing
+both asks for a mobile platform and then a web framework, and the generated
+project carries the documentation, rules and scripts for each.
 
 <!-- TECH_TABLE:START -->
 

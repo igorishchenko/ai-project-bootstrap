@@ -14,8 +14,10 @@ This file is the tool-agnostic entry point. The full instructions live in
 
 - Documentation in `docs/` is the source of truth. If code and docs disagree,
   say so rather than silently picking one.
-- Conventions per technology are in `.claude/skills/` and `.cursor/rules/`.
-  Both directories describe the same rules in the format each tool expects.
+- Conventions per technology live in whichever rules directory your AI tool
+  reads (`.cursor/rules/`, `.claude/skills/`, `.github/instructions/`,
+  `.continue/rules/`, `.clinerules/`, `.roo/rules/`) — they all describe the
+  same rules in the format that tool expects.
 - Configuration comes from environment variables documented in `.env.example`.
 - Run the project's verification commands before reporting a task as finished.
   They are defined in `package.json`.

@@ -51,14 +51,18 @@ steps 2–6 — no filesystem access, which is what makes the 40 cases in
 | 30    | `env`          | `.env.example`, merged and deduplicated from every module's `env.md`                |
 | 40    | `docs`         | `docs/setup.md`, `deployment.md`, `testing.md`, `coding-standards.md`, `release.md` |
 | 50    | `architecture` | `docs/architecture.md`                                                              |
-| 60    | `cursor`       | `.cursor/rules/<id>.mdc`                                                            |
+| 60    | `cursor`       | `.cursor/rules/<id>.mdc`, plus the base module's extra stack-agnostic rules         |
+| 62    | `copilot`      | `.github/copilot-instructions.md` + `.github/instructions/<id>.instructions.md`     |
+| 64    | `continue`     | `.continue/rules/<id>.md`                                                           |
+| 66    | `cline`        | `.clinerules/<id>.md`                                                               |
+| 68    | `roo`          | `.roo/rules/<id>.md`                                                                |
 | 70    | `claude`       | `.claude/skills/<id>/SKILL.md` (frontmatter synthesized, see below)                 |
 | 80    | `prompts`      | `prompts/*.md`                                                                      |
 | 90    | `checklists`   | `checklists/*.md`                                                                   |
 | 100   | `github`       | `.github/` CI workflow                                                              |
 | 110   | `hygiene`      | eslint, prettier, husky, lint-staged, commitlint, `.editorconfig`                   |
 | 115   | `templates`    | Arbitrary per-module `templates/**` content                                         |
-| 120   | `readme`       | The generated project's `README.md`, `CLAUDE.md`, `AGENTS.md`                       |
+| 120   | `readme`       | The generated project's `README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`          |
 | 140   | `gitkeep`      | `.gitkeep` for any folder that would otherwise be empty                             |
 | 150   | `config`       | `ai-project.config.json` — the saved selection + fingerprints                       |
 
@@ -81,6 +85,32 @@ special-case any _module_, but it does synthesize Claude Code's required skill
 frontmatter (`name`, `description`, `paths`) from each module's manifest and
 its own `cursor-rule.mdc` glob line, so Cursor and Claude activate on the same
 files without a module author maintaining the glob list twice.
+
+## Multi-provider AI rules
+
+`cursor` and `claude` predate the rest and stay independent, but `copilot`,
+`continue`, `cline` and `roo` (`src/builders/aiProviderBuilders.ts`) are all
+driven by the same source: `collectRuleSources()`
+(`src/builders/ruleSources.ts`) reads every module's `cursorRule` field, plus
+the base module's four extra stack-agnostic rules — which ship as
+pre-rendered `.mdc`/`SKILL.md` files under `assets/base/templates/_cursor/rules/`
+and `_claude/skills/` rather than through the single-file `cursorRule` field,
+since one module can only hold one rule — and returns a tool-agnostic
+`RuleSource[]`. Each provider builder turns that into its own file
+path and frontmatter dialect; none of them require a module author to write
+more than the one `cursor-rule.mdc` every module already has.
+
+Which tools actually get output is controlled by the `aiTools` wizard
+question (`config/categories.json`, a gating question like `target` — its
+answer never reaches the module resolver, but it does reach
+`BuildContext.selection`, which is where `enabledAiTools()` reads it from). A
+config saved before this question existed has no `aiTools` key at all, which
+is treated as "cursor + claude" — today's pre-existing behavior — not as
+"nothing selected"; an explicit empty selection is honored and produces no
+provider-specific rule files. `README.md`, `CLAUDE.md`, `AGENTS.md` and
+`GEMINI.md` stay unconditional regardless of `aiTools`, the same as they were
+before this question existed — they're general project documentation, not
+per-technology rule output.
 
 ## Non-destructive regeneration: fingerprints and preservation
 

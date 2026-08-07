@@ -2,6 +2,8 @@ import path from 'node:path';
 import type { Builder, BuildContext, LoadedModule, VirtualFsLike } from '../core/types.js';
 import { render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
+import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
+import { extractGlobs, enabledAiTools, yamlString } from './ruleSources.js';
 import {
   RESERVED_TEMPLATE_PREFIXES,
   outputPath,
@@ -50,18 +52,35 @@ function mirror(
   }
 }
 
-/** Emits `.cursor/rules/<id>.mdc` for every module that ships a rule. */
+/**
+ * Emits `.cursor/rules/<id>.mdc` for every module that ships a rule, plus the
+ * base module's extra stack-agnostic rules (architecture, performance,
+ * testing, typescript) — those ship as pre-written `.mdc` files rather than
+ * through the single `cursorRule` field, since one module can only hold one.
+ * Both are gated on the same `aiTools` answer, so disabling Cursor stops
+ * every `.cursor/rules/*` file, not just the per-technology ones.
+ */
 export const cursorBuilder: Builder = {
   id: 'cursor',
   label: 'Generated Cursor Rules',
   order: 60,
   build(ctx, vfs) {
+    if (!enabledAiTools(ctx).has('cursor')) return;
     const data = templateData(ctx);
     for (const module of ctx.modules) {
       if (!module.cursorRule) continue;
       vfs.write(
         `.cursor/rules/${module.manifest.id}.mdc`,
         ensureTrailingNewline(render(module.cursorRule, data)),
+      );
+    }
+
+    const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
+    if (!base) return;
+    for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.cursorRules)) {
+      vfs.write(
+        `.cursor/rules/${asset.relativePath}`,
+        ensureTrailingNewline(render(asset.content, data)),
       );
     }
   },
@@ -84,6 +103,7 @@ export const claudeBuilder: Builder = {
   label: 'Generated Claude Skills',
   order: 70,
   build(ctx, vfs) {
+    if (!enabledAiTools(ctx).has('claude')) return;
     const data = templateData(ctx);
     for (const module of ctx.modules) {
       if (!module.claudeSkill) continue;
@@ -93,32 +113,25 @@ export const claudeBuilder: Builder = {
         ensureTrailingNewline(`${skillFrontmatter(module)}\n\n${body}`),
       );
     }
+
+    // The base module's extra skills (architecture, performance, testing)
+    // already carry their own hand-written frontmatter, unlike the synthesized
+    // frontmatter above — mirrored verbatim, just rendered and gated the same way.
+    const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
+    if (!base) return;
+    for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.claudeSkills)) {
+      vfs.write(
+        `.claude/skills/${asset.relativePath}`,
+        ensureTrailingNewline(render(asset.content, data)),
+      );
+    }
   },
 };
-
-/** Extracts the `globs` array from a module's (unrendered) `cursor-rule.mdc` frontmatter. */
-function extractGlobs(cursorRule: string | undefined): string[] | undefined {
-  const match = cursorRule?.match(/^globs:\s*(\[.*\])\s*$/m);
-  if (!match) return undefined;
-  try {
-    const parsed = JSON.parse(match[1] ?? '[]');
-    return Array.isArray(parsed) && parsed.every((entry) => typeof entry === 'string')
-      ? parsed
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function skillDescription(module: LoadedModule): string {
   return module.isBase
     ? `${module.manifest.description} Read this before any other skill.`
     : `${module.manifest.description} Read before writing code that touches ${module.manifest.name}.`;
-}
-
-/** A minimal YAML string: double-quoted, with embedded quotes escaped. */
-function yamlString(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 function skillFrontmatter(module: LoadedModule): string {

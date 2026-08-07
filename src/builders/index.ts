@@ -15,6 +15,7 @@ import {
   readmeBuilder,
   templateBuilder,
 } from './assetBuilders.js';
+import { clineBuilder, continueBuilder, copilotBuilder, rooBuilder } from './aiProviderBuilders.js';
 
 /**
  * The builder registry.
@@ -30,6 +31,10 @@ export const builders: Builder[] = [
   docsBuilder,
   architectureBuilder,
   cursorBuilder,
+  copilotBuilder,
+  continueBuilder,
+  clineBuilder,
+  rooBuilder,
   claudeBuilder,
   promptBuilder,
   checklistBuilder,
