@@ -39,7 +39,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "docs:tech-table": "node scripts/generate-tech-table.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
