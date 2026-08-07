@@ -193,6 +193,7 @@ function fakeContext(
   choices: Record<string, string | string[]> = {},
 ): BuildContext {
   return {
+    rootDir: '/virtual/root',
     projectName: 'Fake',
     targetDir: '/virtual/out',
     selection: { projectName: 'Fake', choices },

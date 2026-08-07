@@ -16,6 +16,7 @@ export function slugify(name: string): string {
 }
 
 export function createBuildContext(input: {
+  rootDir: string;
   projectName: string;
   targetDir: string;
   selection: Selection;
@@ -28,6 +29,7 @@ export function createBuildContext(input: {
   const modules = input.base ? [input.base, ...input.modules] : [...input.modules];
 
   const ctx: BuildContext = {
+    rootDir: input.rootDir,
     projectName: input.projectName,
     targetDir: input.targetDir,
     selection: input.selection,

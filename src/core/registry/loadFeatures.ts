@@ -95,6 +95,28 @@ function parseFeatureManifest(raw: unknown, file: string): FeatureManifest {
 }
 
 /**
+ * Just the manifests — none of the plan/checklist/prompt content `implement`
+ * needs, and none of the full-registry validation `loadFeatures` does (a
+ * feature's `providers` legitimately includes technology ids this particular
+ * project never selected). Cheap enough to call on every generation, which is
+ * exactly what `roadmapBuilder` does to know which selected module has a
+ * `ai-project-bootstrap implement <feature>` command behind it.
+ */
+export function loadFeatureIndex(rootDir: string): FeatureManifest[] {
+  const featuresDir = path.join(rootDir, 'features');
+  if (!fs.existsSync(featuresDir)) return [];
+
+  return fs
+    .readdirSync(featuresDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .sort(byName)
+    .map((entry) => {
+      const manifestFile = path.join(featuresDir, entry.name, 'manifest.json');
+      return parseFeatureManifest(readJson<unknown>(manifestFile), manifestFile);
+    });
+}
+
+/**
  * Discovers every feature under `features/` — the content `implement` draws
  * from. Each declares, in its own manifest.json, which technology ids it has
  * tailored content for; those are validated against the real module registry

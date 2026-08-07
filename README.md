@@ -15,7 +15,7 @@ npx ai-project-bootstrap
 ## What it generates
 
 ```
-docs/          setup, architecture, deployment, testing, coding-standards, release
+docs/          setup, architecture, roadmap, deployment, testing, coding-standards, release
 prompts/       nine reusable prompts for common tasks
 checklists/    release, plus whatever the selected technologies contribute
 .github/       CI workflow
@@ -33,6 +33,14 @@ database technology, a starter entity-relationship diagram. That ERD is
 explicitly a starting point (nothing here scaffolds real tables), not a
 reflection of your actual schema — GitHub, GitLab and most markdown viewers
 render Mermaid natively.
+
+`docs/roadmap.md` is a suggested build order for exactly the stack you
+selected, grouped into weeks (capped at three items each) using
+`config/categories.json`'s own category ordering — backend and auth before
+payments, deployment last. A category whose selected module has a matching
+`ai-project-bootstrap implement <feature>` command (authentication, payments,
+push notifications) names it directly. It's explicitly a starting point to
+reorder or split, not a schedule handed down from above.
 
 Plus one rule per selected technology, and the stack-agnostic set
 (architecture, performance, testing, typescript), for every AI coding tool

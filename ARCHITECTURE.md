@@ -51,6 +51,7 @@ steps 2–6 — no filesystem access, which is what makes the 40 cases in
 | 30    | `env`          | `.env.example`, merged and deduplicated from every module's `env.md`                |
 | 40    | `docs`         | `docs/setup.md`, `deployment.md`, `testing.md`, `coding-standards.md`, `release.md` |
 | 50    | `architecture` | `docs/architecture.md`                                                              |
+| 55    | `roadmap`      | `docs/roadmap.md`                                                                   |
 | 60    | `cursor`       | `.cursor/rules/<id>.mdc`, plus the base module's extra stack-agnostic rules         |
 | 62    | `copilot`      | `.github/copilot-instructions.md` + `.github/instructions/<id>.instructions.md`     |
 | 64    | `continue`     | `.continue/rules/<id>.md`                                                           |
@@ -107,6 +108,32 @@ Because the sequence and ERD content lives entirely in each module's own
 `architecture.md`, `stackDiagram`'s helpers (`backboneEdges`, `requiresEdges`)
 are the only part of this that lives in `src/` — and they only ever look at
 category ids and the already-resolved `requires` graph, never a technology id.
+
+## Roadmap generation
+
+`roadmapBuilder` (`src/builders/roadmapBuilder.ts`) emits `docs/roadmap.md` —
+a suggested build order, grouped into weeks capped at three items each. The
+ordering heuristic is deliberately the cheapest thing that could work:
+`config/categories.json`'s own `order` field already encodes a reasonable
+dependency-aware sequence (backend and auth before payments, deployment
+last), so this reuses it instead of inventing a second priority system.
+`isGatingQuestion` (see `src/core/types.ts`) excludes `aiTools`/`target`
+automatically; a small `PLATFORM_CATEGORIES` set excludes `mobile`/`web`
+explicitly, since picking a framework isn't a week of work the way wiring up
+auth is — the project already has a working skeleton for it on day one.
+
+Naming the exact `ai-project-bootstrap implement <feature>` command for a
+roadmap item (when one exists) needed a lightweight read of `features/`
+manifests from inside a builder — something no builder previously needed,
+since `implement` (see "Implementing a feature" below) loads `features/`
+directly and outside the `generate()` pipeline entirely. Two changes made
+that possible: `BuildContext` gained a `rootDir` field (`generate()` already
+receives it; threading it through `createBuildContext` was the only
+plumbing needed), and `loadFeatures.ts` gained `loadFeatureIndex(rootDir)` —
+manifests only, none of the plan/checklist/prompt content or full-registry
+provider validation `loadFeatures()` does, since a feature's `providers`
+legitimately names technology ids this particular project never selected.
+Cheap enough to call on every generation, unlike the full loader.
 
 ## The hard invariant: no technology names in `src/`
 

@@ -43,6 +43,7 @@ describe('generate', () => {
     for (const doc of [
       'docs/setup.md',
       'docs/architecture.md',
+      'docs/roadmap.md',
       'docs/deployment.md',
       'docs/testing.md',
       'docs/coding-standards.md',

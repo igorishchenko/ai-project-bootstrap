@@ -145,6 +145,8 @@ export interface Preset {
 
 /** Everything a builder is given. Builders must not read from disk. */
 export interface BuildContext {
+  /** Generator root — the directory holding technologies/, assets/, features/, config/. */
+  rootDir: string;
   projectName: string;
   targetDir: string;
   selection: Selection;

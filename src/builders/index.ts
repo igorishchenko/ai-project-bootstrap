@@ -4,6 +4,7 @@ import { packageBuilder } from './packageBuilder.js';
 import { envBuilder } from './envBuilder.js';
 import { docsBuilder } from './docsBuilder.js';
 import { architectureBuilder } from './architectureBuilder.js';
+import { roadmapBuilder } from './roadmapBuilder.js';
 import { configBuilder } from './configBuilder.js';
 import {
   checklistBuilder,
@@ -30,6 +31,7 @@ export const builders: Builder[] = [
   envBuilder,
   docsBuilder,
   architectureBuilder,
+  roadmapBuilder,
   cursorBuilder,
   copilotBuilder,
   continueBuilder,

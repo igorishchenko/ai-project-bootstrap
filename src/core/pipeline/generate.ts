@@ -44,6 +44,7 @@ export function generate(input: GenerateInput): GenerateResult {
   const { modules, autoIncluded } = resolveSelection(input.selection, registry.byId, gating);
 
   const ctx = createBuildContext({
+    rootDir: input.rootDir,
     projectName: input.selection.projectName,
     targetDir: input.targetDir,
     selection: input.selection,
