@@ -7,7 +7,7 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
-## [Unreleased]
+## [1.1.0] — 2026-08-08
 
 ### Added
 
