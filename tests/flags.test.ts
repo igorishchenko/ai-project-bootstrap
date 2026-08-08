@@ -19,4 +19,18 @@ describe('parseFlags', () => {
     expect(flags.preset).toBe('startup-mvp');
     expect(flags.config).toBe('ai-project.config.json');
   });
+
+  it('parses --idea "<text>"', () => {
+    expect(parseFlags(['--idea', 'a habit tracker for runners']).idea).toBe(
+      'a habit tracker for runners',
+    );
+  });
+
+  it('parses --idea=<text>', () => {
+    expect(parseFlags(['--idea=a habit tracker']).idea).toBe('a habit tracker');
+  });
+
+  it('leaves idea undefined when not given', () => {
+    expect(parseFlags([]).idea).toBeUndefined();
+  });
 });

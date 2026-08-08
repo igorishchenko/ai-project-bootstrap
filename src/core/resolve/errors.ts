@@ -13,7 +13,9 @@ export type GeneratorErrorCode =
   | 'PATH_COLLISION'
   | 'INVALID_CONFIG'
   | 'ALREADY_SELECTED'
-  | 'CATEGORY_ALREADY_ANSWERED';
+  | 'CATEGORY_ALREADY_ANSWERED'
+  | 'IDEA_REQUEST_FAILED'
+  | 'LICENSE_REQUIRED';
 
 /**
  * Every failure the generator raises on purpose. The `hint` is the actionable

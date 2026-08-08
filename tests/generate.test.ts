@@ -102,9 +102,9 @@ describe('generate', () => {
     expect(ruleFiles.some((file) => file.includes('firebase'))).toBe(false);
   });
 
-  it('ships all nine base prompts', () => {
+  it('ships all ten base prompts', () => {
     const prompts = files.filter((file) => file.startsWith('prompts/') && file.endsWith('.md'));
-    expect(prompts).toHaveLength(9);
+    expect(prompts).toHaveLength(10);
   });
 
   it('gives setup.md a section per contributing module', () => {
