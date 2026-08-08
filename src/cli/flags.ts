@@ -6,6 +6,7 @@ export interface CliFlags {
   name?: string;
   preset?: string;
   archetype?: string;
+  idea?: string;
   yes: boolean;
   dryRun: boolean;
   force: boolean;
@@ -23,7 +24,15 @@ const BOOLEANS = new Set([
   '--help',
   '--version',
 ]);
-const VALUED = new Set(['--out', '--config', '--name', '--skip', '--preset', '--archetype']);
+const VALUED = new Set([
+  '--out',
+  '--config',
+  '--name',
+  '--skip',
+  '--preset',
+  '--archetype',
+  '--idea',
+]);
 
 /** Minimal argv parser — the CLI has a dozen flags and no need for a library. */
 export function parseFlags(argv: string[]): CliFlags {
@@ -88,6 +97,7 @@ export function parseFlags(argv: string[]): CliFlags {
       if (arg === '--name') flags.name = value;
       if (arg === '--preset') flags.preset = value;
       if (arg === '--archetype') flags.archetype = value;
+      if (arg === '--idea') flags.idea = value;
       if (arg === '--skip')
         flags.skip.push(
           ...value
@@ -157,15 +167,27 @@ of app? \`--archetype <id>\` pre-fills the same way \`--preset\` does, then
 layers real starter screens and a data model on top (see README's "Starter
 templates" section; \`archetypes/\` lists what's installed).
 
+Don't know which technologies you want yet? \`--idea "<description>"\` sends
+your idea to a hosted service and proposes a stack, shown for review exactly
+like a preset before anything is written. This is a Pro feature — it needs
+AI_PROJECT_BOOTSTRAP_LICENSE_KEY (the key emailed to you after subscribing);
+set AI_PROJECT_BOOTSTRAP_API_URL to point at your own backend if you're
+running one. Combining --idea with --yes skips that review, so it isn't
+recommended.
+
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)
       --name <name>     Project name or path, skips the first wizard question
       --config <file>   Replay a saved ai-project.config.json instead of asking
       --preset <id>     Start from a curated stack (see config/presets.json);
-                         cannot be combined with --config or --archetype
+                         cannot be combined with --config, --archetype or --idea
       --archetype <id>  Start from a full app starter (stack + real starter
                          screens/data model, see archetypes/); cannot be
-                         combined with --config or --preset
+                         combined with --config, --preset or --idea
+      --idea <text>     Propose a stack from a free-text project idea via a
+                         hosted service (Pro — needs
+                         AI_PROJECT_BOOTSTRAP_LICENSE_KEY); cannot be
+                         combined with --config, --preset or --archetype
   -y, --yes             Accept defaults for every unanswered question
       --dry-run         Print what would be written without touching disk
       --force           Write into a non-empty directory

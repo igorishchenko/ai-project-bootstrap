@@ -7,6 +7,30 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
+## [Unreleased]
+
+### Added
+
+- **`--idea <text>`** — proposes a technology stack from a free-text project
+  idea, via a hosted backend rather than calling an LLM directly from the
+  CLI — end users need no API key of their own. The CLI's `src/cli/idea.ts`
+  is a thin HTTP client (`AI_PROJECT_BOOTSTRAP_API_URL`, defaults to
+  `http://localhost:8787`) that offers the result to the wizard as a one-off
+  preset — reviewed and confirmed exactly like `--preset` or `--archetype`,
+  never generated unreviewed. Cannot be combined with `--config`, `--preset`
+  or `--archetype`.
+- **`--idea` is a paid, license-gated Pro feature** — no free tier, no
+  trial, since every call spends real hosting/API budget. Requires
+  `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, the key emailed after subscribing; the
+  CLI fails fast client-side if it's unset, and the backend rejects an
+  invalid or inactive key with `402 LICENSE_REQUIRED`.
+- **`ai-project-bootstrap/core`** — a new public export (types, registry
+  loading, selection validation/resolution: `loadRegistry`,
+  `validateSelection`, `resolveSelection`, `GeneratorError`, and friends).
+  This is the same domain logic the CLI runs on, now usable by other
+  services — e.g. the Pro backend behind `--idea` depends on it rather than
+  reimplementing catalog loading or selection validation.
+
 ## [1.0.0] — 2026-08-07
 
 First stable release. Fourteen prompts from `.planning/prompts/`, reviewed

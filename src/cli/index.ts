@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { builderIds, builders } from '../builders/index.js';
 import { CONFIG_FILENAME } from '../builders/configBuilder.js';
 import { preservedPaths, readFingerprints, removablePaths } from '../core/vfs/preserve.js';
@@ -8,6 +7,7 @@ import { generate } from '../core/pipeline/generate.js';
 import { slugify } from '../core/pipeline/buildContext.js';
 import { loadRegistry } from '../core/registry/loadModules.js';
 import { loadArchetype } from '../core/registry/loadArchetypes.js';
+import { findGeneratorRoot } from '../core/registry/findRoot.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import type { Preset } from '../core/types.js';
@@ -16,6 +16,7 @@ import { runAnalyze } from './analyze.js';
 import { applyArchetype } from './archetype.js';
 import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
+import { requestStackProposal, requireLicenseKey } from './idea.js';
 import { runImplement } from './implement.js';
 import { runReview } from './review.js';
 import { runUpgrade } from './upgrade.js';
@@ -23,28 +24,6 @@ import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
 import { runWizard, WizardCancelled } from './wizard.js';
-
-/**
- * Walks up from this file to the generator's own package root, so
- * `technologies/`, `assets/` and `config/` resolve whether we are running from
- * `dist/`, from source, or from inside node_modules.
- */
-function findGeneratorRoot(): string {
-  let dir = path.dirname(fileURLToPath(import.meta.url));
-
-  for (let depth = 0; depth < 6; depth += 1) {
-    if (fs.existsSync(path.join(dir, 'config', 'categories.json'))) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-
-  throw new GeneratorError(
-    'INVALID_CONFIG',
-    'Could not locate the generator root (config/categories.json).',
-    'Reinstall the package — its config/ and technologies/ directories must ship alongside dist/.',
-  );
-}
 
 function readVersion(rootDir: string): string {
   return readGeneratorPackageInfo(rootDir).version;
@@ -200,7 +179,7 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
 }
 
 async function main(argv: string[]): Promise<number> {
-  const rootDir = findGeneratorRoot();
+  const rootDir = findGeneratorRoot(import.meta.url);
   const reporter = new Reporter();
 
   if (argv[0] === 'add') {
@@ -259,12 +238,15 @@ async function main(argv: string[]): Promise<number> {
   if (
     (flags.preset && flags.config) ||
     (flags.archetype && flags.config) ||
-    (flags.preset && flags.archetype)
+    (flags.preset && flags.archetype) ||
+    (flags.idea && flags.config) ||
+    (flags.idea && flags.preset) ||
+    (flags.idea && flags.archetype)
   ) {
     throw new GeneratorError(
       'INVALID_CONFIG',
-      '--preset, --archetype and --config cannot be combined.',
-      'All three pre-fill the selection — pick one.',
+      '--preset, --archetype, --idea and --config cannot be combined.',
+      'All four pre-fill the selection — pick one.',
     );
   }
   if (flags.preset && !registry.presets.some((preset) => preset.id === flags.preset)) {
@@ -296,17 +278,30 @@ async function main(argv: string[]): Promise<number> {
     choices: archetype.manifest.choices,
   };
 
+  // Same one-off-preset trick as `archetypePreset` above: the backend's
+  // proposal becomes a `Preset` the wizard reviews and confirms exactly like
+  // any other, rather than a second, parallel pre-fill mechanism.
+  const ideaProposal = flags.idea
+    ? await requestStackProposal({ idea: flags.idea, licenseKey: requireLicenseKey() })
+    : undefined;
+
   const selection = flags.config
     ? loadSelectionFile(flags.config)
     : await runWizard({
         categories: registry.categories,
         modules: registry.modules,
-        presets: archetypePreset ? [archetypePreset] : registry.presets,
-        presetId: archetypePreset?.id ?? flags.preset,
+        presets: archetypePreset
+          ? [archetypePreset]
+          : ideaProposal
+            ? [ideaProposal.preset]
+            : registry.presets,
+        presetId: archetypePreset?.id ?? ideaProposal?.preset.id ?? flags.preset,
         name: flags.name,
         // A directory was already given, so the name question starts from it
         // rather than from a generic placeholder.
-        defaultName: flags.out ? path.basename(path.resolve(flags.out)) : undefined,
+        defaultName: flags.out
+          ? path.basename(path.resolve(flags.out))
+          : ideaProposal?.suggestedName,
         acceptDefaults: flags.yes,
       });
 

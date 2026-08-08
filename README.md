@@ -16,7 +16,7 @@ npx ai-project-bootstrap
 
 ```
 docs/          setup, architecture, roadmap, costs, deployment, testing, coding-standards, release
-prompts/       nine reusable prompts for common tasks
+prompts/       ten reusable prompts for common tasks
 checklists/    release, plus whatever the selected technologies contribute
 .github/       CI workflow
 .env.example   every variable from every module, documented and deduplicated
@@ -120,9 +120,9 @@ npx ai-project-bootstrap --preset startup-mvp             # pick a preset, revie
 npx ai-project-bootstrap --preset startup-mvp --yes       # fully non-interactive
 ```
 
-`--preset`, `--archetype` and `--config` cannot be combined — all three are
-ways of pre-filling the selection, and mixing them would leave it ambiguous
-which one wins. Presets live in `config/presets.json` and are validated the
+`--preset`, `--archetype`, `--idea` and `--config` cannot be combined — all
+four are ways of pre-filling the selection, and mixing them would leave it
+ambiguous which one wins. Presets live in `config/presets.json` and are validated the
 same way a hand-written `--config` file is: every module id must exist, and
 the resulting selection must resolve without a conflict, or the tool refuses
 to start rather than shipping a broken preset.
@@ -164,6 +164,39 @@ a `config/presets.json` entry) plus `archetypes/<id>/scaffold/**`, the same
 way a technology is a `manifest.json` plus `templates/**` — adding one
 touches no code in `src/`.
 
+## Describe your idea (Pro)
+
+Don't know which technologies you want yet? Describe the project instead:
+
+```bash
+export AI_PROJECT_BOOTSTRAP_LICENSE_KEY=apb_live_...
+npx ai-project-bootstrap --idea "a habit tracker for runners, web app, cheap to run"
+```
+
+This sends your idea to a hosted backend, which builds the full installed
+technology catalog, asks an LLM for a proposed stack, and returns it — the
+same kind of one-off pre-fill `--preset` and `--archetype` are, so it goes
+through the identical review: a short "why this stack" note, then the usual
+preset-style confirm-or-back-out-to-custom prompt before anything is
+written. Nothing is generated from an unreviewed AI guess.
+
+**`--idea` is a Pro feature** — every call spends real hosting/API budget,
+so unlike the rest of this tool it isn't free and has no trial. It requires
+an active subscription: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, the key emailed
+to you right after checkout. Without it, the CLI fails immediately with a
+clear message rather than making a request that would just be rejected.
+`--idea` calls `http://localhost:8787` by default — set
+`AI_PROJECT_BOOTSTRAP_API_URL` to point at the real deployed backend.
+Cannot be combined with `--config`, `--preset` or `--archetype` — all four
+pre-fill the selection, pick one — and combining it with `--yes` skips the
+review step, so it isn't recommended.
+
+The backend itself isn't part of this repo — it's a separate service that
+depends on this package's `ai-project-bootstrap/core` export (the same
+catalog-loading and selection-validation logic the CLI runs on) to build its
+proposals, so a proposal is validated the same way regardless of which side
+of the network call it happens on.
+
 ## Usage
 
 ```bash
@@ -181,18 +214,19 @@ in `./my-app`; answer `./apps/my-app` and that folder is created — parents and
 all — with the project named `my-app` inside it. `--out` overrides the location
 without touching the name.
 
-| Flag               | Meaning                                                                     |
-| ------------------ | --------------------------------------------------------------------------- |
-| `-o, --out <dir>`  | Target directory (default: the project slug)                                |
-| `--name <name>`    | Project name or path, skipping the first question                           |
-| `--config <file>`  | Replay a saved selection instead of asking                                  |
-| `--preset <id>`    | Start from a curated stack — see [Stack presets](#stack-presets)            |
-| `--archetype <id>` | Start from a full app starter — see [Starter templates](#starter-templates) |
-| `-y, --yes`        | Accept defaults for every question                                          |
-| `--dry-run`        | Print the file list without writing anything                                |
-| `--force`          | Write into a non-empty directory                                            |
-| `--skip <ids>`     | Comma-separated builder ids to skip                                         |
-| `--list-modules`   | List every available technology                                             |
+| Flag               | Meaning                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `-o, --out <dir>`  | Target directory (default: the project slug)                                                    |
+| `--name <name>`    | Project name or path, skipping the first question                                               |
+| `--config <file>`  | Replay a saved selection instead of asking                                                      |
+| `--preset <id>`    | Start from a curated stack — see [Stack presets](#stack-presets)                                |
+| `--archetype <id>` | Start from a full app starter — see [Starter templates](#starter-templates)                     |
+| `--idea <text>`    | Propose a stack from a free-text idea (Pro) — see [Describe your idea](#describe-your-idea-pro) |
+| `-y, --yes`        | Accept defaults for every question                                                              |
+| `--dry-run`        | Print the file list without writing anything                                                    |
+| `--force`          | Write into a non-empty directory                                                                |
+| `--skip <ids>`     | Comma-separated builder ids to skip                                                             |
+| `--list-modules`   | List every available technology                                                                 |
 
 ## Growing a project after the fact
 
