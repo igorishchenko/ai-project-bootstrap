@@ -1,0 +1,708 @@
+.grid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr);
+  min-height: 100%;
+}
+
+.tabs {
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  gap: 2px;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  font-size: 14px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--muted);
+}
+.tab:hover {
+  background: var(--raised);
+  text-decoration: none;
+  color: var(--ink);
+}
+.tabActive {
+  composes: tab;
+  background: var(--raised);
+  color: var(--ink);
+}
+.tabMark {
+  margin-left: auto;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+.tabMarkQuiet {
+  composes: tabMark;
+  color: var(--faint);
+}
+
+.pane {
+  max-width: 720px;
+  padding: 28px 26px 60px;
+  animation: fadeUp 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.title {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+}
+.lead {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 0 22px;
+  text-wrap: pretty;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.cardDanger {
+  composes: card;
+  border-color: var(--danger);
+}
+.cardRow {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.cardRowBordered {
+  composes: cardRow;
+  border-bottom: 1px solid var(--line);
+}
+.cardNote {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--raised);
+  text-wrap: pretty;
+}
+.cardHead {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.cardPad {
+  padding: 16px 18px;
+}
+.cardPadTop {
+  padding: 0 18px 16px;
+}
+
+.eyebrow {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.mono {
+  font-family: var(--font-plex-mono), monospace;
+}
+.value {
+  font-size: 15px;
+  margin-top: 2px;
+}
+.valueQuiet {
+  composes: value;
+  color: var(--muted);
+}
+.subhead {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.subheadDanger {
+  composes: subhead;
+  color: var(--danger);
+}
+.body {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 6px 0 0;
+  text-wrap: pretty;
+}
+.strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.outlineBtn {
+  font-size: 13.5px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.outlineBtn:hover {
+  border-color: var(--ink);
+}
+.outlineBtnRight {
+  composes: outlineBtn;
+  margin-left: auto;
+}
+.dangerBtn {
+  font-size: 13.5px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.dangerBtn:hover {
+  opacity: 0.85;
+}
+.solidDangerBtn {
+  font-size: 13.5px;
+  background: var(--danger);
+  color: #ffffff;
+  border: none;
+  padding: 9px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.solidDangerBtn:hover {
+  opacity: 0.88;
+}
+.solidSignalBtn {
+  font-size: 13.5px;
+  background: var(--signal);
+  color: #ffffff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.solidSignalBtn:hover {
+  opacity: 0.88;
+}
+.cancelBtn {
+  font-size: 13.5px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 9px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cancelBtn:hover {
+  color: var(--ink);
+}
+
+.confirm {
+  border-top: 1px solid var(--line);
+  background: var(--danger-soft);
+  padding: 16px 18px;
+}
+.confirmText {
+  font-size: 14px;
+  margin-bottom: 10px;
+  text-wrap: pretty;
+}
+.confirmRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.confirmInput {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 13.5px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+.confirmInput:focus {
+  border-color: var(--danger);
+}
+.rotateConfirm {
+  border-top: 1px solid var(--line);
+  background: var(--signal-soft);
+  padding: 16px 18px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rotateText {
+  font-size: 14px;
+  flex: 1;
+  min-width: 220px;
+  text-wrap: pretty;
+}
+
+/* -------------------------------------------------------------------------- */
+/* License key                                                                */
+/* -------------------------------------------------------------------------- */
+
+.keyValue {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  word-break: break-all;
+}
+.keyActions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.miniOutline {
+  font-size: 13px;
+  background: var(--paper);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.miniOutline:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.miniSolid {
+  font-size: 13px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.miniSolid:hover {
+  opacity: 0.86;
+}
+.unlockList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.unlockRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14.5px;
+}
+.unlockMark {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  color: var(--signal);
+  width: 14px;
+  flex: none;
+}
+.unlockMarkOff {
+  composes: unlockMark;
+  color: var(--faint);
+}
+.unlockTextOff {
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Billing                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.planCard {
+  composes: card;
+}
+.planCardAlert {
+  composes: card;
+  border-color: var(--danger);
+}
+.planTop {
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+}
+.planName {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.planNameText {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.planStatus {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--signal);
+  color: var(--signal);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.planStatusDanger {
+  composes: planStatus;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.planLine {
+  font-size: 14.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-wrap: pretty;
+}
+.planPrice {
+  text-align: right;
+  margin-left: auto;
+}
+.planAmount {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.planVat {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.alert {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  background: var(--signal-soft);
+}
+.alertDanger {
+  composes: alert;
+  background: var(--danger-soft);
+}
+.alertTag {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--signal);
+  white-space: nowrap;
+}
+.alertTagDanger {
+  composes: alertTag;
+  color: var(--danger);
+}
+.alertText {
+  font-size: 14px;
+  flex: 1;
+  min-width: 220px;
+  text-wrap: pretty;
+}
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardBrand {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cardExp {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.paddleBtn {
+  margin-left: auto;
+  font-size: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 9px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.paddleBtn:hover {
+  opacity: 0.86;
+}
+.fine {
+  padding: 0 18px 16px;
+  font-size: 12.5px;
+  color: var(--faint);
+  text-wrap: pretty;
+}
+.invoiceRow {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.invoiceDate {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 13px;
+  width: 96px;
+  flex: none;
+}
+.invoiceAmount {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.invoiceStatus {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.invoiceStatusFailed {
+  composes: invoiceStatus;
+  color: var(--danger);
+}
+.invoiceLink {
+  margin-left: auto;
+  font-size: 13.5px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Usage                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.usageCard {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.usageTop {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.usageLabel {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+.usageCount {
+  margin-left: auto;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 15px;
+}
+.meter {
+  height: 8px;
+  border-radius: 5px;
+  background: var(--raised);
+  overflow: hidden;
+}
+.meterFill {
+  height: 100%;
+  background: var(--accent);
+}
+.meterFillHot {
+  composes: meterFill;
+  background: var(--danger);
+}
+.usageFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  font-size: 12.5px;
+  color: var(--faint);
+  flex-wrap: wrap;
+}
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.statCard {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  padding: 16px 18px;
+}
+.statValue {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+}
+.statNote {
+  font-size: 13px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.dashed {
+  border: 1px dashed var(--line);
+  border-radius: 13px;
+  padding: 15px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.dashedTag {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Preferences                                                                */
+/* -------------------------------------------------------------------------- */
+
+.prefTitle {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-grotesk), sans-serif;
+}
+.prefBody {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.themeOpts {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.themeOpt {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+}
+.themeOptActive {
+  composes: themeOpt;
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.prefRow {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.prefCopy {
+  flex: 1;
+  min-width: 220px;
+}
+.prefName {
+  font-size: 14.5px;
+}
+.prefNote {
+  font-size: 13px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.toggle {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--raised);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: none;
+}
+.toggleOn {
+  composes: toggle;
+  border-color: transparent;
+  background: var(--accent);
+  justify-content: flex-end;
+}
+.toggleLocked {
+  composes: toggle;
+  border-color: transparent;
+  background: var(--faint);
+  justify-content: flex-end;
+  cursor: not-allowed;
+}
+.knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--faint);
+  margin: 0 2px;
+  display: block;
+}
+.knobOn {
+  composes: knob;
+  background: var(--surface);
+}
+.prefFine {
+  padding: 13px 18px;
+  font-size: 12.5px;
+  color: var(--faint);
+  text-wrap: pretty;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .pane {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

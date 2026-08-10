@@ -4,3 +4,5 @@ assets
 technologies
 archetypes
 tests/__snapshots__
+site/.next
+site/data

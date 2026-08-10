@@ -185,8 +185,9 @@ so unlike the rest of this tool it isn't free and has no trial. It requires
 an active subscription: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, the key emailed
 to you right after checkout. Without it, the CLI fails immediately with a
 clear message rather than making a request that would just be rejected.
-`--idea` calls `http://localhost:8787` by default — set
-`AI_PROJECT_BOOTSTRAP_API_URL` to point at the real deployed backend.
+`--idea` calls `https://api.ai-project-bootstrap.com` by default — set
+`AI_PROJECT_BOOTSTRAP_API_URL` to point elsewhere, such as a backend running
+on your own machine.
 Cannot be combined with `--config`, `--preset` or `--archetype` — all four
 pre-fill the selection, pick one — and combining it with `--yes` skips the
 review step, so it isn't recommended.

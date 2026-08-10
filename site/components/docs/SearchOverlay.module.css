@@ -1,0 +1,93 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+.box {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  margin: 0 20px;
+}
+.inputRow {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 16px;
+  font-family: var(--font-plex-sans), sans-serif;
+}
+.results {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.result {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  text-align: left;
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.resultActive {
+  composes: result;
+  background: var(--raised);
+}
+.resultSection {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  width: 90px;
+  flex: none;
+}
+.resultTitle {
+  font-size: 14.5px;
+  margin-bottom: 2px;
+}
+.resultSnippet {
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.empty {
+  padding: 44px 20px;
+  text-align: center;
+}
+.emptyTitle {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.emptyBody {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 10px 20px;
+  display: flex;
+  gap: 18px;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 11px;
+  color: var(--faint);
+}

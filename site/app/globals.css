@@ -1,0 +1,102 @@
+@import "../styles/tokens.css";
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+}
+
+html {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 160ms;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+button {
+  font-family: inherit;
+}
+
+.mono {
+  font-family: var(--font-plex-mono), monospace;
+}
+.heading {
+  font-family: var(--font-grotesk), sans-serif;
+}
+
+/*
+ * No keyframes here: Next.js's CSS Modules (lightningcss) scope
+ * `animation-name` identifiers to the file they're declared in, so a
+ * `.module.css` file referencing a keyframe defined globally silently
+ * resolves to nothing. Every keyframe lives in the `.module.css` file(s)
+ * that actually use it instead — see Hero, AuthScreen, StackBuilder, Hatch,
+ * Terminal, ChatSection and the dashboard screens in components/app.
+ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.68s cubic-bezier(0.2, 0.7, 0.3, 1),
+    transform 0.68s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+[data-reveal="in"] {
+  opacity: 1;
+  transform: none;
+}
+
+button,
+a,
+[data-lift] {
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.18s,
+    border-color 0.18s,
+    background 0.18s,
+    color 0.18s;
+}
+[data-lift]:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+  }
+}

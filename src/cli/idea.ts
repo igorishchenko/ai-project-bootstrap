@@ -2,12 +2,13 @@ import * as prompts from '@clack/prompts';
 import type { Preset } from '../core/types.js';
 import { GeneratorError, type GeneratorErrorCode } from '../core/resolve/errors.js';
 
-const DEFAULT_API_URL = 'http://localhost:8787';
+const DEFAULT_API_URL = 'https://api.ai-project-bootstrap.com';
 
 /**
- * Where the hosted propose-stack backend lives. Defaults to localhost for
- * local development against `pnpm dev:server` — override once a real,
- * deployed URL exists.
+ * Where the hosted propose-stack backend lives. Defaults to the deployed
+ * service, since an installed CLI has no local backend to talk to — set
+ * `AI_PROJECT_BOOTSTRAP_API_URL` to `http://localhost:8787` to develop
+ * against a backend running on this machine.
  */
 export function resolveApiUrl(): string {
   return process.env.AI_PROJECT_BOOTSTRAP_API_URL ?? DEFAULT_API_URL;

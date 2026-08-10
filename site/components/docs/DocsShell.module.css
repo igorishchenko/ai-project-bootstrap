@@ -1,0 +1,306 @@
+.page {
+  min-height: 100vh;
+}
+
+.shell {
+  max-width: 1560px;
+  margin: 0 auto;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-height: 100vh;
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: 88px 268px minmax(0, 1fr) 220px;
+}
+
+@media (max-width: 1280px) {
+  .shell {
+    grid-template-columns: 88px 268px 1fr;
+  }
+  .toc {
+    display: none !important;
+  }
+}
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+  .sidebar {
+    display: none !important;
+  }
+  .mobileBar {
+    display: flex !important;
+  }
+  .content {
+    padding: 36px 32px 100px !important;
+  }
+}
+@media (max-width: 760px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rail {
+    display: none !important;
+  }
+  .content {
+    padding: 24px 20px 80px !important;
+  }
+}
+
+/* ── Icon rail ─────────────────────────────────────────── */
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 0;
+  border-right: 1px solid var(--line);
+}
+.railBrand {
+  margin-bottom: 6px;
+}
+.railVersion {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 9.5px;
+  color: var(--faint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 10px;
+}
+.railSearch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 8px;
+  width: 44px;
+  padding: 6px 0;
+  cursor: pointer;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 9px;
+}
+.railSearch:hover {
+  color: var(--ink);
+}
+.railNav {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 8px;
+}
+.railItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.railItemLabel {
+  font-size: 10.5px;
+}
+.railBottom {
+  margin-top: auto;
+}
+.railThemeBtn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Section sidebar ───────────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  padding: 28px 22px;
+}
+/* Drawer copy of the sidebar: same inner styles, but not .sidebar (which the
+   1024px breakpoint hides) and no sticky column chrome — .drawer scrolls. */
+.sidebarDrawer {
+  padding-bottom: 40px;
+}
+.sidebarAccount {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 22px;
+}
+.acctDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex: none;
+}
+.acctTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.acctBody {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.acctCta {
+  font-size: 11.5px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.sidebarGroup {
+  margin-bottom: 26px;
+}
+.sidebarGroupTitle {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.sidebarItems {
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.sidebarItem {
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  margin-left: -1px;
+  padding: 6px 0 6px 14px;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.sidebarItemActive {
+  composes: sidebarItem;
+  border-left-color: var(--accent);
+}
+
+/* ── Content column ────────────────────────────────────── */
+.content {
+  min-width: 0;
+  padding: 60px 56px 120px;
+}
+.breadcrumb {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  color: var(--faint);
+  margin-bottom: 18px;
+}
+.h1 {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  margin: 0 0 14px;
+  line-height: 1.1;
+}
+.lead {
+  font-size: 18.5px;
+  color: var(--muted);
+  margin: 0 0 40px;
+  max-width: 66ch;
+}
+
+@media (max-width: 760px) {
+  .h1 {
+    font-size: 30px;
+  }
+}
+
+/* ── TOC ───────────────────────────────────────────────── */
+.toc {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 60px 24px;
+}
+.tocLabel {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 12px;
+}
+.tocLink {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 5px 0;
+}
+.tocLink:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+.tocSource {
+  margin-top: 24px;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 11px;
+  color: var(--faint);
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+/* ── Mobile bar + drawer ───────────────────────────────── */
+.mobileBar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 56px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  max-width: 1560px;
+  margin: 0 auto;
+}
+.mobileBtn {
+  border: none;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+}
+.mobileWordmark {
+  flex: 1;
+}
+.drawer {
+  position: fixed;
+  inset: 56px 0 0;
+  background: var(--paper);
+  z-index: 35;
+  overflow-y: auto;
+  padding: 20px;
+}

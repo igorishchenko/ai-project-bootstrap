@@ -28,9 +28,9 @@ describe('resolveApiUrl', () => {
     else delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
   });
 
-  it('defaults to localhost:8787', () => {
+  it('defaults to the deployed backend', () => {
     delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
-    expect(resolveApiUrl()).toBe('http://localhost:8787');
+    expect(resolveApiUrl()).toBe('https://api.ai-project-bootstrap.com');
   });
 
   it('reads AI_PROJECT_BOOTSTRAP_API_URL when set', () => {

@@ -6,3 +6,7 @@ dist/
 coverage/
 .env
 .env.local
+
+# Claude Code local state — worktrees are full checkouts, settings are per-machine
+.claude/worktrees/
+.claude/settings.local.json

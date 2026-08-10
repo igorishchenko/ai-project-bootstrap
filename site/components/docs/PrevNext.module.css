@@ -1,0 +1,33 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 40px;
+}
+.card {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 16px 18px;
+}
+.card:hover {
+  text-decoration: none;
+  border-color: var(--ink);
+}
+.cardNext {
+  composes: card;
+  text-align: right;
+}
+.label {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.title {
+  font-size: 15px;
+  color: var(--ink);
+}

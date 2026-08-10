@@ -1,0 +1,121 @@
+.block {
+  margin-bottom: 26px;
+}
+.h2 {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 20px 0 26px;
+  scroll-margin-top: 26px;
+}
+.p {
+  font-size: 16.5px;
+  color: var(--muted);
+  max-width: 70ch;
+  margin: 0 0 26px;
+}
+.code {
+  background: var(--term);
+  color: var(--term-ink);
+  border-radius: 12px;
+  padding: 20px 22px;
+  white-space: pre;
+  overflow-x: auto;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 13.5px;
+  margin: 0 0 26px;
+}
+.list {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 26px;
+}
+.listRow {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0;
+  font-size: 16px;
+  color: var(--muted);
+}
+.listMarker {
+  color: var(--signal);
+}
+.table {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 0 26px;
+}
+.tableHeadRow {
+  display: flex;
+  background: var(--raised);
+}
+.tableHeadCell {
+  flex: 1;
+  padding: 10px 16px;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.tableRow {
+  display: flex;
+  border-top: 1px solid var(--line);
+}
+.tableCell {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.note {
+  border: 1px solid var(--line);
+  border-radius: 0 12px 12px 0;
+  padding: 16px 20px;
+  margin: 0 0 26px;
+  border-left: 3px solid;
+}
+.noteTitle {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 15.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.noteText {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+  max-width: 74ch;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 0 0 26px;
+}
+.card {
+  display: block;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 20px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.card:hover {
+  border-color: var(--accent);
+}
+.cardTitle {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 15.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.cardBody {
+  font-size: 13.5px;
+  color: var(--muted);
+}

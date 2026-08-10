@@ -1,0 +1,134 @@
+.tierGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.callout {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal);
+  background: var(--signal-soft);
+  border-radius: 0 14px 14px 0;
+  padding: 20px 24px;
+}
+.calloutTitle {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 16.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.calloutBody {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+.compareCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.compareHead {
+  display: flex;
+  background: var(--raised);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.compareHeadCell {
+  padding: 12px 20px;
+}
+.compareRow {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+  align-items: baseline;
+}
+.compareRow:last-child {
+  border-bottom: none;
+}
+.compareCell {
+  padding: 13px 20px;
+  overflow-wrap: anywhere;
+}
+.footnote {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  color: var(--faint);
+  margin: 18px 0 0;
+}
+
+.faqGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.faqCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 22px 24px;
+}
+.faqQ {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.faqA {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.lockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+.lockCard {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 14px 14px 0;
+  padding: 22px 24px;
+}
+.lockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.lockPill {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--signal);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.lockTitle {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lockBody {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.lockCode {
+  margin: 0;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 11.5px;
+  color: var(--faint);
+}
