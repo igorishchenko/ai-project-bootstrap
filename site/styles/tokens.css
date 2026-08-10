@@ -1,0 +1,48 @@
+:root {
+  --paper: #faf9f7;
+  --surface: #ffffff;
+  --raised: #f3f1ed;
+  --ink: #14130f;
+  --muted: #6b6760;
+  --faint: #94908a;
+  --line: #e4e1db;
+  --accent: #3d6be5;
+  --accent-soft: #eef2fd;
+  --signal: #c4611f;
+  --signal-soft: #fdf6f0;
+  --term: #14130f;
+  --term-ink: #e8e5df;
+  --scrim: rgba(20, 19, 15, 0.34);
+  /* Destructive actions and hard failures only — never for emphasis. */
+  --danger: #b3351e;
+  --danger-soft: #fbf0ed;
+}
+
+[data-theme="dark"] {
+  --paper: #100f0d;
+  --surface: #191713;
+  --raised: #211f1a;
+  --ink: #f5f3ef;
+  --muted: #a29d94;
+  --faint: #78736b;
+  --line: #2c2924;
+  --accent: #8fa9f0;
+  --accent-soft: #1b2033;
+  --signal: #e0925a;
+  --signal-soft: #2a1e14;
+  --term: #000000;
+  --term-ink: #e8e5df;
+  --scrim: rgba(0, 0, 0, 0.62);
+  --danger: #e8836c;
+  --danger-soft: #2b1713;
+}
+
+/* Terminal syntax colours are constant across themes. */
+:root {
+  --term-prompt: #6b6760;
+  --term-dim: #94908a;
+  --term-blue: #8fa9f0;
+  --term-green: #7fbf9b;
+  --term-orange: #e0925a;
+  --term-dot: #3a3730;
+}

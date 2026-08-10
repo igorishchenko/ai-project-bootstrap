@@ -1,0 +1,90 @@
+.card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 26px 26px 24px;
+  display: flex;
+  flex-direction: column;
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.name {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+.tag {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 11.5px;
+}
+.price {
+  font-family: var(--font-grotesk), sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+.sub {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.rows {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: 14px;
+}
+.mark {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.rowText {
+  color: var(--muted);
+}
+.cta {
+  margin-top: auto;
+  display: block;
+  text-align: center;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14.5px;
+}
+.cta:hover {
+  text-decoration: none;
+  opacity: 0.88;
+}
+.ctaSolid {
+  composes: cta;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+}
+.ctaSolid:hover {
+  color: var(--paper);
+}
+.ctaOutline {
+  composes: cta;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.note {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 11px;
+  color: var(--faint);
+  text-align: center;
+  margin-top: 10px;
+}
