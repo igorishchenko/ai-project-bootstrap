@@ -7,7 +7,18 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
-## [Unreleased]
+## [1.2.0] — 2026-08-10
+
+### Fixed
+
+- **1.1.0 was published with no compiled code at all.** `dist` is gitignored
+  and `files` lists it, but nothing built before `npm publish` — so the
+  tarball carried all 413 catalogue files and none of the CLI: `bin` pointed
+  at a `dist/index.js` that was absent, `npx ai-project-bootstrap` failed for
+  every user, and `ai-project-bootstrap/core` could not resolve. Anyone on
+  1.1.0 should upgrade. `prepublishOnly` now builds and then asserts that
+  every path named by `bin`, `main` and `exports` exists, because a build can
+  fail quietly enough that a green publish still ships nothing.
 
 ### Changed
 
@@ -188,6 +199,9 @@ rather than released individually. See each prompt file under
 - Renamed the package to `ai-project-bootstrap` and fixed the `bin` path.
 - Added repository metadata for npm and GitHub.
 
+[1.2.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v0.3.0...v0.4.0
