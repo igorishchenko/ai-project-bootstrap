@@ -46,6 +46,7 @@ export function MobileBar({
             signedIn={signedIn}
             onToggleSignedIn={onToggleSignedIn}
             onNavigate={onToggleMenu}
+            inDrawer
           />
         </div>
       )}

@@ -9,14 +9,18 @@ export function SectionSidebar({
   signedIn,
   onToggleSignedIn,
   onNavigate,
+  inDrawer = false,
 }: {
   currentId: string;
   signedIn: boolean;
   onToggleSignedIn: () => void;
   onNavigate?: () => void;
+  inDrawer?: boolean;
 }) {
   return (
-    <div className={styles.sidebar}>
+    // The drawer copy must not carry .sidebar — the 1024px breakpoint hides
+    // that class to collapse the desktop grid column.
+    <div className={inDrawer ? styles.sidebarDrawer : styles.sidebar}>
       <div className={styles.sidebarAccount}>
         <span
           className={styles.acctDot}

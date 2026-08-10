@@ -133,6 +133,11 @@
   border-right: 1px solid var(--line);
   padding: 28px 22px;
 }
+/* Drawer copy of the sidebar: same inner styles, but not .sidebar (which the
+   1024px breakpoint hides) and no sticky column chrome — .drawer scrolls. */
+.sidebarDrawer {
+  padding-bottom: 40px;
+}
 .sidebarAccount {
   display: flex;
   gap: 10px;
