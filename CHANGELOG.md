@@ -7,6 +7,17 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
+## [Unreleased]
+
+### Changed
+
+- **`--idea` now calls the hosted backend by default.**
+  `AI_PROJECT_BOOTSTRAP_API_URL` defaulted to `http://localhost:8787`, which
+  an installed CLI has no way to reach — so `--idea` failed for everyone who
+  did not happen to set the variable themselves. The default is now
+  `https://api.ai-project-bootstrap.com`; point the variable at localhost to
+  develop against a backend running on your own machine.
+
 ## [1.1.0] — 2026-08-08
 
 ### Added
