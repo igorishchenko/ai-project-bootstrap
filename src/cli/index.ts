@@ -14,6 +14,8 @@ import type { Preset } from '../core/types.js';
 import { ADD_HELP_TEXT, mergeChoice, parseAddFlags, replaceChoice } from './add.js';
 import { runAnalyze } from './analyze.js';
 import { applyArchetype } from './archetype.js';
+import { runCheck } from './check.js';
+import { runCiInit } from './ciInit.js';
 import { loadSelectionFile } from './configFile.js';
 import { runDoctor } from './doctor.js';
 import { requestStackProposal, requireLicenseKey } from './idea.js';
@@ -187,6 +189,12 @@ async function main(argv: string[]): Promise<number> {
   }
   if (argv[0] === 'doctor') {
     return runDoctor(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'check') {
+    return runCheck(argv.slice(1), rootDir, reporter);
+  }
+  if (argv[0] === 'ci') {
+    return runCiInit(argv.slice(1), rootDir, reporter);
   }
   if (argv[0] === 'upgrade') {
     return runUpgrade(argv.slice(1), rootDir, reporter);

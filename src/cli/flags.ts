@@ -129,11 +129,16 @@ ai-project-bootstrap — bootstrap the development environment for AI-assisted d
 Usage
   npx ai-project-bootstrap [directory] [options]
   npx ai-project-bootstrap add <technology-id> [options]
+  npx ai-project-bootstrap check [options]
+  npx ai-project-bootstrap ci init [options]
   npx ai-project-bootstrap upgrade [options]
   npx ai-project-bootstrap implement <feature-id> [options]
   npx ai-project-bootstrap review [options]
   npx ai-project-bootstrap analyze [options]
   npx ai-project-bootstrap doctor [options]
+
+Every command is also available as \`apb\` — \`apb check\` is the same thing,
+and shorter for something worth running weekly.
 
 The project name doubles as its location: answer "my-app" to generate ./my-app,
 or "./apps/my-app" to create that folder and name the project "my-app".
@@ -141,6 +146,14 @@ or "./apps/my-app" to create that folder and name the project "my-app".
 Already have a generated project and want one more technology in it? Run
 \`ai-project-bootstrap add <technology-id>\` inside it instead of starting over —
 see \`ai-project-bootstrap add --help\` for details.
+
+Wondering whether this project's rules still say what we'd write today? Run
+\`ai-project-bootstrap check\` inside it — a read-only report, safe in CI, that
+never counts files you've edited as drift. See \`check --help\`.
+
+Want that answered without remembering to ask? \`ai-project-bootstrap ci init\`
+writes two GitHub Actions workflows: one comments the drift on every pull
+request, the other opens a pull request when there is something to refresh.
 
 Package updated since you generated? Run \`ai-project-bootstrap upgrade\` inside
 the project to refresh its rules, prompts and docs against the same selection
