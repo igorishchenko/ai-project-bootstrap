@@ -213,6 +213,135 @@ export class Reporter {
     }
   }
 
+  /**
+   * `check`'s report.
+   *
+   * Ordered by what a reader should do about it, not by count: drift first
+   * because it is the only actionable part, then the files we deliberately
+   * left alone. The "preserved" block is phrased as a guarantee rather than a
+   * warning — someone scanning this in CI should never read their own edits as
+   * a problem, or they will learn to ignore the whole report.
+   */
+  checkSummary(report: {
+    projectName: string;
+    targetDir: string;
+    recordedVersion: string | undefined;
+    installedVersion: string;
+    current: string[];
+    behind: string[];
+    edited: string[];
+    missing: string[];
+    added: string[];
+    orphaned: string[];
+    newAiTools: string[];
+  }): void {
+    const versionLine =
+      report.recordedVersion === undefined
+        ? pc.dim(`generated before versions were recorded · installed v${report.installedVersion}`)
+        : report.recordedVersion === report.installedVersion
+          ? pc.dim(`v${report.installedVersion}`)
+          : `${pc.dim(`v${report.recordedVersion}`)} → ${pc.bold(`v${report.installedVersion}`)}`;
+
+    this.write();
+    this.write(`${pc.bold('Project')}    ${report.projectName}  ${pc.dim('·')}  ${versionLine}`);
+    this.write();
+
+    /*
+     * The note belongs to the group, so it sits on the header line — below the
+     * files it read as a comment on whichever path happened to be last.
+     * `remedy`, where a group has one, follows the file list for the same
+     * reason: it is what to do about the whole group.
+     *
+     * Padded to the longest label ("Orphaned") plus a space, so the counts
+     * line up in a column whichever groups happen to be present.
+     */
+    const LABEL_WIDTH = 'Orphaned'.length + 1;
+    const group = (label: string, files: string[], note: string, remedy?: string): void => {
+      if (files.length === 0) return;
+      this.write(`${pc.bold(label.padEnd(LABEL_WIDTH))}${files.length}  ${pc.dim(`· ${note}`)}`);
+      for (const file of files.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (files.length > 8) this.write(pc.dim(`    …and ${files.length - 8} more`));
+      if (remedy) this.write(pc.dim(`    → ${remedy}`));
+      this.write();
+    };
+
+    group('Behind', report.behind, 'untouched since generation, safe to refresh');
+    group('Missing', report.missing, 'generated once, no longer on disk');
+    group('New', report.added, 'this version writes these; the one that generated it did not');
+    // Carries its own remedy because it is the one bucket `upgrade` does not
+    // resolve — the closing "run upgrade" line would send someone to a command
+    // that leaves these exactly where they are.
+    group(
+      'Orphaned',
+      report.orphaned,
+      'still on disk, no longer part of this stack',
+      'upgrade will not remove these — delete them, or use `add <id> --replace`',
+    );
+
+    if (report.edited.length > 0) {
+      this.write(
+        `${pc.cyan('ℹ')} ${report.edited.length} file${report.edited.length > 1 ? 's' : ''} you edited — ${pc.bold('upgrade will not touch')} ${report.edited.length > 1 ? 'them' : 'it'}:`,
+      );
+      for (const file of report.edited.slice(0, 8)) this.write(pc.dim(`    ${file}`));
+      if (report.edited.length > 8) {
+        this.write(pc.dim(`    …and ${report.edited.length - 8} more`));
+      }
+      this.write();
+    }
+
+    if (report.newAiTools.length > 0) {
+      const plural = report.newAiTools.length > 1;
+      this.write(
+        `${pc.cyan('ℹ')} ${report.newAiTools.length} more AI tool${plural ? 's' : ''} ${plural ? 'are' : 'is'} now supported: ${report.newAiTools.join(', ')}.`,
+      );
+      this.write(
+        pc.dim('  Add to "aiTools" in ai-project.config.json and upgrade again to include them.'),
+      );
+      this.write();
+    }
+
+    // Orphans are deliberately not in this count: `upgrade` does not resolve
+    // them, so folding them in would overstate what the suggested command
+    // fixes. They get their own line above, with their own remedy.
+    const stale = report.behind.length + report.missing.length + report.added.length;
+    if (stale > 0) {
+      this.write(
+        `${stale} file${stale > 1 ? 's' : ''} would change. ${pc.bold('npx ai-project-bootstrap upgrade')}`,
+      );
+      this.write();
+    } else if (report.orphaned.length === 0) {
+      this.write(
+        `${pc.green('Up to date.')} ${pc.dim(`${report.current.length} generated file${report.current.length === 1 ? '' : 's'} match today's templates.`)}`,
+      );
+      this.write();
+    }
+    // Nothing written in the orphans-only case: the group above already ended
+    // with a blank line, and a second one reads as a missing closing sentence.
+  }
+
+  /** `ci init`'s report — two files, and what to do with them. */
+  ciInitSummary(input: { targetDir: string; files: string[]; dryRun: boolean }): void {
+    this.write();
+    this.fileList(input.dryRun ? 'Would write' : 'Wrote', input.files);
+    this.write();
+    this.write(pc.dim(`  ${input.targetDir}`));
+    this.write();
+
+    if (input.dryRun) {
+      this.write(pc.yellow('Dry run — nothing was written.'));
+      this.write();
+      return;
+    }
+
+    this.write('Commit them, and the next pull request gets a drift report.');
+    this.write(
+      pc.dim(
+        '  Neither workflow blocks a build by default. Both are yours to edit — nothing regenerates them.',
+      ),
+    );
+    this.write();
+  }
+
   implementSummary(input: {
     targetDir: string;
     featureName: string;
