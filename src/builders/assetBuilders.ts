@@ -114,8 +114,8 @@ export const claudeBuilder: Builder = {
       );
     }
 
-    // The base module's extra skills (architecture, performance, testing)
-    // already carry their own hand-written frontmatter, unlike the synthesized
+    // The base module's extra skills (architecture, performance, testing,
+    // typescript) carry their own hand-written frontmatter, unlike the synthesized
     // frontmatter above — mirrored verbatim, just rendered and gated the same way.
     const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
     if (!base) return;

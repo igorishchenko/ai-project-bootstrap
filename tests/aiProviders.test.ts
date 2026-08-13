@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { generate } from '../src/core/pipeline/generate.js';
 import { loadRegistry } from '../src/core/registry/loadModules.js';
 import { builders } from '../src/builders/index.js';
-import { collectRuleSources, enabledAiTools } from '../src/builders/ruleSources.js';
+import { AI_TOOLS, collectRuleSources, enabledAiTools } from '../src/builders/ruleSources.js';
 import type { BuildContext, Selection } from '../src/core/types.js';
 import { makeModule } from './helpers/modules.js';
 
@@ -97,6 +97,26 @@ describe('AI provider builders', () => {
     expect(content).toContain('# Stripe');
   });
 
+  it('renders the frontmatter Continue writes, not just the rule body', () => {
+    // Regression: `description` is lifted verbatim out of the source
+    // frontmatter by `toRuleSource`, so only the body went through `render` —
+    // shipping a literal `{{projectName}}` to anyone who picked Continue.
+    const result = run(withAiTools(['continue']));
+
+    expect(result.vfs.read('.continue/rules/base.md')).toContain(
+      'description: "Project-wide conventions for Demo App"',
+    );
+    expect(result.vfs.read('.continue/rules/architecture.md')).toContain(
+      'description: "Architectural constraints for Demo App"',
+    );
+  });
+
+  it('spells product names the way the product does, not the way the slug does', () => {
+    const result = run(withAiTools(['continue']));
+
+    expect(result.vfs.read('.continue/rules/typescript.md')).toContain('name: "TypeScript"');
+  });
+
   it('writes plain-Markdown rules for Cline and Roo Code, with no frontmatter', () => {
     const result = run(withAiTools(['cline', 'roo']));
 
@@ -138,15 +158,8 @@ describe('AI provider builders', () => {
       'stripe',
       'nextjs',
     ].sort();
-    // Claude never got a dedicated "typescript" skill authored (only
-    // architecture/performance/testing exist under assets/base/templates/_claude/skills/)
-    // — a pre-existing asymmetry with Cursor's four base topics, not something
-    // this feature changes.
-    const expectedByTool: Record<string, string[]> = {
-      claude: expected.filter((id) => id !== 'typescript'),
-    };
     for (const [tool, ids] of Object.entries(perProviderIds)) {
-      expect([...ids].sort(), `${tool} rule set`).toEqual(expectedByTool[tool] ?? expected);
+      expect([...ids].sort(), `${tool} rule set`).toEqual(expected);
     }
 
     // Copilot's rule set is the same content, just the base one is filed under
@@ -156,6 +169,23 @@ describe('AI provider builders', () => {
       .map((f) => f.replace('.github/instructions/', '').replace('.instructions.md', ''));
     expect([...copilotScoped, 'base'].sort()).toEqual(expected);
     expect(files).toContain('.github/copilot-instructions.md');
+  });
+
+  it('renders every template with all providers enabled — no placeholder survives', () => {
+    // generate.test.ts makes the same assertion, but over a selection with no
+    // `aiTools` key — which defaults to cursor + claude, so the four newer
+    // providers' output was never looked at. That is how a literal
+    // `{{projectName}}` reached `.continue/rules/*.md` unnoticed.
+    const result = run({
+      ...base,
+      choices: { ...base.choices, 'ci-cd': 'github-actions', aiTools: [...AI_TOOLS] },
+    });
+
+    for (const [file, content] of result.vfs.entries()) {
+      // `${{ … }}` belongs to the CI runner; `{{ flex: 1 }}` in prose is JSX.
+      const tags = content.replace(/\$\{\{[^{}]*\}\}/g, '').match(/\{\{[^{}:]*\}\}/g) ?? [];
+      expect(tags, `${file} has unrendered tags`).toEqual([]);
+    }
   });
 });
 
