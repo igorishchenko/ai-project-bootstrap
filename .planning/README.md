@@ -1,5 +1,11 @@
 # `.planning/` — Implementation Roadmap
 
+> **Status, 13 Aug 2026: complete.** Twelve of the fourteen prompts shipped.
+> `11` (feature modules) and `13` (SaaS templates) are partially built and
+> deliberately frozen — see §5 of the site repo's `STRATEGY_V2.md`. Product-wide
+> planning has moved to that repo's `.planning/`; this folder is kept as the
+> record of how the CLI got here.
+
 This folder is a working roadmap for evolving `ai-project-bootstrap` from a project generator into what the source discussion (a ChatGPT conversation about this package, summarized in [`roadmap/00-overview.md`](roadmap/00-overview.md)) called an "AI development operating system" — a tool that doesn't just scaffold folders but ships everything an AI coding agent needs to build a project consistently: rules, prompts, docs, checklists, and now-missing capabilities like multi-provider AI support, stack presets, and AI-native commands (`implement`, `review`, `analyze`, `upgrade`).
 
 It is **technical/implementation scope only**. Monetization and business-model questions from the source conversation are deliberately excluded here.

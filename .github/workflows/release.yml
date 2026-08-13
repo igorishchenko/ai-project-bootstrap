@@ -1,0 +1,82 @@
+# Publishes on a `vX.Y.Z` tag pushed to main — see .claude/commands/release.md
+# for the procedure that produces the tag.
+#
+# Requires an `NPM_TOKEN` repository secret (an npm automation token).
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write # cut the GitHub Release
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    name: Publish to npm and cut the GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The tag is the only trigger, so a tag that disagrees with package.json
+      # would publish a version nobody wrote release notes for.
+      - name: The tag agrees with package.json
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          tag=${GITHUB_REF_NAME#v}
+          if [ "$pkg" != "$tag" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $pkg"
+            exit 1
+          fi
+
+      - name: Lint, typecheck and test
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+
+      # `prepublishOnly` runs `pnpm build && pnpm check:publishable`, so the
+      # tarball is built and audited by the publish itself. A tarball missing
+      # config/, technologies/, archetypes/ or features/ installs fine and
+      # fails at runtime, which is what check:publishable exists to catch.
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { inside = 1; next }
+            inside && /^## \[/ { exit }
+            inside { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+
+      - name: GitHub Release
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
