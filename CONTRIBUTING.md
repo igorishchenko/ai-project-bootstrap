@@ -146,9 +146,21 @@ test runner.
   are parsed after rendering, so a module can vary by what else was selected —
   `{{#if has.react-native}}` picks native test tooling, and a web framework
   namespaces its `start` script when a mobile platform already defines one.
-- **`templates/`** has three reserved subtrees: `root/` (project root),
-  `github/` (`.github/`) and `hygiene/` (lint, format and hook configs).
+- **`templates/`** has five reserved subtrees: `root/` (project root),
+  `github/` (`.github/`), `hygiene/` (lint, format and hook configs), and —
+  used only by the base module — `_cursor/rules/` and `_claude/skills/`.
   Everything else mirrors to the project root at its own path.
+- **The base module's stack-agnostic topics come in pairs.** `architecture`,
+  `performance`, `testing` and `typescript` are the one place a rule is
+  authored twice: `assets/base/templates/_cursor/rules/<topic>.mdc` and
+  `assets/base/templates/_claude/skills/<topic>/SKILL.md`. Neither is derived
+  from the other — Cursor wants a rule, Claude Code wants a skill with its own
+  hand-written frontmatter — so adding a topic means adding both files, with
+  the skill's `paths` matching the rule's `globs`. Every other provider
+  re-renders the `_cursor` copy through `extraBaseRuleSources`
+  (`src/builders/ruleSources.ts`), so a topic added on only the Cursor side
+  reaches five tools and silently skips Claude Code.
+  `tests/moduleContract.test.ts` fails on the unpaired file.
 - **`_name`** in a template path becomes `.name` on output — npm rewrites a
   packaged `.gitignore`, so sources store `_gitignore`.
 - Every text asset is rendered with `{{var}}`, `{{#if}}`, `{{#unless}}` and

@@ -7,6 +7,33 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
+## [Unreleased]
+
+### Fixed
+
+- **Continue.dev rules shipped a literal `{{projectName}}`.** `toRuleSource`
+  lifts `name`, `description` and `globs` out of a rule's source frontmatter
+  verbatim, and only the *body* was ever rendered — so every generated project
+  that selected Continue got
+  `description: "Project-wide conventions for {{projectName}}"` in
+  `.continue/rules/base.md` and `architecture.md`. Every part of a rule that
+  can reach the output is now rendered. A new test generates with all seven AI
+  tools enabled and fails on any surviving `{{…}}`; the existing one defaulted
+  to Cursor and Claude Code only, which is how this went unnoticed.
+- **Claude Code was missing the TypeScript rule entirely.** The base module's
+  stack-agnostic topics are authored twice — once as a Cursor `.mdc`, once as a
+  Claude `SKILL.md` — and `typescript` only ever had the Cursor half. Every
+  other provider re-renders the Cursor copy, so the topic reached five tools
+  and silently skipped the one this project tells people to use.
+  `tests/moduleContract.test.ts` now fails on an unpaired topic, and
+  `CONTRIBUTING.md` documents that they come in pairs.
+- **`typescript` was named "Typescript"** wherever a rule name is derived from
+  its filename — Continue's `name:` field. Known product casings now win over
+  title-casing the slug.
+- **Piping CLI output into `head` or `grep -q` crashed** with an unhandled
+  `EPIPE` and a full stack trace over what is ordinary shell behaviour. A
+  closed pipe now exits 0 quietly. Every other stream error still throws.
+
 ## [1.3.1] — 2026-08-13
 
 ### Fixed

@@ -5,13 +5,28 @@ import type { Finding, FindingCategory } from './reviewChecks.js';
 import type { CategoryScore, DetectedTechnology } from './analyzeChecks.js';
 import type { CostSummary } from '../core/pricing.js';
 import { isGeneratorError } from '../core/resolve/errors.js';
+import { isEpipe } from './epipe.js';
 
 /** All user-facing output, kept in one place so the CLI voice stays consistent. */
 export class Reporter {
   constructor(private readonly stream: NodeJS.WriteStream = process.stdout) {}
 
   private write(line = ''): void {
-    this.stream.write(`${line}\n`);
+    this.writeTo(this.stream, `${line}\n`);
+  }
+
+  /**
+   * The stream is injectable, so it may be one nothing else has made safe — a
+   * write that lands after its reader has gone throws EPIPE here rather than
+   * emitting it, and truncated output is not worth a stack trace. See
+   * `ignoreEpipe`, which handles the emitted half of the same problem.
+   */
+  private writeTo(stream: NodeJS.WriteStream, text: string): void {
+    try {
+      stream.write(text);
+    } catch (error) {
+      if (!isEpipe(error)) throw error;
+    }
   }
 
   intro(version: string): void {
@@ -544,17 +559,17 @@ export class Reporter {
   /** Renders an error with its remediation hint, if it carries one. */
   failure(error: unknown): void {
     const stderr = process.stderr;
-    stderr.write('\n');
+    this.writeTo(stderr, '\n');
 
     if (isGeneratorError(error)) {
-      stderr.write(`${pc.red('✖')} ${error.message}\n`);
-      if (error.hint) stderr.write(`${pc.dim(`  → ${error.hint}`)}\n`);
+      this.writeTo(stderr, `${pc.red('✖')} ${error.message}\n`);
+      if (error.hint) this.writeTo(stderr, `${pc.dim(`  → ${error.hint}`)}\n`);
     } else if (error instanceof Error) {
-      stderr.write(`${pc.red('✖')} ${error.message}\n`);
+      this.writeTo(stderr, `${pc.red('✖')} ${error.message}\n`);
     } else {
-      stderr.write(`${pc.red('✖')} ${String(error)}\n`);
+      this.writeTo(stderr, `${pc.red('✖')} ${String(error)}\n`);
     }
 
-    stderr.write('\n');
+    this.writeTo(stderr, '\n');
   }
 }

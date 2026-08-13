@@ -1,5 +1,5 @@
 import type { Builder, BuildContext } from '../core/types.js';
-import { render } from '../core/template/render.js';
+import { type TemplateData, render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
 import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
 import {
@@ -21,6 +21,25 @@ function ensureTrailingNewline(content: string): string {
   return content.endsWith('\n') ? content : `${content}\n`;
 }
 
+/**
+ * Renders every part of a rule that can reach the output, not just the body.
+ *
+ * `toRuleSource` lifts `name`, `description` and `globs` out of the raw source
+ * frontmatter verbatim, so a `{{projectName}}` in a `description:` field (as in
+ * `assets/base/cursor-rule.mdc`) survives unrendered into any provider that
+ * writes those fields back out — Continue today. `id` is deliberately left
+ * alone: it is a slug that only ever becomes a file path.
+ */
+function renderRuleSource(source: RuleSource, data: TemplateData): RuleSource {
+  return {
+    ...source,
+    name: render(source.name, data),
+    description: render(source.description, data),
+    globs: source.globs?.map((glob) => render(glob, data)),
+    body: render(source.body, data),
+  };
+}
+
 function buildRuleFiles(
   ctx: BuildContext,
   tool: AiTool,
@@ -29,10 +48,13 @@ function buildRuleFiles(
 ): Array<{ path: string; content: string }> {
   if (!enabledAiTools(ctx).has(tool)) return [];
   const data = templateData(ctx);
-  return collectRuleSources(ctx).map((source) => ({
-    path: toPath(source),
-    content: ensureTrailingNewline(render_(source, render(source.body, data))),
-  }));
+  return collectRuleSources(ctx).map((source) => {
+    const rendered = renderRuleSource(source, data);
+    return {
+      path: toPath(rendered),
+      content: ensureTrailingNewline(render_(rendered, rendered.body)),
+    };
+  });
 }
 
 /**

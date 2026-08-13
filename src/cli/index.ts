@@ -22,6 +22,7 @@ import { requestStackProposal, requireLicenseKey } from './idea.js';
 import { runImplement } from './implement.js';
 import { runReview } from './review.js';
 import { runUpgrade } from './upgrade.js';
+import { ignoreEpipe } from './epipe.js';
 import { HELP_TEXT, parseFlags, type CliFlags } from './flags.js';
 import { resolveProjectTarget } from './projectTarget.js';
 import { Reporter } from './reporter.js';
@@ -378,6 +379,11 @@ async function main(argv: string[]): Promise<number> {
 
   return 0;
 }
+
+// Piping into `head`, `grep -q` or anything else that stops reading early is
+// normal use, not an error — installed before the first byte is written.
+ignoreEpipe(process.stdout);
+ignoreEpipe(process.stderr);
 
 main(process.argv.slice(2))
   .then((code) => {

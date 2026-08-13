@@ -105,7 +105,20 @@ export function yamlString(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
+/**
+ * Product names whose casing cannot be derived from a slug — `typescript`
+ * title-cases to "Typescript", not "TypeScript". Only the base module's topic
+ * filenames reach `titleCase`; every other rule takes its name straight from a
+ * module manifest, which spells it correctly already.
+ */
+const KNOWN_CASING: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+};
+
 function titleCase(slug: string): string {
+  const known = KNOWN_CASING[slug];
+  if (known) return known;
   return slug.replace(/(^|-)([a-z])/g, (_, sep: string, letter: string) =>
     sep ? ` ${letter.toUpperCase()}` : letter.toUpperCase(),
   );
