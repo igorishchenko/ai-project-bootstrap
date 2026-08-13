@@ -7,13 +7,13 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
-## [Unreleased]
+## [1.3.2] — 2026-08-13
 
 ### Fixed
 
 - **Continue.dev rules shipped a literal `{{projectName}}`.** `toRuleSource`
   lifts `name`, `description` and `globs` out of a rule's source frontmatter
-  verbatim, and only the *body* was ever rendered — so every generated project
+  verbatim, and only the _body_ was ever rendered — so every generated project
   that selected Continue got
   `description: "Project-wide conventions for {{projectName}}"` in
   `.continue/rules/base.md` and `architecture.md`. Every part of a rule that
@@ -282,6 +282,7 @@ rather than released individually. See each prompt file under
 - Renamed the package to `ai-project-bootstrap` and fixed the `bin` path.
 - Added repository metadata for npm and GitHub.
 
+[1.3.2]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.1.0...v1.2.0
