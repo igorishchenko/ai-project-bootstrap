@@ -2,3 +2,35 @@ node_modules
 dist
 build
 coverage
+
+# Everything below is written by ai-project-bootstrap, and reformatting it
+# breaks `upgrade`.
+#
+# The generator records a fingerprint of every file it writes and compares it
+# on the next run: a file whose contents no longer match is treated as yours
+# and is never overwritten. That is what protects your edits — but `prettier
+# --write` is an edit too. Running `npm run format` over these once was enough
+# to mark 26 of them as hand-edited, after which `upgrade` silently stopped
+# refreshing them and the rules your AI assistant reads quietly went stale.
+#
+# Delete a line here only if you intend to own that file from then on.
+docs/
+checklists/
+prompts/
+implementation/
+.cursor/
+.claude/
+.continue/
+.clinerules/
+.roo/
+.github/instructions/
+.github/copilot-instructions.md
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+README.md
+ai-project.config.json
+# Named individually rather than ignoring scripts/, so your own scripts are
+# still formatted.
+scripts/setup.mjs
+scripts/doctor.mjs

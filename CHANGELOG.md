@@ -7,6 +7,27 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
+## [Unreleased]
+
+### Fixed
+
+- **Running the generated project's own `npm run format` silently broke
+  `upgrade`.** The generator fingerprints every file it writes and treats a
+  mismatch as "the user edited this, never touch it again" — and
+  `prettier --write` is an edit. One `npm run format` rewrote 26
+  generator-owned files (`.claude/skills/**`, `docs/**`, `CLAUDE.md`,
+  `AGENTS.md`, …), after which `upgrade` stopped refreshing them and the rules
+  the AI assistant reads went quietly stale. The generated `.prettierignore`
+  now covers generator-owned output, and `tests/generatedFormatting.test.ts`
+  fails if any of it is ever reformatted again.
+- **Every new project's first CI run went red, twice over.** The generated
+  workflow used `cache: npm` and `npm ci`, both of which require a lockfile a
+  freshly generated project does not have yet — the job failed at
+  `setup-node`, before a single script ran. Caching is now enabled only once
+  `package-lock.json` exists, and the install step falls back to
+  `npm install` for that first run. Separately, `format:check` failed on 27
+  generated files, which the `.prettierignore` fix above resolves.
+
 ## [1.3.0] — 2026-08-12
 
 ### Added

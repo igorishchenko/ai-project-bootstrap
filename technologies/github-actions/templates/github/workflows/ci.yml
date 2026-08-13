@@ -27,10 +27,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          # Enabled only once a lockfile is committed. `cache: npm` does not
+          # degrade when there is no lockfile — it fails the job outright,
+          # before a single script runs, which is exactly the state this
+          # project is in until someone has installed dependencies.
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
 
+      # `npm ci` also requires a lockfile, so the first run on a freshly
+      # generated project installs instead. Every run after that takes the
+      # reproducible path. Commit package-lock.json and this stops branching.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "No package-lock.json yet — installing. Commit the lockfile to get reproducible CI installs."
+            npm install
+          fi
 
       - name: Lint
         run: npm run lint
