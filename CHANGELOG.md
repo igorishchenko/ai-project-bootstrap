@@ -7,6 +7,11 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
+## [Unreleased]
+
+Nothing yet. Entries land here in the PR that makes the change, not at
+release time — see `.claude/commands/changelog-entry.md`.
+
 ## [1.3.2] — 2026-08-13
 
 ### Fixed
