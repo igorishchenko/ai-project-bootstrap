@@ -7,7 +7,7 @@ the CLI's flags, exit codes, or the generated-project contract needs a major
 version bump. Seeded from git history; going forward, add an entry here as
 part of the PR that makes the change, not at release time.
 
-## [Unreleased]
+## [1.3.1] — 2026-08-13
 
 ### Fixed
 
@@ -255,6 +255,7 @@ rather than released individually. See each prompt file under
 - Renamed the package to `ai-project-bootstrap` and fixed the `bin` path.
 - Added repository metadata for npm and GitHub.
 
+[1.3.1]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/igorishchenko/ai-project-bootstrap/compare/v1.0.0...v1.1.0
