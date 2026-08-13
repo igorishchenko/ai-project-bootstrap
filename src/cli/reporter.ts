@@ -249,6 +249,15 @@ export class Reporter {
     added: string[];
     orphaned: string[];
     newAiTools: string[];
+    advisories?: Array<{
+      id: string;
+      severity: 'info' | 'warning' | 'critical';
+      publishedAt: string;
+      summary?: string;
+      url?: string;
+    }>;
+    advisoriesEntitled?: boolean;
+    advisoryNote?: string;
   }): void {
     const versionLine =
       report.recordedVersion === undefined
@@ -312,6 +321,49 @@ export class Reporter {
       this.write(
         pc.dim('  Add to "aiTools" in ai-project.config.json and upgrade again to include them.'),
       );
+      this.write();
+    }
+
+    /*
+     * Advisories sit after the drift summary because they are about the world
+     * rather than about this repository — "your rules are behind" first, then
+     * "and here is the vendor change that is why".
+     *
+     * Worst first. An unentitled reader gets the count and the severities and
+     * one line about what reveals the rest: never a claim that there is
+     * nothing, which would be the one thing that makes the feed untrustworthy.
+     */
+    if (report.advisories && report.advisories.length > 0) {
+      const worst = { critical: pc.red, warning: pc.yellow, info: pc.cyan };
+      const count = report.advisories.length;
+      this.write(
+        `${pc.bold('Advisories')}  ${count}  ${pc.dim('· vendor changes affecting this stack')}`,
+      );
+
+      for (const advisory of report.advisories.slice(0, 10)) {
+        const tag = worst[advisory.severity](advisory.severity.padEnd(8));
+        this.write(
+          `    ${tag} ${advisory.summary ?? pc.dim(`${advisory.id} — subscribe to read this`)}`,
+        );
+        if (advisory.url) this.write(pc.dim(`             ${advisory.url}`));
+      }
+      if (count > 10) this.write(pc.dim(`    …and ${count - 10} more`));
+
+      if (report.advisoriesEntitled === false) {
+        this.write(
+          pc.dim(
+            '    → Subscribing shows what each one says and what to do about it: ai-project-bootstrap login',
+          ),
+        );
+      }
+      this.write();
+    }
+
+    // Said even when nothing is wrong, because "advisories were skipped" and
+    // "no advisories apply" are different answers and a reader acting on the
+    // second deserves to know which one they got.
+    if (report.advisoryNote) {
+      this.write(pc.dim(`ℹ ${report.advisoryNote}`));
       this.write();
     }
 

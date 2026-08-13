@@ -11,6 +11,34 @@ part of the PR that makes the change, not at release time.
 
 ### Added
 
+- **`check` reports advisories** — known vendor changes affecting the
+  technologies you selected, after the drift summary, worst first. This is
+  where "your rules are behind" and "here is the vendor change that is why"
+  become one report. New in `--json` as `advisories` and `advisoryNote`;
+  `schema` stays `1` because nothing that existed moved, and the GitHub action
+  is pinned by a moving `v1` tag that a changed field would break all at once.
+  `advisories` is `null` when they were skipped and `[]` when none matched —
+  "we did not look" and "we looked and found none" are different answers.
+- **`--no-advisories`** skips the lookup, completing the
+  `check [--json --fail-on --no-advisories]` surface Appendix A specifies.
+
+### Changed
+
+- **A `critical` advisory now raises the report to `critical`, and can fail a
+  build through `--fail-on`.** `critical` has been accepted-but-unreachable
+  since 1.3.0, reserved for exactly this. The cost is real — somebody else
+  publishing a change can turn your CI red with no commit on your side — and
+  it is the right trade: an advisory is a *stronger* signal than a stale file,
+  `--fail-on` still defaults to `none` so nothing fails unless asked, and an
+  advisory only raises severity if you can actually read it. Nobody's build
+  fails over text the same response refuses to show them.
+- **`check` still works offline, unaccounted-for and MIT.** The advisory
+  lookup is the only network call the command makes, and it degrades to
+  nothing on every failure — no network, a timeout, any non-200 — leaving the
+  full drift report plus one line saying why advisories are missing.
+
+### Added
+
 - **`login` and `logout`.** The first thing a paying customer used to meet was
   an error message teaching them about `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` — a
   credential, introduced as an environment variable, with no suggestion of
