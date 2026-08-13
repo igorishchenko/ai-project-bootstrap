@@ -10,3 +10,5 @@ coverage/
 # Claude Code local state — worktrees are full checkouts, settings are per-machine
 .claude/worktrees/
 .claude/settings.local.json
+# Points at sibling checkouts by absolute path, so it is one developer's only.
+.claude/launch.json
