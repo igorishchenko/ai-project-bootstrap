@@ -136,6 +136,8 @@ Usage
   npx ai-project-bootstrap review [options]
   npx ai-project-bootstrap analyze [options]
   npx ai-project-bootstrap doctor [options]
+  npx ai-project-bootstrap login [options]
+  npx ai-project-bootstrap logout
 
 Every command is also available as \`apb\` — \`apb check\` is the same thing,
 and shorter for something worth running weekly.
@@ -182,11 +184,16 @@ templates" section; \`archetypes/\` lists what's installed).
 
 Don't know which technologies you want yet? \`--idea "<description>"\` sends
 your idea to a hosted service and proposes a stack, shown for review exactly
-like a preset before anything is written. This is a Pro feature — it needs
-AI_PROJECT_BOOTSTRAP_LICENSE_KEY (the key emailed to you after subscribing);
-set AI_PROJECT_BOOTSTRAP_API_URL to point at your own backend if you're
-running one. Combining --idea with --yes skips that review, so it isn't
-recommended.
+like a preset before anything is written. This is a Pro feature — run
+\`ai-project-bootstrap login\` once and it works from then on. Set
+AI_PROJECT_BOOTSTRAP_API_URL to point at your own backend if you're running
+one. Combining --idea with --yes skips that review, so it isn't recommended.
+
+Subscribed? \`ai-project-bootstrap login\` stores your key on this machine, so
+--idea and the editor assistant stop asking for it. \`logout\` removes it, and
+\`login --status\` says which key is in use without printing it. Every command
+that needs a key reads AI_PROJECT_BOOTSTRAP_LICENSE_KEY first and the stored
+key second, so existing CI keeps working exactly as it did.
 
 Options
   -o, --out <dir>       Where to generate the project (default: ./<project-name>)

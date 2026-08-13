@@ -9,8 +9,32 @@ part of the PR that makes the change, not at release time.
 
 ## [Unreleased]
 
-Nothing yet. Entries land here in the PR that makes the change, not at
-release time — see `.claude/commands/changelog-entry.md`.
+### Added
+
+- **`login` and `logout`.** The first thing a paying customer used to meet was
+  an error message teaching them about `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` — a
+  credential, introduced as an environment variable, with no suggestion of
+  where to put it that was not a shell profile or a CI secret. `login` prompts
+  for the key (or takes `--key`), checks it against the backend before storing
+  anything, and writes it **owner-only, outside any project directory**: a
+  credential inside a project is one `git add -A` from a public repository. It
+  follows the platform — `~/Library/Application Support/` on macOS,
+  `$XDG_CONFIG_HOME` on Linux, `%APPDATA%` on Windows.
+- **`login --status`** says which key is in use and where it came from, and
+  **never prints one in full** — the same masking the dashboard shows. `logout`
+  removes the stored key, and says so when `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`
+  is still set in the shell, since that keeps winning and `logout` cannot unset
+  it for you.
+
+### Changed
+
+- **Every command that needs a license key now looks in two places**, in this
+  order: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, then the key stored by `login`.
+  The environment deliberately wins — a key exported for one run is the more
+  deliberate of the two, and putting it first is what keeps existing CI working
+  unchanged. Nothing that worked before this release stops working.
+- The message you get with no key names a command to run rather than a variable
+  to set.
 
 ## [1.3.2] — 2026-08-13
 

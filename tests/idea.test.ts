@@ -1,5 +1,9 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GeneratorError } from '../src/core/resolve/errors.js';
+import { storeKey } from '../src/cli/credentials.js';
 
 const notes: Array<{ message: string; title?: string }> = [];
 
@@ -10,7 +14,7 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-const { resolveApiUrl, requireLicenseKey, requestStackProposal } =
+const { resolveApiUrl, requireLicenseKey, resolveLicenseKey, requestStackProposal } =
   await import('../src/cli/idea.js');
 
 const samplePreset = {
@@ -40,22 +44,74 @@ describe('resolveApiUrl', () => {
 });
 
 describe('requireLicenseKey', () => {
-  const original = process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
+  const originalKey = process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
+  const originalDir = process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR;
+  let dir: string;
+
+  beforeEach(() => {
+    // Pointed at a temp directory, or these tests would read whatever the
+    // machine running them happens to have logged in.
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'apb-idea-'));
+    process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR = dir;
+    delete process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
+  });
 
   afterEach(() => {
-    if (original) process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY = original;
+    fs.rmSync(dir, { recursive: true, force: true });
+    if (originalKey) process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY = originalKey;
     else delete process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
+    if (originalDir) process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR = originalDir;
+    else delete process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR;
   });
 
-  it('throws INVALID_CONFIG when AI_PROJECT_BOOTSTRAP_LICENSE_KEY is unset', () => {
-    delete process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
+  it('throws INVALID_CONFIG when there is no key anywhere', () => {
     expect(() => requireLicenseKey()).toThrow(GeneratorError);
-    expect(() => requireLicenseKey()).toThrow(/AI_PROJECT_BOOTSTRAP_LICENSE_KEY is not set/);
+    expect(() => requireLicenseKey()).toThrow(/No license key found/);
   });
 
-  it('returns the key when set', () => {
+  /**
+   * The message names a command, not a variable. Being told to set
+   * AI_PROJECT_BOOTSTRAP_LICENSE_KEY was the first thing a paying customer met,
+   * and it taught them the wrong thing to do with a credential.
+   */
+  it('tells you to run login rather than to set an environment variable', () => {
+    try {
+      requireLicenseKey();
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      expect((error as GeneratorError).hint).toContain('ai-project-bootstrap login');
+    }
+  });
+
+  it('returns the key from the environment', () => {
     process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY = 'apb_live_test';
     expect(requireLicenseKey()).toBe('apb_live_test');
+  });
+
+  it('falls back to the stored key when the environment has none', () => {
+    storeKey('apb_live_stored');
+    expect(requireLicenseKey()).toBe('apb_live_stored');
+    expect(resolveLicenseKey()).toEqual({ key: 'apb_live_stored', source: 'stored' });
+  });
+
+  /**
+   * The environment wins, and that is what keeps every existing CI pipeline
+   * working unchanged now that `login` exists: a key exported for this run is
+   * the more deliberate of the two.
+   */
+  it('prefers the environment over the stored key when both are present', () => {
+    storeKey('apb_live_stored');
+    process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY = 'apb_live_env';
+
+    expect(requireLicenseKey()).toBe('apb_live_env');
+    expect(resolveLicenseKey()).toEqual({ key: 'apb_live_env', source: 'env' });
+  });
+
+  it('ignores an empty environment variable rather than treating it as a key', () => {
+    storeKey('apb_live_stored');
+    process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY = '   ';
+
+    expect(requireLicenseKey()).toBe('apb_live_stored');
   });
 });
 
