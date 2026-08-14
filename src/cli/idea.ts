@@ -21,13 +21,16 @@ export function resolveApiUrl(): string {
  * fast with a clear message instead of a round trip that ends in the same
  * rejection anyway.
  */
-export function requireLicenseKey(): string {
+export function requireLicenseKey(
+  feature = '--idea',
+  alternative = 'drop --idea and use --preset/the wizard instead',
+): string {
   const key = process.env.AI_PROJECT_BOOTSTRAP_LICENSE_KEY;
   if (!key) {
     throw new GeneratorError(
       'INVALID_CONFIG',
       'AI_PROJECT_BOOTSTRAP_LICENSE_KEY is not set.',
-      '--idea requires an ai-project-bootstrap Pro subscription. Set the license key you received by email, or drop --idea and use --preset/the wizard instead.',
+      `${feature} requires an ai-project-bootstrap subscription. Set the license key you received by email, or ${alternative}.`,
     );
   }
   return key;

@@ -9,7 +9,8 @@ import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import { UNTRACKED } from '../core/vfs/fingerprint.js';
 import { preservedPaths, readFingerprints, type Fingerprints } from '../core/vfs/preserve.js';
-import { loadSelectionFile, readRecordedGeneratorVersion } from './configFile.js';
+import { loadSelectionFile, readPinnedPacks, readRecordedGeneratorVersion } from './configFile.js';
+import { loadPinnedPacks } from '../core/packs/packCache.js';
 import type { Reporter } from './reporter.js';
 
 /**
@@ -326,6 +327,7 @@ export async function runCheck(
     selection,
     builders,
     registry,
+    packs: loadPinnedPacks(readPinnedPacks(configFile)),
     generatorVersion: installedVersion,
     // No `onBuilder` — a read-only report should not print a build log, and
     // --json must emit nothing but JSON.

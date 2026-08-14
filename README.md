@@ -414,6 +414,73 @@ project originally selected, `upgrade` says so without adding them itself —
 edit `"aiTools"` in `ai-project.config.json` and upgrade again to include
 them. `upgrade --help` covers the rest.
 
+## Your organisation's own rules (Team)
+
+The built-in rules cover 35 technologies. They do not cover how _your_ team
+writes code — that you log with `pino`, that Row Level Security goes on before
+the first deploy, that the bare Expo workflow is not an option here. A **rule
+pack** carries those into every project your organisation generates, rendered
+into all seven AI tool formats alongside the built-in rules.
+
+```bash
+cd my-app
+npx ai-project-bootstrap pack add acme-standards   # fetch, cache, pin
+npx ai-project-bootstrap upgrade                   # write the rules in
+npx ai-project-bootstrap pack list                 # what is pinned, what is cached
+npx ai-project-bootstrap pack update               # move the pin deliberately
+```
+
+**Precedence, in one sentence: an org pack beats a built-in rule, and your own
+hand edits beat everything.**
+
+A pack is one JSON document with three things a rule can do:
+
+|              | Written as             | What happens                                                                                            |
+| ------------ | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Add**      | `"appliesTo": ["*"]`   | A new rule, in every project — or scope it to module ids and it appears only where those were selected. |
+| **Extend**   | `"extends": "nextjs"`  | Appended below our section. Ours stays.                                                                 |
+| **Override** | `"replaces": "nextjs"` | Ours is dropped entirely, and `check` says which pack did it.                                           |
+
+```json
+{
+  "id": "acme-standards",
+  "name": "Acme engineering standards",
+  "version": "2.1.0",
+  "rules": [
+    {
+      "id": "logging",
+      "name": "Logging",
+      "appliesTo": ["*"],
+      "content": "# Logging\n\nUse `pino`…"
+    },
+    {
+      "id": "nextjs",
+      "name": "Next.js at Acme",
+      "extends": "nextjs",
+      "content": "## Acme additions\n…"
+    }
+  ],
+  "docs": [{ "path": "docs/acme-review.md", "content": "…" }],
+  "checklists": [{ "path": "checklists/acme-launch.md", "content": "…" }]
+}
+```
+
+**A pack is pinned to an exact version, and `@latest` is deliberately not
+offered.** Two runs of the same command against the same commit produce the
+same files — a rule that changed underneath them would break that quietly, in
+the direction nobody checks, because the output would still look plausible.
+`pack update` moves the pin on purpose.
+
+**Generation stays offline.** `pack add` and `pack update` are the only
+commands that touch the network; they cache to
+`~/.ai-project-bootstrap/packs/`, and generation, `check` and `upgrade` read
+that cache and nothing else. A pinned pack that is not cached is a clear
+refusal rather than a silent generation without your standards — which would
+also make every rule file report as drifted, since the fingerprints were
+recorded with the pack's content in them.
+
+Fetching a pack needs a licence key and an organisation that publishes one.
+
 ## Implementing a feature
 
 Everything so far scaffolds the project or wires in a technology. `implement`

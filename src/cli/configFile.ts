@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import type { Selection } from '../core/types.js';
 import { GeneratorError } from '../core/resolve/errors.js';
+import { parsePackRef, type PackRef } from '../core/packs/packTypes.js';
 
 /**
  * Loads and validates a saved selection — `ai-project.config.json`, or a
@@ -31,6 +32,36 @@ export function loadSelectionFile(file: string): Selection {
     );
   }
   return { projectName: selection.projectName, choices: selection.choices ?? {} };
+}
+
+/**
+ * The rule packs a project was generated against, pinned.
+ *
+ * Absent on every project that has none, which is every project by default —
+ * `[]`, not an error. Parsed strictly: an unpinned or malformed reference is a
+ * refusal rather than a guess, since guessing here means generating rule files
+ * that will not match their own fingerprints.
+ */
+export function readPinnedPacks(file: string): PackRef[] {
+  if (!fs.existsSync(file)) return [];
+  let parsed: { packs?: unknown };
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as { packs?: unknown };
+  } catch {
+    return [];
+  }
+
+  const raw = parsed.packs;
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.some((entry) => typeof entry !== 'string')) {
+    throw new GeneratorError(
+      'INVALID_CONFIG',
+      `${file} has a "packs" field that is not a list of strings.`,
+      'It should look like ["acme-standards@2.1.0"].',
+    );
+  }
+
+  return (raw as string[]).map(parsePackRef);
 }
 
 /**

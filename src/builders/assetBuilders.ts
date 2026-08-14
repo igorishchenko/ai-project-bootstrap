@@ -3,7 +3,8 @@ import type { Builder, BuildContext, LoadedModule, VirtualFsLike } from '../core
 import { render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
 import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
-import { extractGlobs, enabledAiTools, yamlString } from './ruleSources.js';
+import { extractGlobs, enabledAiTools, packRuleSources, yamlString } from './ruleSources.js';
+import { resolveRuleBody } from '../core/packs/resolve.js';
 import {
   RESERVED_TEMPLATE_PREFIXES,
   outputPath,
@@ -71,20 +72,52 @@ export const cursorBuilder: Builder = {
       if (!module.cursorRule) continue;
       vfs.write(
         `.cursor/rules/${module.manifest.id}.mdc`,
-        ensureTrailingNewline(render(module.cursorRule, data)),
+        ensureTrailingNewline(withPackOverlay(ctx, module.manifest.id, render(module.cursorRule, data))),
       );
     }
 
     const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
-    if (!base) return;
-    for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.cursorRules)) {
+    if (base) {
+      for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.cursorRules)) {
+        const topic = asset.relativePath.replace(/\.mdc$/, '');
+        vfs.write(
+          `.cursor/rules/${asset.relativePath}`,
+          ensureTrailingNewline(withPackOverlay(ctx, topic, render(asset.content, data))),
+        );
+      }
+    }
+
+    // The organisation's own added rules, in the same directory and the same
+    // format. Nothing downstream can tell them apart from ours, which is what
+    // makes a pack render into every tool without per-tool code.
+    for (const source of packRuleSources(ctx)) {
+      const frontmatter = [
+        '---',
+        `description: ${yamlString(render(source.description, data))}`,
+        ...(source.globs ? [`globs: ${JSON.stringify(source.globs)}`] : []),
+        `alwaysApply: ${source.alwaysApply}`,
+        '---',
+      ].join('\n');
       vfs.write(
-        `.cursor/rules/${asset.relativePath}`,
-        ensureTrailingNewline(render(asset.content, data)),
+        `.cursor/rules/${source.id}.mdc`,
+        ensureTrailingNewline(`${frontmatter}\n\n${render(source.body, data)}`),
       );
     }
   },
 };
+
+/**
+ * A rule's body after the organisation's packs have extended or replaced it.
+ *
+ * Applied to the *rendered* body so a pack's content sits below content the
+ * template engine has already resolved — a pack is authored against the
+ * finished rule somebody reads, not against its template source.
+ */
+function withPackOverlay(ctx: BuildContext, ruleId: string, rendered: string): string {
+  if (ctx.packs.length === 0) return rendered;
+  const { body } = resolveRuleBody(ruleId, rendered, ctx.packs);
+  return body;
+}
 
 /**
  * Emits `.claude/skills/<id>/SKILL.md` for every module that ships a skill.
@@ -107,7 +140,7 @@ export const claudeBuilder: Builder = {
     const data = templateData(ctx);
     for (const module of ctx.modules) {
       if (!module.claudeSkill) continue;
-      const body = render(module.claudeSkill, data);
+      const body = withPackOverlay(ctx, module.manifest.id, render(module.claudeSkill, data));
       vfs.write(
         `.claude/skills/${module.manifest.id}/SKILL.md`,
         ensureTrailingNewline(`${skillFrontmatter(module)}\n\n${body}`),
@@ -118,11 +151,31 @@ export const claudeBuilder: Builder = {
     // typescript) carry their own hand-written frontmatter, unlike the synthesized
     // frontmatter above — mirrored verbatim, just rendered and gated the same way.
     const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
-    if (!base) return;
-    for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.claudeSkills)) {
+    if (base) {
+      for (const asset of templatesUnder(base, RESERVED_TEMPLATE_PREFIXES.claudeSkills)) {
+        // `<topic>/SKILL.md` — the topic is the directory, which is the same id
+        // the Cursor side uses, so one pack rule reaches both.
+        const topic = asset.relativePath.split('/')[0] ?? asset.relativePath;
+        vfs.write(
+          `.claude/skills/${asset.relativePath}`,
+          ensureTrailingNewline(withPackOverlay(ctx, topic, render(asset.content, data))),
+        );
+      }
+    }
+
+    for (const source of packRuleSources(ctx)) {
+      const frontmatter = [
+        '---',
+        `name: ${source.id}`,
+        `description: ${yamlString(render(source.description, data))}`,
+        ...(source.globs && source.globs.length > 0
+          ? [`paths: ${JSON.stringify(source.globs)}`]
+          : []),
+        '---',
+      ].join('\n');
       vfs.write(
-        `.claude/skills/${asset.relativePath}`,
-        ensureTrailingNewline(render(asset.content, data)),
+        `.claude/skills/${source.id}/SKILL.md`,
+        ensureTrailingNewline(`${frontmatter}\n\n${render(source.body, data)}`),
       );
     }
   },

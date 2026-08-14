@@ -8,7 +8,8 @@ import { loadRegistry } from '../core/registry/loadModules.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import { preservedPaths, readFingerprints } from '../core/vfs/preserve.js';
-import { loadSelectionFile, readRecordedGeneratorVersion } from './configFile.js';
+import { loadSelectionFile, readPinnedPacks, readRecordedGeneratorVersion } from './configFile.js';
+import { loadPinnedPacks } from '../core/packs/packCache.js';
 import type { Reporter } from './reporter.js';
 
 export interface UpgradeFlags {
@@ -122,6 +123,10 @@ export async function runUpgrade(
     selection,
     builders,
     registry,
+    // A pinned pack that is not cached refuses here rather than regenerating
+    // without the organisation's rules — that would report every rule file as
+    // drifted and quietly drop the standards at the same time.
+    packs: loadPinnedPacks(readPinnedPacks(configFile)),
     generatorVersion: toVersion,
     onBuilder: (run) => reporter.step(run),
   });
