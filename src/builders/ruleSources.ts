@@ -1,5 +1,5 @@
 import type { BuildContext, LoadedModule, ModuleAsset } from '../core/types.js';
-import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
+import { BASE_MODULE_ID } from '../core/registry/baseModuleId.js';
 import { packAdditions, resolveRuleBody } from '../core/packs/resolve.js';
 
 /**

@@ -26,4 +26,20 @@ export default defineConfig([
     sourcemap: true,
     dts: true,
   },
+  /*
+   * `platform: 'neutral'` rather than `node`, and that is the point of this
+   * entry: it must bundle into a browser. The pack editor validates and
+   * previews client-side, so a build that quietly reached for `node:fs` would
+   * fail in a bundler rather than here. Nothing under `src/rules.ts` may import
+   * a Node builtin — if this entry starts failing to build, that is why.
+   */
+  {
+    entry: { rules: 'src/rules.ts' },
+    format: ['esm'],
+    target: 'es2022',
+    platform: 'neutral',
+    clean: false,
+    sourcemap: true,
+    dts: true,
+  },
 ]);

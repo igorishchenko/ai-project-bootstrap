@@ -1,4 +1,4 @@
-import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
+import { BASE_MODULE_ID } from '../core/registry/baseModuleId.js';
 import { type AiTool, type RuleSource, yamlString } from './ruleSources.js';
 
 /**

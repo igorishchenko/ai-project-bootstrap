@@ -24,6 +24,10 @@
       "types": "./dist/core.d.ts",
       "import": "./dist/core.js"
     },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "import": "./dist/rules.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
