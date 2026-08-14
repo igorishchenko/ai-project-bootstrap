@@ -20,6 +20,21 @@ export type {
 } from './types.js';
 export { isGatingQuestion } from './types.js';
 
+/**
+ * Rule packs. Exported so the hosted service validates a pack against the
+ * *same* schema the CLI enforces, rather than a second copy that can disagree
+ * — a pack that fails validation must fail at publish time, in the browser,
+ * not at `pack add` time on a stranger's machine.
+ */
+export type { PackFile, PackRef, PackRule, RulePack } from './packs/packTypes.js';
+export {
+  formatPackRef,
+  packRuleSchema,
+  parsePack,
+  parsePackRef,
+  rulePackSchema,
+} from './packs/packTypes.js';
+
 export type { Registry } from './registry/loadModules.js';
 export { loadRegistry, groupByCategory, BASE_MODULE_ID } from './registry/loadModules.js';
 export { findGeneratorRoot } from './registry/findRoot.js';
