@@ -9,6 +9,7 @@ import { builders } from '../src/builders/index.js';
 import { GeneratorError } from '../src/core/resolve/errors.js';
 import { fingerprint } from '../src/core/vfs/fingerprint.js';
 import { normalizePackPath } from '../src/builders/packBuilder.js';
+import { RULE_FILE_TOOLS, previewRule } from '../src/builders/ruleDialects.js';
 import {
   listCachedPacks,
   loadPinnedPacks,
@@ -454,5 +455,68 @@ describe('check and upgrade on a packed project', () => {
     await expect(
       runCheck(['--dir', targetDir], ROOT, capturingReporter().reporter),
     ).rejects.toThrow(/not available offline/);
+  });
+});
+
+/**
+ * The preview the pack editor shows.
+ *
+ * It matters that this is the *same* function the builders render through: a
+ * preview that drifts from the output is worse than no preview, because it is
+ * believed. These assertions pin the two together.
+ */
+describe('previewRule', () => {
+  const source = {
+    id: 'acme-standards-logging',
+    name: 'Logging at Acme',
+    description: 'How we log.',
+    globs: ['src/**/*.ts'],
+    alwaysApply: false,
+    body: '# Logging\n\nUse `pino`.',
+    isBase: false,
+  };
+
+  it('gives each tool its own path and frontmatter', () => {
+    expect(previewRule(source, 'cursor').path).toBe('.cursor/rules/acme-standards-logging.mdc');
+    expect(previewRule(source, 'claude').path).toBe(
+      '.claude/skills/acme-standards-logging/SKILL.md',
+    );
+    expect(previewRule(source, 'continue').content).toContain('name: "Logging at Acme"');
+    expect(previewRule(source, 'claude').content).toContain('paths: ["src/**/*.ts"]');
+    // Cline and Roo take a plain body — there is nothing to synthesise.
+    expect(previewRule(source, 'cline').content.startsWith('# Logging')).toBe(true);
+  });
+
+  it('matches what the builders actually write', () => {
+    const generated = run([acme]);
+    for (const [tool, file] of [
+      ['cursor', '.cursor/rules/acme-standards-logging.mdc'],
+      ['claude', '.claude/skills/acme-standards-logging/SKILL.md'],
+    ] as const) {
+      const rule = acme.rules.find((entry) => entry.id === 'logging')!;
+      const preview = previewRule(
+        {
+          id: 'acme-standards-logging',
+          name: rule.name,
+          description: `${acme.name}: ${rule.name}`,
+          globs: rule.globs,
+          alwaysApply: rule.globs === undefined,
+          body: rule.content,
+          isBase: false,
+        },
+        tool,
+      );
+      expect(preview.content, tool).toBe(generated.vfs.read(file));
+    }
+  });
+
+  it('covers every tool that receives a file per rule, and no others', () => {
+    // `gemini-cli` is a real `aiTools` option with no per-rule output — it gets
+    // the unconditional GEMINI.md. Previewing a path nothing writes would be a
+    // lie the editor tells confidently.
+    expect(RULE_FILE_TOOLS).not.toContain('gemini-cli');
+    for (const tool of RULE_FILE_TOOLS) {
+      expect(() => previewRule(source, tool), tool).not.toThrow();
+    }
   });
 });

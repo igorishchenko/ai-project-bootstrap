@@ -27,6 +27,17 @@ export { isGatingQuestion } from './types.js';
  * not at `pack add` time on a stranger's machine.
  */
 export type { PackFile, PackRef, PackRule, RulePack } from './packs/packTypes.js';
+/**
+ * The pack editor's preview. Exported for the same reason the schema is: an
+ * author has to be able to see what Cursor gets versus what Claude Code gets,
+ * and a second implementation of those dialects would start out identical and
+ * quietly stop being so.
+ */
+export type { RuleFileTool, RuleDialect } from '../builders/ruleDialects.js';
+export { RULE_DIALECTS, RULE_FILE_TOOLS, previewRule } from '../builders/ruleDialects.js';
+export type { RuleSource, AiTool } from '../builders/ruleSources.js';
+export { AI_TOOLS } from '../builders/ruleSources.js';
+
 export {
   formatPackRef,
   packRuleSchema,

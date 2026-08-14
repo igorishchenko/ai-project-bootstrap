@@ -1,14 +1,8 @@
 import type { Builder, BuildContext } from '../core/types.js';
 import { type TemplateData, render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
-import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
-import {
-  type AiTool,
-  type RuleSource,
-  collectRuleSources,
-  enabledAiTools,
-  yamlString,
-} from './ruleSources.js';
+import { type RuleSource, collectRuleSources, enabledAiTools } from './ruleSources.js';
+import { RULE_DIALECTS, type RuleFileTool } from './ruleDialects.js';
 
 /**
  * Builders for the AI tools that reuse `collectRuleSources` instead of a
@@ -40,19 +34,26 @@ function renderRuleSource(source: RuleSource, data: TemplateData): RuleSource {
   };
 }
 
+/**
+ * Every rule this tool should receive, in this tool's own dialect.
+ *
+ * The dialect comes from `RULE_DIALECTS` rather than being spelled out per
+ * builder, so the pack editor's preview and the file actually written here are
+ * the same function — a preview that drifts from the output is worse than no
+ * preview, because it is believed.
+ */
 function buildRuleFiles(
   ctx: BuildContext,
-  tool: AiTool,
-  toPath: (source: RuleSource) => string,
-  render_: (source: RuleSource, renderedBody: string) => string,
+  tool: RuleFileTool,
 ): Array<{ path: string; content: string }> {
   if (!enabledAiTools(ctx).has(tool)) return [];
   const data = templateData(ctx);
+  const dialect = RULE_DIALECTS[tool];
   return collectRuleSources(ctx).map((source) => {
     const rendered = renderRuleSource(source, data);
     return {
-      path: toPath(rendered),
-      content: ensureTrailingNewline(render_(rendered, rendered.body)),
+      path: dialect.path(rendered),
+      content: ensureTrailingNewline(dialect.render(rendered, rendered.body)),
     };
   });
 }
@@ -70,19 +71,7 @@ export const copilotBuilder: Builder = {
   label: 'Generated GitHub Copilot instructions',
   order: 62,
   build(ctx, vfs) {
-    for (const file of buildRuleFiles(
-      ctx,
-      'copilot',
-      (source) =>
-        source.id === BASE_MODULE_ID
-          ? '.github/copilot-instructions.md'
-          : `.github/instructions/${source.id}.instructions.md`,
-      (source, body) => {
-        if (source.id === BASE_MODULE_ID) return body;
-        const applyTo = source.globs && source.globs.length > 0 ? source.globs.join(',') : '**';
-        return `---\napplyTo: ${yamlString(applyTo)}\n---\n\n${body}`;
-      },
-    )) {
+    for (const file of buildRuleFiles(ctx, 'copilot')) {
       vfs.write(file.path, file.content);
     }
   },
@@ -94,23 +83,7 @@ export const continueBuilder: Builder = {
   label: 'Generated Continue.dev rules',
   order: 64,
   build(ctx, vfs) {
-    for (const file of buildRuleFiles(
-      ctx,
-      'continue',
-      (source) => `.continue/rules/${source.id}.md`,
-      (source, body) => {
-        const lines = [
-          '---',
-          `name: ${yamlString(source.name)}`,
-          `description: ${yamlString(source.description)}`,
-        ];
-        if (source.globs && source.globs.length > 0) {
-          lines.push(`globs: ${JSON.stringify(source.globs)}`);
-        }
-        lines.push(`alwaysApply: ${source.alwaysApply}`, '---');
-        return `${lines.join('\n')}\n\n${body}`;
-      },
-    )) {
+    for (const file of buildRuleFiles(ctx, 'continue')) {
       vfs.write(file.path, file.content);
     }
   },
@@ -126,12 +99,7 @@ export const clineBuilder: Builder = {
   label: 'Generated Cline rules',
   order: 66,
   build(ctx, vfs) {
-    for (const file of buildRuleFiles(
-      ctx,
-      'cline',
-      (source) => `.clinerules/${source.id}.md`,
-      (_source, body) => body,
-    )) {
+    for (const file of buildRuleFiles(ctx, 'cline')) {
       vfs.write(file.path, file.content);
     }
   },
@@ -147,12 +115,7 @@ export const rooBuilder: Builder = {
   label: 'Generated Roo Code rules',
   order: 68,
   build(ctx, vfs) {
-    for (const file of buildRuleFiles(
-      ctx,
-      'roo',
-      (source) => `.roo/rules/${source.id}.md`,
-      (_source, body) => body,
-    )) {
+    for (const file of buildRuleFiles(ctx, 'roo')) {
       vfs.write(file.path, file.content);
     }
   },
