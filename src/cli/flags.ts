@@ -133,6 +133,7 @@ Usage
   npx ai-project-bootstrap ci init [options]
   npx ai-project-bootstrap upgrade [options]
   npx ai-project-bootstrap implement <feature-id> [options]
+  npx ai-project-bootstrap pack add|update|list [options]
   npx ai-project-bootstrap review [options]
   npx ai-project-bootstrap analyze [options]
   npx ai-project-bootstrap doctor [options]
@@ -173,6 +174,11 @@ inside the project — see \`ai-project-bootstrap review --help\`.
 Have a repo this tool never generated and want the same kind of scored,
 prioritized feedback? Run \`ai-project-bootstrap analyze\` inside it — see
 \`ai-project-bootstrap analyze --help\`.
+
+Does your organisation have its own engineering standards? A rule pack carries
+them into every project alongside the built-in rules — see
+\`ai-project-bootstrap pack --help\`. **An org pack beats a built-in rule, and
+your own hand edits beat everything.**
 
 Not sure this machine can build the stack you have in mind? Run
 \`ai-project-bootstrap doctor\` first — see \`ai-project-bootstrap doctor --help\`.

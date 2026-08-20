@@ -5,9 +5,10 @@ import { parseManifest } from './manifestSchema.js';
 import { loadModuleAssets } from './moduleAssets.js';
 import { loadPresets } from './loadPresets.js';
 import { GeneratorError } from '../resolve/errors.js';
+import { BASE_MODULE_ID } from './baseModuleId.js';
 
 /** The always-on pseudo-module holding stack-agnostic content. */
-export const BASE_MODULE_ID = 'base';
+export { BASE_MODULE_ID } from './baseModuleId.js';
 
 export interface Registry {
   /** Every discovered technology module, excluding base. */

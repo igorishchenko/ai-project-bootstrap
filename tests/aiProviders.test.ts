@@ -230,6 +230,7 @@ function fakeContext(
     modules,
     categories: [],
     warnings: [],
+    packs: [],
     generatorVersion: '0.0.0-test',
   };
 }

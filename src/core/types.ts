@@ -5,6 +5,12 @@
  * technology. Technologies are data discovered at runtime from `technologies/`.
  */
 
+import type { RulePack } from './packs/packTypes.js';
+
+// Re-exported so a consumer of `ai-project-bootstrap/core` gets the pack types
+// alongside everything else, rather than reaching into a subpath.
+export type { PackFile, PackRef, PackRule, RulePack } from './packs/packTypes.js';
+
 /**
  * Published pricing for a module's underlying service, as of whenever a
  * maintainer last checked — never inferred, always manually verified against
@@ -173,6 +179,14 @@ export interface BuildContext {
   warnings: string[];
   /** The generator's own version at build time — recorded so `upgrade` can compare. */
   generatorVersion: string;
+  /**
+   * The organisation's own rule packs, already resolved and pinned.
+   *
+   * Empty for every project that has none, which is every project by default.
+   * Builders never read this directly — `ruleSources.ts` folds packs into the
+   * `RuleSource[]` they already consume, so no builder learns what a pack is.
+   */
+  packs: RulePack[];
 }
 
 export interface Builder {

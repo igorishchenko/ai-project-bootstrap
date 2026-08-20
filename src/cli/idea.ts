@@ -48,13 +48,16 @@ export function resolveLicenseKey(env: NodeJS.ProcessEnv = process.env): {
  * `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` was the first thing a paying customer met,
  * and it taught them the wrong thing to do with a credential.
  */
-export function requireLicenseKey(): string {
+export function requireLicenseKey(
+  feature = '--idea',
+  alternative = 'drop --idea and use --preset or the wizard instead',
+): string {
   const resolved = resolveLicenseKey();
   if (!resolved) {
     throw new GeneratorError(
       'INVALID_CONFIG',
       'No license key found.',
-      'Run `ai-project-bootstrap login` and paste the key you were emailed. --idea, chat and the editor assistant all need an ai-project-bootstrap Pro subscription; without one, drop --idea and use --preset or the wizard instead.',
+      `Run \`ai-project-bootstrap login\` and paste the key you were emailed. ${feature} needs an ai-project-bootstrap Pro subscription; without one, ${alternative}.`,
     );
   }
   return resolved.key;

@@ -7,6 +7,7 @@ import { createBuildContext } from './buildContext.js';
 import { runPipeline, type BuilderRun, type RunOptions } from './runPipeline.js';
 import type { VirtualFs } from '../vfs/virtualFs.js';
 import { summarizeCosts, type CostSummary } from '../pricing.js';
+import type { RulePack } from '../packs/packTypes.js';
 
 export interface GenerateInput {
   /** Generator root — the directory holding technologies/, assets/, config/. */
@@ -19,6 +20,14 @@ export interface GenerateInput {
   onBuilder?: RunOptions['onBuilder'];
   /** Overrides the version recorded in the output — tests only; defaults to `rootDir`'s own package.json. */
   generatorVersion?: string;
+  /**
+   * The organisation's rule packs, already loaded from cache by the caller.
+   *
+   * Loaded outside `generate()` on purpose: reading them touches the
+   * filesystem, and this function's whole value is being pure enough for the
+   * test suite to drive it with fixtures.
+   */
+  packs?: RulePack[];
 }
 
 export interface GenerateResult {
@@ -54,6 +63,7 @@ export function generate(input: GenerateInput): GenerateResult {
     categories: registry.categories,
     base: registry.base,
     generatorVersion: input.generatorVersion ?? readGeneratorPackageInfo(input.rootDir).version,
+    packs: input.packs,
   });
 
   const { vfs, runs, warnings } = runPipeline(ctx, input.builders, {

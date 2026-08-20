@@ -16,7 +16,9 @@ import { runAnalyze } from './analyze.js';
 import { applyArchetype } from './archetype.js';
 import { runCheck } from './check.js';
 import { runCiInit } from './ciInit.js';
-import { loadSelectionFile } from './configFile.js';
+import { loadSelectionFile, readPinnedPacks } from './configFile.js';
+import { loadPinnedPacks } from '../core/packs/packCache.js';
+import { runPack } from './packCommand.js';
 import { runDoctor } from './doctor.js';
 import { requestStackProposal, requireLicenseKey } from './idea.js';
 import { runLogin, runLogout } from './login.js';
@@ -121,6 +123,7 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     selection,
     builders,
     registry,
+    packs: loadPinnedPacks(readPinnedPacks(configFile)),
     onBuilder: (run) => reporter.step(run),
   });
 
@@ -215,6 +218,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (argv[0] === 'logout') {
     return runLogout(argv.slice(1), reporter);
+  }
+  if (argv[0] === 'pack') {
+    return runPack(argv.slice(1), reporter);
   }
 
   const flags: CliFlags = parseFlags(argv);
