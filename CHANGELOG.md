@@ -9,8 +9,98 @@ part of the PR that makes the change, not at release time.
 
 ## [Unreleased]
 
-Nothing yet. Entries land here in the PR that makes the change, not at
-release time — see `.claude/commands/changelog-entry.md`.
+### Added
+
+- **`check` reports advisories** — known vendor changes affecting the
+  technologies you selected, after the drift summary, worst first. This is
+  where "your rules are behind" and "here is the vendor change that is why"
+  become one report. New in `--json` as `advisories` and `advisoryNote`;
+  `schema` stays `1` because nothing that existed moved, and the GitHub action
+  is pinned by a moving `v1` tag that a changed field would break all at once.
+  `advisories` is `null` when they were skipped and `[]` when none matched —
+  "we did not look" and "we looked and found none" are different answers.
+- **`--no-advisories`** skips the lookup, completing the
+  `check [--json --fail-on --no-advisories]` surface Appendix A specifies.
+- **Your organisation's own rules now reach every project it generates.** The
+  built-in rules cover 35 technologies and say nothing about how your team
+  writes code — that you log with pino, that Row Level Security goes on before
+  the first deploy. A rule pack carries that, and `pack add|update|list`
+  installs one. A pack's rules become the same `RuleSource` the provider
+  builders already consume, so they reach all seven AI tool formats with no
+  per-tool work and no builder learning what a pack is.
+- **A pack rule does exactly one of three things** — add, `extend` (appended
+  below ours) or `override` (ours dropped, and `check` names the pack that did
+  it). Exactly one, because a rule that both extended and replaced the same
+  built-in would have no defined meaning. Precedence in one sentence: an org
+  pack beats a built-in rule, and hand edits beat everything. Pack-derived
+  files are fingerprinted like any other generated file, so a freshly
+  generated packed project reports clean and `upgrade` refreshes pack files
+  while leaving hand edits alone — both halves have a test, because a report
+  that is always wrong is a report people learn to ignore.
+- **Packs are pinned to an exact version; `@latest` is deliberately not
+  offered.** Two runs of the same command must produce the same files, and a
+  rule that moved underneath them would break that in the one direction nobody
+  checks — the output would still look plausible. Generation, `check` and
+  `upgrade` still never touch the network: only `pack add` and `pack update`
+  fetch, caching to `~/.ai-project-bootstrap/packs`, outside any project. A
+  pinned pack missing from the cache is a refusal, never a quiet generation
+  without the standards.
+- **`ai-project-bootstrap/rules`** — a second public export beside `/core`,
+  carrying the pack schema, rule resolution and the six AI tool dialects.
+  Built `platform: 'neutral'`, so it runs in a browser: a hosted editor
+  validates a draft against the same schema `pack add` enforces, and previews
+  what each tool will get, rather than shipping a second implementation that
+  starts out identical and quietly stops being so. `/core` cannot do this — it
+  imports `node:fs` for registry loading.
+
+
+- **`login` and `logout`.** The first thing a paying customer used to meet was
+  an error message teaching them about `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` — a
+  credential, introduced as an environment variable, with no suggestion of
+  where to put it that was not a shell profile or a CI secret. `login` prompts
+  for the key (or takes `--key`), checks it against the backend before storing
+  anything, and writes it **owner-only, outside any project directory**: a
+  credential inside a project is one `git add -A` from a public repository. It
+  follows the platform — `~/Library/Application Support/` on macOS,
+  `$XDG_CONFIG_HOME` on Linux, `%APPDATA%` on Windows.
+- **`login --status`** says which key is in use and where it came from, and
+  **never prints one in full** — the same masking the dashboard shows. `logout`
+  removes the stored key, and says so when `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`
+  is still set in the shell, since that keeps winning and `logout` cannot unset
+  it for you.
+
+### Changed
+
+- **Every AI tool dialect now has exactly one definition.** The four provider
+  builders and the pack editor's preview render through the same
+  `RULE_DIALECTS` table, and a test asserts the preview is byte-identical to
+  what the builders write — a preview that drifts from the output is worse
+  than no preview, because it is believed. No generated output changed.
+  `gemini-cli` is deliberately absent from the table: it is a real `aiTools`
+  option, but what it receives is the unconditional `GEMINI.md` the base
+  module ships, and giving the editor a path to preview would describe files
+  nothing writes.
+- **A `critical` advisory now raises the report to `critical`, and can fail a
+  build through `--fail-on`.** `critical` has been accepted-but-unreachable
+  since 1.3.0, reserved for exactly this. The cost is real — somebody else
+  publishing a change can turn your CI red with no commit on your side — and
+  it is the right trade: an advisory is a *stronger* signal than a stale file,
+  `--fail-on` still defaults to `none` so nothing fails unless asked, and an
+  advisory only raises severity if you can actually read it. Nobody's build
+  fails over text the same response refuses to show them.
+- **`check` still works offline, unaccounted-for and MIT.** The advisory
+  lookup is the only network call the command makes, and it degrades to
+  nothing on every failure — no network, a timeout, any non-200 — leaving the
+  full drift report plus one line saying why advisories are missing.
+
+
+- **Every command that needs a license key now looks in two places**, in this
+  order: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, then the key stored by `login`.
+  The environment deliberately wins — a key exported for one run is the more
+  deliberate of the two, and putting it first is what keeps existing CI working
+  unchanged. Nothing that worked before this release stops working.
+- The message you get with no key names a command to run rather than a variable
+  to set.
 
 ## [1.3.2] — 2026-08-13
 

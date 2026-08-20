@@ -39,7 +39,7 @@ function capturingReporter(): { reporter: Reporter; output: () => string } {
 
 describe('parseCheckFlags', () => {
   it('defaults to reporting only — never failing a build nobody asked it to fail', () => {
-    expect(parseCheckFlags([])).toEqual({ json: false, failOn: 'none', help: false });
+    expect(parseCheckFlags([])).toEqual({ json: false, failOn: 'none', advisories: true, help: false });
   });
 
   it('reads --dir, --json and --fail-on', () => {

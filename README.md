@@ -169,7 +169,7 @@ touches no code in `src/`.
 Don't know which technologies you want yet? Describe the project instead:
 
 ```bash
-export AI_PROJECT_BOOTSTRAP_LICENSE_KEY=apb_live_...
+npx ai-project-bootstrap login   # once, per machine
 npx ai-project-bootstrap --idea "a habit tracker for runners, web app, cheap to run"
 ```
 
@@ -182,12 +182,37 @@ written. Nothing is generated from an unreviewed AI guess.
 
 **`--idea` is a Pro feature** — every call spends real hosting/API budget,
 so unlike the rest of this tool it isn't free and has no trial. It requires
-an active subscription: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, the key emailed
-to you right after checkout. Without it, the CLI fails immediately with a
-clear message rather than making a request that would just be rejected.
+an active subscription and the key emailed to you right after checkout (also
+on your dashboard). Without one, the CLI fails immediately with a clear
+message rather than making a request that would just be rejected.
 `--idea` calls `https://api.ai-project-bootstrap.com` by default — set
 `AI_PROJECT_BOOTSTRAP_API_URL` to point elsewhere, such as a backend running
 on your own machine.
+
+### Signing in
+
+```bash
+npx ai-project-bootstrap login            # prompts, then stores the key
+npx ai-project-bootstrap login --key ...  # non-interactive (lands in shell history)
+npx ai-project-bootstrap login --status   # which key is in use, masked
+npx ai-project-bootstrap logout           # remove it
+```
+
+`login` checks the key against the backend before storing it, so a typo fails
+there rather than at first use, and it writes the key **owner-only, outside
+any project directory** — a credential inside a project is one `git add -A`
+away from a public repository. Where it lands follows the platform: `~/Library/
+Application Support/ai-project-bootstrap/` on macOS, `$XDG_CONFIG_HOME` (or
+`~/.config`) on Linux, `%APPDATA%` on Windows. `login --status` prints the
+exact path.
+
+Every command that needs a key looks in two places, **in this order**:
+
+1. **`AI_PROJECT_BOOTSTRAP_LICENSE_KEY`** — so existing CI keeps working
+   exactly as it did, and a key set for one run beats whatever is stored.
+2. **The key stored by `login`.**
+
+Neither `login --status` nor any error message ever prints a key in full.
 Cannot be combined with `--config`, `--preset` or `--archetype` — all four
 pre-fill the selection, pick one — and combining it with `--yes` skips the
 review step, so it isn't recommended.
@@ -208,6 +233,8 @@ npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
 npx ai-project-bootstrap --preset startup-mvp --yes   # generate from a preset, non-interactively
 npx ai-project-bootstrap --dry-run                # show what would be written
 npx ai-project-bootstrap --list-modules
+npx ai-project-bootstrap login                    # store a Pro license key (see above)
+npx ai-project-bootstrap logout                   # remove it
 ```
 
 The package installs a second, shorter binary: **`apb`** runs the identical
@@ -350,7 +377,34 @@ npx ai-project-bootstrap check --fail-on warning       # exit 1 on drift
 **`--fail-on` defaults to `none`** — by default `check` reports and never
 fails a build. Levels are `none`, `info` (a newer version, new files, newly
 supported AI tools), `warning` (rules behind the templates) and `critical`,
-which is reserved and which nothing emits yet.
+which a `critical` **advisory** now reaches — see below.
+
+### Advisories
+
+`check` also asks whether any known vendor change affects the technologies
+you selected: a breaking release, a deprecation, a default that moved. This is
+the only network call the command makes.
+
+**A `critical` advisory raises the report to `critical`, and can therefore fail
+a build through `--fail-on`.** That is a deliberate choice with a real cost —
+somebody else publishing a change can turn your CI red without a commit on your
+side — and it is the right one, for three reasons. An advisory is a _stronger_
+signal than a stale file, not a weaker one: a rule being out of date is our
+problem, a vendor breaking something is yours. `--fail-on` defaults to `none`,
+so nothing turns red unless you asked for it. And an advisory only ever raises
+severity if you can actually read it — an unentitled report is never failed over
+text it will not show you.
+
+**It always degrades to nothing.** `--no-advisories` skips the call; so does
+having no network, a slow service, or any non-200. In every one of those cases
+you still get the full drift report plus one line saying why advisories are
+missing. `check` stays offline-capable, MIT and account-free: advisories add a
+sentence when the service is reachable, never a reason for the report not to
+arrive.
+
+Without a subscription you are told how many advisories match your stack and how
+severe they are, but not what they say. That is the whole difference; the count
+is never hidden and never reported as zero when it is not.
 
 Exit `2` is deliberately distinct from `1`: "this repo has drifted" and "this
 repo was never generated by us" call for different responses, and a CI job
@@ -413,6 +467,73 @@ stack; that's what `add` is for. If newer AI tools are supported than this
 project originally selected, `upgrade` says so without adding them itself —
 edit `"aiTools"` in `ai-project.config.json` and upgrade again to include
 them. `upgrade --help` covers the rest.
+
+## Your organisation's own rules (Team)
+
+The built-in rules cover 35 technologies. They do not cover how _your_ team
+writes code — that you log with `pino`, that Row Level Security goes on before
+the first deploy, that the bare Expo workflow is not an option here. A **rule
+pack** carries those into every project your organisation generates, rendered
+into all seven AI tool formats alongside the built-in rules.
+
+```bash
+cd my-app
+npx ai-project-bootstrap pack add acme-standards   # fetch, cache, pin
+npx ai-project-bootstrap upgrade                   # write the rules in
+npx ai-project-bootstrap pack list                 # what is pinned, what is cached
+npx ai-project-bootstrap pack update               # move the pin deliberately
+```
+
+**Precedence, in one sentence: an org pack beats a built-in rule, and your own
+hand edits beat everything.**
+
+A pack is one JSON document with three things a rule can do:
+
+|              | Written as             | What happens                                                                                            |
+| ------------ | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Add**      | `"appliesTo": ["*"]`   | A new rule, in every project — or scope it to module ids and it appears only where those were selected. |
+| **Extend**   | `"extends": "nextjs"`  | Appended below our section. Ours stays.                                                                 |
+| **Override** | `"replaces": "nextjs"` | Ours is dropped entirely, and `check` says which pack did it.                                           |
+
+```json
+{
+  "id": "acme-standards",
+  "name": "Acme engineering standards",
+  "version": "2.1.0",
+  "rules": [
+    {
+      "id": "logging",
+      "name": "Logging",
+      "appliesTo": ["*"],
+      "content": "# Logging\n\nUse `pino`…"
+    },
+    {
+      "id": "nextjs",
+      "name": "Next.js at Acme",
+      "extends": "nextjs",
+      "content": "## Acme additions\n…"
+    }
+  ],
+  "docs": [{ "path": "docs/acme-review.md", "content": "…" }],
+  "checklists": [{ "path": "checklists/acme-launch.md", "content": "…" }]
+}
+```
+
+**A pack is pinned to an exact version, and `@latest` is deliberately not
+offered.** Two runs of the same command against the same commit produce the
+same files — a rule that changed underneath them would break that quietly, in
+the direction nobody checks, because the output would still look plausible.
+`pack update` moves the pin on purpose.
+
+**Generation stays offline.** `pack add` and `pack update` are the only
+commands that touch the network; they cache to
+`~/.ai-project-bootstrap/packs/`, and generation, `check` and `upgrade` read
+that cache and nothing else. A pinned pack that is not cached is a clear
+refusal rather than a silent generation without your standards — which would
+also make every rule file report as drifted, since the fingerprints were
+recorded with the pack's content in them.
+
+Fetching a pack needs a licence key and an organisation that publishes one.
 
 ## Implementing a feature
 

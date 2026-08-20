@@ -36,10 +36,20 @@ export const configBuilder: Builder = {
       if (content !== undefined) generated[path] = fingerprint(content);
     }
 
+    /*
+     * Pinned to an exact version, and recorded even though the pack content is
+     * not: this file says which inputs produced the fingerprints below it, and
+     * a pack is an input. Without the pin, `check` in a fresh clone would
+     * regenerate against whatever version happened to be cached and call every
+     * rule file drifted.
+     */
+    const packs = ctx.packs.map((pack) => `${pack.id}@${pack.version}`).sort();
+
     vfs.writeJson(CONFIG_FILENAME, {
       projectName: ctx.selection.projectName,
       generatorVersion: ctx.generatorVersion,
       choices,
+      ...(packs.length > 0 ? { packs } : {}),
       generated,
     });
   },

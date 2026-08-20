@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "The `check --json` payload as of schema 1, before advisories existed.",
+    "The GitHub action parses this shape and is pinned by a moving v1 tag, so a",
+    "changed or removed field breaks every consumer at once while a new one is",
+    "invisible to anything that does not look for it.",
+    "tests/checkAdvisories.test.ts asserts every key below still exists and still",
+    "means the same thing. Adding to this file is wrong: it records what the",
+    "contract WAS, which is the whole point of comparing against it."
+  ],
+  "keys": [
+    "schema",
+    "project",
+    "generatorVersion",
+    "counts",
+    "behind",
+    "edited",
+    "missing",
+    "added",
+    "orphaned",
+    "newAiTools",
+    "severity",
+    "failOn",
+    "ok"
+  ],
+  "generatorVersionKeys": ["recorded", "installed"],
+  "countsKeys": ["current", "behind", "edited", "missing", "added", "orphaned"],
+  "schemaValue": 1
+}

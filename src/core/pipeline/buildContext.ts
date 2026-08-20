@@ -1,4 +1,5 @@
 import type { BuildContext, CategoryQuestion, LoadedModule, Selection } from '../types.js';
+import type { RulePack } from '../packs/packTypes.js';
 import type { TemplateData } from '../template/render.js';
 import { render } from '../template/render.js';
 import { mergeFolders, renderFolderTree } from '../merge/mergeFolders.js';
@@ -24,6 +25,8 @@ export function createBuildContext(input: {
   categories: CategoryQuestion[];
   base?: LoadedModule;
   generatorVersion: string;
+  /** Resolved rule packs. Absent for every project that has none. */
+  packs?: RulePack[];
 }): BuildContext {
   // Base always leads, so its content frames every merged document.
   const modules = input.base ? [input.base, ...input.modules] : [...input.modules];
@@ -37,6 +40,7 @@ export function createBuildContext(input: {
     categories: input.categories,
     warnings: [],
     generatorVersion: input.generatorVersion,
+    packs: input.packs ?? [],
   };
 
   // `dependencies.json` may branch on the rest of the stack, so it is rendered

@@ -1,5 +1,6 @@
 import type { BuildContext, LoadedModule, ModuleAsset } from '../core/types.js';
-import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
+import { BASE_MODULE_ID } from '../core/registry/baseModuleId.js';
+import { packAdditions, resolveRuleBody } from '../core/packs/resolve.js';
 
 /**
  * Every AI coding tool this generator can emit rules for. `cursor` and
@@ -162,14 +163,51 @@ function extraBaseRuleSources(base: LoadedModule | undefined): RuleSource[] {
   );
 }
 
+/** Every module id this project resolved to — what a pack's `appliesTo` matches. */
+export function selectedModuleIds(ctx: BuildContext): Set<string> {
+  return new Set(ctx.modules.map((module) => module.manifest.id));
+}
+
+/**
+ * A pack's added rules, as ordinary `RuleSource`s.
+ *
+ * Nothing downstream can tell these apart from a built-in rule, which is the
+ * whole point: a pack reaches every AI tool format the generator supports
+ * without one line of per-provider code.
+ */
+export function packRuleSources(ctx: BuildContext): RuleSource[] {
+  return packAdditions(ctx.packs, selectedModuleIds(ctx)).map((addition) => ({
+    id: addition.id,
+    name: addition.name,
+    description: addition.description,
+    globs: addition.globs,
+    alwaysApply: addition.globs === undefined,
+    body: addition.content.trim(),
+    // Not `isBase`: these are the organisation's rules, not the generator's
+    // stack-agnostic ones, and a provider that treats the base rule specially
+    // (Copilot writes it to a different path) must not treat these that way.
+    isBase: false,
+  }));
+}
+
 /**
  * Every rule this project should offer an AI tool, from every source: the
- * base project-wide rule, the base module's extra topics, and one per
- * selected technology. `cursorBuilder` and `claudeBuilder` predate this and
- * read `ctx.modules` directly for the module set; every other provider
- * builder should read this instead of re-deriving it.
+ * base project-wide rule, the base module's extra topics, one per selected
+ * technology — each already overlaid with whatever the organisation's packs
+ * extend or replace — and the packs' own added rules.
+ *
+ * `cursorBuilder` and `claudeBuilder` predate this and read `ctx.modules`
+ * directly for the module set; every other provider builder should read this
+ * instead of re-deriving it.
  */
 export function collectRuleSources(ctx: BuildContext): RuleSource[] {
   const base = ctx.modules.find((module) => module.manifest.id === BASE_MODULE_ID);
-  return [...moduleRuleSources(ctx.modules), ...extraBaseRuleSources(base)];
+  const built = [...moduleRuleSources(ctx.modules), ...extraBaseRuleSources(base)];
+
+  const overlaid = built.map((source) => ({
+    ...source,
+    body: resolveRuleBody(source.id, source.body, ctx.packs).body,
+  }));
+
+  return [...overlaid, ...packRuleSources(ctx)];
 }

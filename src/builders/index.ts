@@ -18,6 +18,7 @@ import {
   templateBuilder,
 } from './assetBuilders.js';
 import { clineBuilder, continueBuilder, copilotBuilder, rooBuilder } from './aiProviderBuilders.js';
+import { packBuilder } from './packBuilder.js';
 
 /**
  * The builder registry.
@@ -45,6 +46,7 @@ export const builders: Builder[] = [
   githubBuilder,
   hygieneBuilder,
   templateBuilder,
+  packBuilder,
   readmeBuilder,
   configBuilder,
   gitkeepBuilder,
