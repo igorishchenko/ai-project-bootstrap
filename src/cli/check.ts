@@ -8,6 +8,7 @@ import { loadRegistry } from '../core/registry/loadModules.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
 import { UNTRACKED } from '../core/vfs/fingerprint.js';
+import { fetchAdvisories, moduleIdsFrom, type Advisory } from './advisories.js';
 import { preservedPaths, readFingerprints, type Fingerprints } from '../core/vfs/preserve.js';
 import { loadSelectionFile, readRecordedGeneratorVersion } from './configFile.js';
 import type { Reporter } from './reporter.js';
@@ -43,6 +44,8 @@ export interface CheckFlags {
   dir?: string;
   json: boolean;
   failOn: DriftSeverity;
+  /** False skips the one network call this command can make. */
+  advisories: boolean;
   help: boolean;
 }
 
@@ -76,21 +79,31 @@ export interface CheckReport {
   orphaned: string[];
   /** Supported AI tools this project never opted into. */
   newAiTools: string[];
+  /**
+   * Advisories for this stack, when they were asked for and the service
+   * answered. Absent means they were skipped — `--no-advisories`, no network,
+   * a timeout, or any non-200 — and `advisoryNote` says which.
+   */
+  advisories?: Advisory[];
+  advisoriesEntitled?: boolean;
+  /** One line about why advisories are missing or incomplete. */
+  advisoryNote?: string;
   severity: DriftSeverity;
 }
 
-const BOOLEANS = new Set(['--json', '-h', '--help']);
+const BOOLEANS = new Set(['--json', '--no-advisories', '-h', '--help']);
 const VALUED = new Set(['--dir', '--fail-on']);
 
 /** Parses `check`'s own small flag set — deliberately separate from the main parser. */
 export function parseCheckFlags(argv: string[]): CheckFlags {
-  const flags: CheckFlags = { json: false, failOn: 'none', help: false };
+  const flags: CheckFlags = { json: false, failOn: 'none', advisories: true, help: false };
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i] as string;
 
     if (BOOLEANS.has(arg)) {
       if (arg === '--json') flags.json = true;
+      if (arg === '--no-advisories') flags.advisories = false;
       if (arg === '-h' || arg === '--help') flags.help = true;
       continue;
     }
@@ -145,6 +158,11 @@ Options
       --dir <path>     Project to check (default: the current directory)
       --json           Machine-readable output, for CI
       --fail-on <lvl>  Exit 1 at or above this level (default: none)
+      --no-advisories  Skip the advisory lookup — the only network call this
+                         command makes. It is also skipped automatically when
+                         there is no network, the service is slow, or it
+                         answers anything but 200: you still get the full
+                         drift report and one line saying why.
                         none     never fail — report only
                         info     a newer version, new files, new AI tools
                         warning  rules behind the installed templates
@@ -168,8 +186,45 @@ function newlySupportedAiTools(choices: Record<string, string | string[]>): stri
   return AI_TOOLS.filter((tool) => !known.has(tool));
 }
 
-/** The most serious thing in a report. */
+/**
+ * The most serious thing in a report.
+ *
+ * **An advisory can raise this, and therefore fail a build through
+ * `--fail-on`.** That is a real decision with a real cost: a vendor publishing
+ * a change can turn somebody's CI red with no commit on their side. It is the
+ * right trade for three reasons.
+ *
+ * An advisory is a *stronger* signal than a stale file, not a weaker one — a
+ * rule being out of date is our problem, while a vendor breaking something is
+ * the user's, and reporting the first as more serious than the second would be
+ * backwards. `--fail-on` defaults to `none`, so nothing turns red unless
+ * somebody asked for it. And `critical` has been accepted-but-unreachable since
+ * 1.3.0, explicitly reserved for this; advisories are what finally make it mean
+ * something.
+ *
+ * The severity of an advisory is used directly rather than being damped: a
+ * `critical` advisory makes a `critical` report. Anything else would mean
+ * quietly disagreeing with the person who wrote the advisory about how bad it
+ * is.
+ */
 export function severityOf(
+  report: Pick<CheckReport, 'behind' | 'missing' | 'added' | 'orphaned' | 'newAiTools'>,
+  versionBehind: boolean,
+  advisories: readonly { severity: DriftSeverity | 'info' | 'warning' | 'critical' }[] = [],
+): DriftSeverity {
+  const worstAdvisory = advisories.reduce<DriftSeverity>(
+    (worst, advisory) =>
+      SEVERITY_RANK[advisory.severity as DriftSeverity] > SEVERITY_RANK[worst]
+        ? (advisory.severity as DriftSeverity)
+        : worst,
+    'none',
+  );
+  const fromDrift = driftSeverityOf(report, versionBehind);
+  return SEVERITY_RANK[worstAdvisory] > SEVERITY_RANK[fromDrift] ? worstAdvisory : fromDrift;
+}
+
+/** Drift alone, with no advisories in the picture. */
+function driftSeverityOf(
   report: Pick<CheckReport, 'behind' | 'missing' | 'added' | 'orphaned' | 'newAiTools'>,
   versionBehind: boolean,
 ): DriftSeverity {
@@ -342,6 +397,12 @@ export async function runCheck(
   const newAiTools = newlySupportedAiTools(selection.choices);
   const versionBehind = recordedVersion !== undefined && recordedVersion !== installedVersion;
 
+  // The one network call in this command, and it cannot fail the run: see
+  // `fetchAdvisories`, which resolves a note rather than rejecting.
+  const advisoryResult = flags.advisories
+    ? await fetchAdvisories(moduleIdsFrom(selection.choices))
+    : undefined;
+
   const report: CheckReport = {
     projectName: selection.projectName,
     targetDir,
@@ -349,7 +410,22 @@ export async function runCheck(
     installedVersion,
     ...classified,
     newAiTools,
-    severity: severityOf({ ...classified, newAiTools }, versionBehind),
+    ...(advisoryResult
+      ? {
+          advisories: advisoryResult.advisories,
+          advisoriesEntitled: advisoryResult.entitled,
+          ...(advisoryResult.note ? { advisoryNote: advisoryResult.note } : {}),
+        }
+      : {}),
+    severity: severityOf(
+      { ...classified, newAiTools },
+      versionBehind,
+      // Only advisories whose text this caller may read raise severity. An
+      // unentitled caller is told the count and the severity, but failing
+      // somebody's build over something the same response refuses to explain
+      // would be indefensible.
+      advisoryResult?.entitled ? advisoryResult.advisories : [],
+    ),
   };
 
   if (flags.json) {
@@ -391,6 +467,25 @@ export function toJson(report: CheckReport, failOn: DriftSeverity) {
     added: report.added,
     orphaned: report.orphaned,
     newAiTools: report.newAiTools,
+    /*
+     * Additive, and only ever additive. The GitHub action parses this payload
+     * and is pinned by a moving `v1` tag, so a changed field breaks every
+     * consumer at once — while a new one is invisible to anything that does
+     * not look for it. `schema` stays 1 for the same reason: nothing above
+     * this line moved.
+     *
+     * `advisories` is null rather than absent when they were skipped, so a
+     * consumer can tell "we did not look" from "we looked and found none" —
+     * an empty array means the latter.
+     */
+    advisories: report.advisories
+      ? {
+          entitled: report.advisoriesEntitled ?? false,
+          total: report.advisories.length,
+          items: report.advisories,
+        }
+      : null,
+    advisoryNote: report.advisoryNote ?? null,
     severity: report.severity,
     failOn,
     ok: !failsThreshold(report.severity, failOn),
