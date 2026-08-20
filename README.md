@@ -169,7 +169,7 @@ touches no code in `src/`.
 Don't know which technologies you want yet? Describe the project instead:
 
 ```bash
-export AI_PROJECT_BOOTSTRAP_LICENSE_KEY=apb_live_...
+npx ai-project-bootstrap login   # once, per machine
 npx ai-project-bootstrap --idea "a habit tracker for runners, web app, cheap to run"
 ```
 
@@ -182,12 +182,37 @@ written. Nothing is generated from an unreviewed AI guess.
 
 **`--idea` is a Pro feature** — every call spends real hosting/API budget,
 so unlike the rest of this tool it isn't free and has no trial. It requires
-an active subscription: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, the key emailed
-to you right after checkout. Without it, the CLI fails immediately with a
-clear message rather than making a request that would just be rejected.
+an active subscription and the key emailed to you right after checkout (also
+on your dashboard). Without one, the CLI fails immediately with a clear
+message rather than making a request that would just be rejected.
 `--idea` calls `https://api.ai-project-bootstrap.com` by default — set
 `AI_PROJECT_BOOTSTRAP_API_URL` to point elsewhere, such as a backend running
 on your own machine.
+
+### Signing in
+
+```bash
+npx ai-project-bootstrap login            # prompts, then stores the key
+npx ai-project-bootstrap login --key ...  # non-interactive (lands in shell history)
+npx ai-project-bootstrap login --status   # which key is in use, masked
+npx ai-project-bootstrap logout           # remove it
+```
+
+`login` checks the key against the backend before storing it, so a typo fails
+there rather than at first use, and it writes the key **owner-only, outside
+any project directory** — a credential inside a project is one `git add -A`
+away from a public repository. Where it lands follows the platform: `~/Library/
+Application Support/ai-project-bootstrap/` on macOS, `$XDG_CONFIG_HOME` (or
+`~/.config`) on Linux, `%APPDATA%` on Windows. `login --status` prints the
+exact path.
+
+Every command that needs a key looks in two places, **in this order**:
+
+1. **`AI_PROJECT_BOOTSTRAP_LICENSE_KEY`** — so existing CI keeps working
+   exactly as it did, and a key set for one run beats whatever is stored.
+2. **The key stored by `login`.**
+
+Neither `login --status` nor any error message ever prints a key in full.
 Cannot be combined with `--config`, `--preset` or `--archetype` — all four
 pre-fill the selection, pick one — and combining it with `--yes` skips the
 review step, so it isn't recommended.
@@ -208,6 +233,8 @@ npx ai-project-bootstrap --config ai-project.config.json --out .   # regenerate
 npx ai-project-bootstrap --preset startup-mvp --yes   # generate from a preset, non-interactively
 npx ai-project-bootstrap --dry-run                # show what would be written
 npx ai-project-bootstrap --list-modules
+npx ai-project-bootstrap login                    # store a Pro license key (see above)
+npx ai-project-bootstrap logout                   # remove it
 ```
 
 The package installs a second, shorter binary: **`apb`** runs the identical
