@@ -12,6 +12,10 @@ implementing features correctly.
 npx ai-project-bootstrap
 ```
 
+**New here?** [USAGE.md](USAGE.md) is the task-first tour — what you can do,
+which command does it, and where each part's instructions live. This README is
+the reference underneath it.
+
 ## What it generates
 
 ```
