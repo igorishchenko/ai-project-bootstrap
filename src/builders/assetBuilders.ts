@@ -3,6 +3,7 @@ import type { Builder, BuildContext, LoadedModule, VirtualFsLike } from '../core
 import { render } from '../core/template/render.js';
 import { templateData } from '../core/pipeline/buildContext.js';
 import { BASE_MODULE_ID } from '../core/registry/loadModules.js';
+import type { AiTool } from './ruleSources.js';
 import { extractGlobs, enabledAiTools, packRuleSources, yamlString } from './ruleSources.js';
 import { resolveRuleBody } from '../core/packs/resolve.js';
 import {
@@ -259,16 +260,33 @@ export const templateBuilder: Builder = {
   },
 };
 
-/** Renders `templates/root/**` — README.md, CLAUDE.md, AGENTS.md — last. */
+/**
+ * Root files a tool reads by name rather than through a rules directory.
+ *
+ * README.md, CLAUDE.md and AGENTS.md are deliberately absent: the first two
+ * double as this project's own documentation and AGENTS.md is the tool-agnostic
+ * convention, so all three ship whatever was chosen. GEMINI.md is only ever
+ * read by one tool, which makes it the one root file that should follow the
+ * `aiTools` answer — before this, selecting or deselecting Gemini CLI changed
+ * nothing at all.
+ */
+const ROOT_FILES_BY_TOOL: ReadonlyMap<string, AiTool> = new Map([['GEMINI.md', 'gemini-cli']]);
+
+/** Renders `templates/root/**` — README.md, CLAUDE.md, AGENTS.md, GEMINI.md — last. */
 export const readmeBuilder: Builder = {
   id: 'readme',
-  label: 'Generated README, CLAUDE.md and AGENTS.md',
+  label: 'Generated README, CLAUDE.md, AGENTS.md and GEMINI.md',
   order: 120,
   build(ctx, vfs) {
+    const enabled = enabledAiTools(ctx);
     mirror(
       ctx,
       vfs,
-      (module) => templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.root),
+      (module) =>
+        templatesUnder(module, RESERVED_TEMPLATE_PREFIXES.root).filter((asset) => {
+          const tool = ROOT_FILES_BY_TOOL.get(outputPath(asset.relativePath));
+          return tool === undefined || enabled.has(tool);
+        }),
       outputPath,
     );
   },

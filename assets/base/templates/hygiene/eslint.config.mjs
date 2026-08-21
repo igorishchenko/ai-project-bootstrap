@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
  * add stylistic rules here, and do not disable a rule to get past an error.
  */
 export default tseslint.config(
-  { ignores: ['dist', 'build', 'coverage', 'node_modules'] },
+  { ignores: ['dist', 'build', 'coverage', 'node_modules'{{#if has.nextjs}}, '.next', 'next-env.d.ts'{{/if}}] },
   ...tseslint.configs.recommended,
   {
     rules: {

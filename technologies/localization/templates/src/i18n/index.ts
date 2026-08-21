@@ -36,14 +36,11 @@ const INTERPOLATION = { prefix: '{', suffix: '}', escapeValue: false };
 
 const resources = { en: { translation: en }, es: { translation: es } };
 
-void i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'en',
-    interpolation: INTERPOLATION,
-  });
+void i18n.use(LanguageDetector).use(initReactI18next).init({
+  resources,
+  fallbackLng: 'en',
+  interpolation: INTERPOLATION,
+});
 
 export default i18n;
 {{/if}}

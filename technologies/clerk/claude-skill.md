@@ -32,7 +32,7 @@ attacker-controlled. If a task asks you to pass `userId` to an endpoint so it
 can "know who is calling", say why the token is the right mechanism.
 
 The **secret key is server-side only**. It must never appear in the app or in an
-`EXPO_PUBLIC_*` variable.
+`{{envPrefix}}*` variable.
 
 ## Joining users to your data
 

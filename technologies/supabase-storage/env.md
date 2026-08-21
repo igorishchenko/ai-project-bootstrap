@@ -6,4 +6,4 @@ separate credential.
 
 | Key | Required | Description | Example |
 | --- | --- | --- | --- |
-| `EXPO_PUBLIC_STORAGE_BUCKET` | No | Default bucket for user uploads. Keep it private and namespace objects by user id. | `avatars` |
+| `{{envPrefix}}STORAGE_BUCKET` | No | Default bucket for user uploads. Keep it private and namespace objects by user id. | `avatars` |

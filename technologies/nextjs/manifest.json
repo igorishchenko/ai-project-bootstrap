@@ -6,5 +6,6 @@
   "requires": [],
   "conflicts": ["react"],
   "dependencies": [],
-  "priority": 12
+  "priority": 12,
+  "clientEnvPrefix": "NEXT_PUBLIC_"
 }

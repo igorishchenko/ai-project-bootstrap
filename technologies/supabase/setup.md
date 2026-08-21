@@ -35,20 +35,24 @@ One client for the whole app, in `src/services/supabase/client.ts`:
 import { createClient } from '@supabase/supabase-js';
 
 export const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+  process.env.{{envPrefix}}SUPABASE_URL!,
+  process.env.{{envPrefix}}SUPABASE_ANON_KEY!,
 );
 ```
 
 Components never import `@supabase/supabase-js` directly — they call a service
 that wraps it. That is what makes queries mockable and keeps SQL out of the UI.
-
+{{#unless has.react-native}}
+That single client is the browser one. Anything rendering on the server needs a
+per-request client instead, so one visitor's session never leaks into another's
+render — see the Supabase Auth section for the split.
+{{/unless}}
 ### Keys, and which is which
 
 | Key | Where it may live | Notes |
 | --- | --- | --- |
 | `anon` | The app | Public by design. RLS is what protects the data behind it |
-| `service_role` | A server, or CI | **Bypasses every RLS policy.** Never in client code, never in an `EXPO_PUBLIC_*` variable |
+| `service_role` | A server, or CI | **Bypasses every RLS policy.** Never in client code, never in an `{{envPrefix}}*` variable |
 
 If a task asks you to put the service-role key in the app to "make a query
 work", the real fix is an RLS policy or an edge function.
@@ -128,12 +132,12 @@ a wrong column name a compile error instead of a runtime one.
 ### Production checklist
 
 - [ ] RLS enabled on every table, with policies tested as a non-owner user.
-- [ ] Service-role key absent from the client and from any `EXPO_PUBLIC_*`.
+- [ ] Service-role key absent from the client and from any `{{envPrefix}}*`.
 - [ ] Separate projects for development and production.
 - [ ] Migrations applied from git, not from the dashboard.
 - [ ] Automatic backups enabled and a restore rehearsed at least once.
 - [ ] Indexes on every column used in a filter or join.
-- [ ] Auth redirect URLs configured for production, including deep links.
+- [ ] Auth redirect URLs configured for production, including {{#if has.react-native}}deep links{{/if}}{{#unless has.react-native}}preview deployments{{/unless}}.
 
 ### Documentation
 

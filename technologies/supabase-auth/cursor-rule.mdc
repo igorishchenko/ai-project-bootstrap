@@ -11,10 +11,18 @@ alwaysApply: false
 - Subscribe to `onAuthStateChange` **once**, at startup, and read session state
   from there. Calling `getSession()` per screen leaves stale copies behind after
   a background token refresh.
-- Configure a storage adapter (`AsyncStorage`) with `persistSession: true`, or
+{{#if has.react-native}}- Configure a storage adapter (`AsyncStorage`) with `persistSession: true`, or
   the user is signed out on every cold start.
 - `detectSessionInUrl: false` outside a browser.
-
+{{/if}}{{#unless has.react-native}}- Build the client through `@supabase/ssr`, never `createClient`. The session is
+  a cookie because the server has to read it too.
+- One client **per request** on the server. A shared instance leaks one
+  visitor's session into another's render.
+- Refresh the cookie in `middleware.ts`, or a session expires mid-visit and
+  server components quietly start rendering signed-out.
+- `getUser()` on the server, never `getSession()` — only the former verifies the
+  cookie.
+{{/unless}}
 ## Authorisation
 
 - Authentication proves identity. **Row Level Security grants access.** Signing

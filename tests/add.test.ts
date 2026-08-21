@@ -377,7 +377,9 @@ describe('add --replace, end to end', () => {
     expect(pkg.devDependencies['firebase-tools']).toBeUndefined();
 
     const env = fs.readFileSync(path.join(targetDir, '.env.example'), 'utf8');
-    expect(env).toContain('EXPO_PUBLIC_SUPABASE_URL');
+    // The fixture is a Next.js project, so the client prefix is Next's.
+    expect(env).toContain('NEXT_PUBLIC_SUPABASE_URL');
+    expect(env).not.toContain('EXPO_PUBLIC_');
     expect(env).not.toContain('FIREBASE');
 
     const config = JSON.parse(

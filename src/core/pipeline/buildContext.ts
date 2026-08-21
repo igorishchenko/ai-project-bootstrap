@@ -46,9 +46,26 @@ export function createBuildContext(input: {
   // `dependencies.json` may branch on the rest of the stack, so it is rendered
   // now that the full module list is known. Safe to compute template data
   // first: none of it reads the dependencies field.
+  //
+  // An env var's *key* may branch too — a client-visible variable is named
+  // `NEXT_PUBLIC_…` on web and `EXPO_PUBLIC_…` on native, and only the module
+  // knows which. That makes `envKeys`/`envVars` in this first `data` the one
+  // part of it that is not yet resolved; it is used solely to render the keys,
+  // and every builder-time call sees the resolved names.
   const data = templateData(ctx);
+
+  const prefixes = declaredEnvPrefixes(ctx);
+  if (prefixes.length > 1) {
+    const [winner, ...rest] = prefixes;
+    ctx.warnings.push(
+      `This stack builds more than one client bundle, so a client-visible variable has more than one name (${prefixes.join(', ')}). ` +
+        `.env.example uses ${winner}; duplicate each of those rows under ${rest.join(' and ')} by hand, or the other app will read undefined.`,
+    );
+  }
+
   ctx.modules = modules.map((module) => ({
     ...module,
+    env: module.env.map((variable) => ({ ...variable, key: render(variable.key, data) })),
     dependencies:
       renderJson(module.dependenciesRaw, 'dependencies.json', module, data, ctx) ??
       module.dependencies,
@@ -102,6 +119,10 @@ export function templateData(ctx: BuildContext): TemplateData {
 
   return {
     projectName: ctx.projectName,
+    // What a client-visible variable must be called on this platform. Empty
+    // when nothing in the stack builds a client bundle, which is what a
+    // server-only project wants: no prefix at all.
+    envPrefix: clientEnvPrefix(ctx),
     projectSlug: slugify(ctx.projectName),
     modules: technologies.map(describe),
     moduleIds: technologies.map((module) => module.manifest.id),
@@ -127,6 +148,26 @@ export function templateData(ctx: BuildContext): TemplateData {
       ...Object.fromEntries(ctx.modules.map((module) => [module.manifest.id, true])),
     },
   };
+}
+
+/**
+ * The prefix a client-visible variable needs on this stack.
+ *
+ * More than one platform can declare one — a repository carrying both a mobile
+ * app and a web app has two build pipelines and genuinely two names for the
+ * same value. `.env.example` has one row per key, so the first declaring module
+ * wins and `createBuildContext` warns about the rest rather than silently
+ * producing a variable one of the two apps will never see.
+ */
+function clientEnvPrefix(ctx: BuildContext): string {
+  return declaredEnvPrefixes(ctx)[0] ?? '';
+}
+
+function declaredEnvPrefixes(ctx: BuildContext): string[] {
+  const prefixes = ctx.modules
+    .map((module) => module.manifest.clientEnvPrefix)
+    .filter((prefix): prefix is string => prefix !== undefined);
+  return [...new Set(prefixes)];
 }
 
 interface EnvDescription extends TemplateData {

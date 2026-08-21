@@ -1,14 +1,12 @@
 {
   "packages": [
-    {
-      "name": "@sentry/react-native",
-      "version": "^8.21.0",
-      "native": true
-    }
-  ],
+{{#if has.react-native}}    { "name": "@sentry/react-native", "version": "^8.21.0", "native": true }
+{{/if}}{{#unless has.react-native}}    { "name": "@sentry/nextjs", "version": "^10.70.0" }
+{{/unless}}  ],
   "install": [
-    "npx expo install @sentry/react-native",
+{{#if has.react-native}}    "npx expo install @sentry/react-native",
     "npx expo prebuild --clean",
     "eas secret:create --name SENTRY_AUTH_TOKEN --value <token>"
-  ]
+{{/if}}{{#unless has.react-native}}    "npm install @sentry/nextjs"
+{{/unless}}  ]
 }

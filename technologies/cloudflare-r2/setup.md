@@ -106,7 +106,7 @@ bucket listing.
 
 ### Production checklist
 
-- [ ] No R2 credential in any client application or `EXPO_PUBLIC_*` variable.
+- [ ] No R2 credential in any client application or `{{envPrefix}}*` variable.
 - [ ] API token scoped to one bucket with least privilege.
 - [ ] Object keys generated server-side and namespaced by owner.
 - [ ] Content type and size validated before signing.

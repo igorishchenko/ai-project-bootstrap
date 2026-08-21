@@ -55,8 +55,22 @@ describe('AI provider builders', () => {
       ).toBe(false);
     }
     expect(files).not.toContain('.github/copilot-instructions.md');
-    // Root docs stay unconditional, same as README/CLAUDE.md/AGENTS.md.
-    expect(files).toContain('GEMINI.md');
+    // README.md, CLAUDE.md and AGENTS.md stay unconditional — the first two are
+    // also this project's own documentation and the third is the tool-agnostic
+    // convention. GEMINI.md is read by one tool and nothing else, so it follows
+    // that tool's answer; otherwise picking Gemini CLI changes nothing at all.
+    expect(files).toContain('README.md');
+    expect(files).toContain('CLAUDE.md');
+    expect(files).toContain('AGENTS.md');
+    expect(files).not.toContain('GEMINI.md');
+  });
+
+  it('writes GEMINI.md when, and only when, Gemini CLI is selected', () => {
+    expect(run(withAiTools(['gemini-cli'])).vfs.snapshot().files).toContain('GEMINI.md');
+    expect(run(withAiTools(['claude'])).vfs.snapshot().files).not.toContain('GEMINI.md');
+    // Absent means the pre-existing cursor+claude default, which never included
+    // Gemini CLI, so a config saved before this question existed loses nothing.
+    expect(run(withAiTools(undefined)).vfs.snapshot().files).not.toContain('GEMINI.md');
   });
 
   it('selecting only copilot produces no cursor or claude rules, including the stack-agnostic base ones', () => {

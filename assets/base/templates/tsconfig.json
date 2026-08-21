@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ESNext"],
+    "lib": ["ESNext"{{#if has.web}}, "DOM", "DOM.Iterable"{{/if}}],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -21,8 +21,23 @@
     "isolatedModules": true,
     "noEmit": true,
 
-    "types": ["node"{{#if has.jest}}, "jest"{{/if}}]
+    "types": ["node"{{#if has.jest}}, "jest"{{/if}}],
+
+    "paths": { "@/*": ["./src/*"] }{{#if has.nextjs}},
+
+    "incremental": true,
+    "plugins": [{ "name": "next" }]{{/if}}
   },
-  "include": ["src", "*.ts", "*.tsx"],
+{{#if has.nextjs}}  "include": [
+    "src",
+    "app",
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "*.ts",
+    "*.tsx"
+  ],
+{{/if}}{{#unless has.nextjs}}  "include": ["src", "*.ts", "*.tsx"],
+{{/unless}}
   "exclude": ["node_modules", "dist", "build", "coverage"]
 }

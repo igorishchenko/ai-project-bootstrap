@@ -87,7 +87,8 @@ The CLI gives you a webhook secret for local development.
 | Webhook works locally, not deployed | Endpoint or signing secret differs per environment |
 | Access granted twice | No idempotency on the event id |
 | Subscription state drifts | Only handling `checkout.session.completed` |
-| App Store rejection | Selling digital goods through Stripe on iOS. Use in-app purchase |
+{{#if has.mobile}}| App Store rejection | Selling digital goods through Stripe on iOS. Use in-app purchase |
+{{/if}}
 
 ### Common mistakes
 

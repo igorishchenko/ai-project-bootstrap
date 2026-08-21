@@ -37,7 +37,7 @@ result, which is the single most common Supabase bug.
 
 - **RLS enabled on every table.** No exceptions. The anon key is public — it
   ships inside the app — so RLS is the only thing protecting the data.
-- The `service_role` key never appears in client code, in an `EXPO_PUBLIC_*`
+- The `service_role` key never appears in client code, in an `{{envPrefix}}*`
   variable, or in this repository. It bypasses every policy.
 - If a query needs privileges the user does not have, the answer is an edge
   function or an RLS policy — never a more powerful key in the client.

@@ -46,7 +46,7 @@ import { OneSignal, LogLevel } from 'react-native-onesignal';
 
 export function configureNotifications() {
   OneSignal.Debug.setLogLevel(__DEV__ ? LogLevel.Verbose : LogLevel.None);
-  OneSignal.initialize(process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!);
+  OneSignal.initialize(process.env.{{envPrefix}}ONESIGNAL_APP_ID!);
 }
 ```
 

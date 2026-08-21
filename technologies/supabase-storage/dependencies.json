@@ -1,11 +1,11 @@
 {
   "packages": [
-    { "name": "expo-image-picker", "version": "^57.0.0", "native": true },
+{{#if has.react-native}}    { "name": "expo-image-picker", "version": "^57.0.0", "native": true },
     { "name": "expo-image-manipulator", "version": "^57.0.0", "native": true },
     { "name": "expo-file-system", "version": "^57.0.0", "native": true }
-  ],
+{{/if}}  ],
   "install": [
-    "npx expo install expo-image-picker expo-image-manipulator expo-file-system",
+{{#if has.react-native}}    "npx expo install expo-image-picker expo-image-manipulator expo-file-system",
     "npx expo prebuild --clean"
-  ]
+{{/if}}  ]
 }

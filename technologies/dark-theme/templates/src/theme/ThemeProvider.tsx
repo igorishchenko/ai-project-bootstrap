@@ -75,10 +75,18 @@ function systemTheme(): ThemeMode {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren): React.JSX.Element {
-  const [preference, setPreferenceState] = useState<ThemePreference>(
-    () => (localStorage.getItem(STORAGE_KEY) as ThemePreference | null) ?? 'system',
-  );
+  // Both start at their neutral value and are filled in from an effect. A
+  // `'use client'` component still renders once on the server during
+  // prerendering, where `localStorage` and `matchMedia` do not exist — reading
+  // either during render fails the build outright, and reading it lazily on the
+  // client instead would hydrate against different markup.
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const [system, setSystem] = useState<ThemeMode>('light');
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') setPreferenceState(stored);
+  }, []);
 
   useEffect(() => {
     setSystem(systemTheme());

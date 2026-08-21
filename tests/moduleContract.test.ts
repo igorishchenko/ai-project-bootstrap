@@ -50,8 +50,13 @@ describe('module contract', () => {
       expect(manifest.conflicts).not.toContain(manifest.id);
 
       // Env tables parsed at load time; here we only assert they are complete.
+      // A client-visible key may lead with `{{envPrefix}}`, which resolves to
+      // the chosen platform's prefix at build time — nothing else is templated,
+      // so a typo in the tag still fails here rather than reaching a .env.
       for (const variable of module.env) {
-        expect(variable.key, `${manifest.id} env key`).toMatch(/^[A-Z][A-Z0-9_]*$/);
+        expect(variable.key, `${manifest.id} env key`).toMatch(
+          /^(\{\{envPrefix\}\})?[A-Z][A-Z0-9_]*$/,
+        );
         expect(
           variable.description.length,
           `${manifest.id}:${variable.key} description`,

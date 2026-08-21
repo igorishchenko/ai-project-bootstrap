@@ -38,13 +38,20 @@ describe('a generated project survives its own formatter', () => {
     const registry = loadRegistry(ROOT);
     const targetDir = fs.mkdtempSync(path.join(os.tmpdir(), 'format-test-'));
     dirs.push(targetDir);
+    // Every module that ships a `templates/**` source file has to be in here:
+    // a module missing from this selection is a module whose output nothing
+    // ever runs Prettier over. `localization` shipped an unformatted i18n
+    // module for exactly that reason — its web branch failed `format:check` in
+    // every generated project that selected it, and this test could not see it.
     const selection: Selection = {
       projectName: 'Test',
       choices: {
         target: 'web',
         web: 'nextjs',
         backend: 'supabase',
+        auth: 'supabase-auth',
         payments: 'stripe',
+        features: ['dark-theme', 'onboarding', 'localization'],
         'ci-cd': 'github-actions',
         testing: ['jest'],
       },

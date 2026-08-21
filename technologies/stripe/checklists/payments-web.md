@@ -40,6 +40,7 @@ before taking real money.
 - [ ] Duplicate webhook delivery grants access once.
 - [ ] Customer Portal opens and manages the subscription.
 
-## Mobile
+{{#if has.mobile}}## Mobile
 
 - [ ] Not used for digital goods in an iOS or Android app — the stores reject it.
+{{/if}}

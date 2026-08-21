@@ -6,5 +6,6 @@
   "requires": [],
   "conflicts": [],
   "dependencies": [],
-  "priority": 10
+  "priority": 10,
+  "clientEnvPrefix": "EXPO_PUBLIC_"
 }

@@ -15,7 +15,7 @@ someone five times.
 Create a key with **Mail Send only**. A full-access key can read your contact
 lists, rewrite templates and change account settings — none of which a sending
 service needs. And it is server-side: never in the app, never in an
-`EXPO_PUBLIC_*` variable.
+`{{envPrefix}}*` variable.
 
 ## Templates are outside version control
 

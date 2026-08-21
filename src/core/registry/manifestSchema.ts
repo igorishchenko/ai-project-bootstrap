@@ -30,6 +30,12 @@ export const manifestSchema = z.object({
   dependencies: z.array(z.string()).default([]),
   priority: z.number().int().min(0).default(50),
   pricing: pricingSchema,
+  // Uppercase and trailing-underscore by convention, because it is concatenated
+  // straight onto a variable name.
+  clientEnvPrefix: z
+    .string()
+    .regex(/^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*_$/, 'must be UPPER_SNAKE_CASE ending in an underscore')
+    .optional(),
 });
 
 /**

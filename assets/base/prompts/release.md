@@ -13,7 +13,8 @@ Prepare release **[version]** of {{projectName}}.
    existing integration or user expectation?
 4. Draft the changelog, written for someone who does not work on this codebase.
 5. Work through `checklists/release.md` and report anything unmet.
-6. [Bump the build number — stores reject duplicates]
+{{#if has.mobile}}6. [Bump the build number — stores reject duplicates]
+{{/if}}
 
 ## Read first
 

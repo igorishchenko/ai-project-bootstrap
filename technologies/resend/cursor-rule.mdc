@@ -9,7 +9,7 @@ alwaysApply: false
 ## Where it runs
 
 - **Server-side only.** The API key sends mail as your domain to any recipient.
-  Never in the app, never in an `EXPO_PUBLIC_*` variable.
+  Never in the app, never in an `{{envPrefix}}*` variable.
 
 ## Sending
 

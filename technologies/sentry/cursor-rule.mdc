@@ -10,7 +10,11 @@ alwaysApply: false
 
 - `Sentry.init()` runs once, as early in startup as possible. Anything thrown
   before it is lost.
-- `enabled: !__DEV__` — development noise buries real production issues.
+{{#if has.react-native}}- `enabled: !__DEV__` — development noise buries real production issues.
+{{/if}}{{#unless has.react-native}}- `enabled` only in production — development noise buries real production issues.
+- The DSN needs the `{{envPrefix}}` prefix; `SENTRY_AUTH_TOKEN` must never have
+  one, or a project-write credential ships to every visitor.
+{{/unless}}
 - `environment` must distinguish development, staging and production.
 
 ## Reporting

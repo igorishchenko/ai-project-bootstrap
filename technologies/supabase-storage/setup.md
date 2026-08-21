@@ -36,15 +36,17 @@ policies expressible. Decide the path convention before you have files.
 
 ### Install
 
-```bash
+{{#if has.react-native}}```bash
 npx expo install expo-image-picker expo-file-system
 ```
-
+{{/if}}{{#unless has.react-native}}Nothing to install — uploads use the browser's own `File` API and the Supabase
+client you already have.
+{{/unless}}
 The Supabase client comes from the Supabase module.
 
 ### Uploading
 
-```ts
+{{#if has.react-native}}```ts
 const file = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
 
 const { error } = await supabase.storage
@@ -60,7 +62,23 @@ if (error) throw new Error(`Upload failed: ${error.message}`);
 Resize before uploading. A modern phone camera produces multi-megabyte images,
 and shipping the original wastes the user's data allowance, your bandwidth bill
 and their battery — for pixels nobody sees.
+{{/if}}{{#unless has.react-native}}```ts
+// `file` is a File from an <input type="file"> or a drop event
+const { error } = await supabase.storage
+  .from('avatars')
+  .upload(`${userId}/avatar.png`, file, {
+    contentType: file.type,
+    upsert: true,
+  });
 
+if (error) throw new Error(`Upload failed: ${error.message}`);
+```
+
+Upload from the browser, not through a route handler that buffers the file —
+routing bytes through your server costs you the bandwidth twice and runs into
+the platform's request body limit. Validate size and type before uploading;
+a bucket policy cannot check either.
+{{/unless}}
 ### Downloading
 
 ```ts
