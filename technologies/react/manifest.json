@@ -6,5 +6,6 @@
   "requires": [],
   "conflicts": ["nextjs"],
   "dependencies": [],
-  "priority": 14
+  "priority": 14,
+  "clientEnvPrefix": "VITE_"
 }

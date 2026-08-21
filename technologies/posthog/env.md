@@ -8,6 +8,6 @@ to the US region is a compliance problem, so set it deliberately.
 
 | Key | Required | Description | Example |
 | --- | --- | --- | --- |
-| `EXPO_PUBLIC_POSTHOG_KEY` | Yes | Project API key. Write-only, safe in the client. | `phc_xxxxxxxx` |
-| `EXPO_PUBLIC_POSTHOG_HOST` | Yes | Ingestion host. Replace `<region>` with `eu` or `us` — this decides where your data is stored, so choose deliberately. | `https://<region>.i.posthog.com` |
+| `{{envPrefix}}POSTHOG_KEY` | Yes | Project API key. Write-only, safe in the client. | `phc_xxxxxxxx` |
+| `{{envPrefix}}POSTHOG_HOST` | Yes | Ingestion host. Replace `<region>` with `eu` or `us` — this decides where your data is stored, so choose deliberately. | `https://<region>.i.posthog.com` |
 | `POSTHOG_PERSONAL_API_KEY` | No | Server-side API access. Never ship in the app. | `phx_xxxxxxxx` |

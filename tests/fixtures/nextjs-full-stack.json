@@ -1,0 +1,19 @@
+{
+  "projectName": "Web Full Stack",
+  "choices": {
+    "target": "web",
+    "web": "nextjs",
+    "backend": "supabase",
+    "auth": "supabase-auth",
+    "payments": "stripe",
+    "analytics": ["posthog"],
+    "crash-reporting": ["sentry"],
+    "storage": "supabase-storage",
+    "email": "resend",
+    "monitoring": "betterstack",
+    "ci-cd": "github-actions",
+    "testing": ["jest"],
+    "features": ["dark-theme", "onboarding", "localization"],
+    "aiTools": ["claude"]
+  }
+}

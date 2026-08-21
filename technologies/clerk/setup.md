@@ -39,7 +39,7 @@ const tokenCache = {
 };
 
 <ClerkProvider
-  publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+  publishableKey={process.env.{{envPrefix}}CLERK_PUBLISHABLE_KEY!}
   tokenCache={tokenCache}
 >
   <App />

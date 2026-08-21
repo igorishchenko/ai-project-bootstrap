@@ -1,12 +1,14 @@
 {
   "packages": [
-    { "name": "posthog-react-native", "version": "^4.61.0" },
+{{#if has.react-native}}    { "name": "posthog-react-native", "version": "^4.61.0" },
     { "name": "expo-file-system", "version": "^57.0.0", "native": true },
     { "name": "expo-application", "version": "^57.0.0", "native": true },
     { "name": "expo-device", "version": "^57.0.0", "native": true },
     { "name": "expo-localization", "version": "^57.0.0", "native": true }
-  ],
+{{/if}}{{#unless has.react-native}}    { "name": "posthog-js", "version": "^1.418.9" }
+{{/unless}}  ],
   "install": [
-    "npx expo install posthog-react-native expo-file-system expo-application expo-device expo-localization"
-  ]
+{{#if has.react-native}}    "npx expo install posthog-react-native expo-file-system expo-application expo-device expo-localization"
+{{/if}}{{#unless has.react-native}}    "npm install posthog-js"
+{{/unless}}  ]
 }

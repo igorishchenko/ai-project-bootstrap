@@ -37,7 +37,7 @@ Work through this before every release of {{projectName}}.
 
 ## Release
 
-- [ ] Version bumped; build number incremented for native apps.
+- [ ] Version bumped{{#if has.mobile}}; build number incremented — stores reject a duplicate{{/if}}.
 - [ ] Changelog written for users, not for the team.
 - [ ] Tagged, with the artefact built by CI rather than a local machine.
 

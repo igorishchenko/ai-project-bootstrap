@@ -18,24 +18,46 @@ events nobody defined is worse than no analytics, because people trust it.
 
 ### Install
 
-```bash
+{{#if has.react-native}}```bash
 npx expo install posthog-react-native expo-file-system expo-application \
   expo-device expo-localization
 ```
-
+{{/if}}{{#unless has.react-native}}```bash
+npm install posthog-js
+```
+{{/unless}}
 ### Initialise
 
-```ts
+{{#if has.react-native}}```ts
 import PostHog from 'posthog-react-native';
 
-export const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_KEY!, {
-  host: process.env.EXPO_PUBLIC_POSTHOG_HOST,
+export const posthog = new PostHog(process.env.{{envPrefix}}POSTHOG_KEY!, {
+  host: process.env.{{envPrefix}}POSTHOG_HOST,
   captureAppLifecycleEvents: true,
 });
 ```
 
 Wrap the app in `PostHogProvider` so hooks and autocapture work.
+{{/if}}{{#unless has.react-native}}```ts
+'use client';
 
+import posthog from 'posthog-js';
+
+posthog.init(process.env.{{envPrefix}}POSTHOG_KEY!, {
+  api_host: process.env.{{envPrefix}}POSTHOG_HOST,
+});
+
+export { posthog };
+```
+
+Initialise from a client component mounted in the root layout — `posthog-js`
+touches `window`, so importing it from a server component fails the build. Both
+variables need the `{{envPrefix}}` prefix or the browser reads `undefined`.
+
+App Router does not fire a page view on client-side navigation by default.
+Capture `$pageview` yourself from a `usePathname` effect, or the funnel only
+ever sees first loads.
+{{/unless}}
 ### Naming events
 
 Pick one convention and hold to it. This project uses `object_action`, past
@@ -89,6 +111,9 @@ render the default and update when it arrives.
 | Events appear minutes later | Expected — the SDK batches. Use the debug view for immediate feedback |
 | Flags always return the default | Fetched before `identify`, or the flag is not rolled out to that user |
 | Duplicate users | `reset()` not called on sign-out |
+{{#unless has.react-native}}| Only the first page appears | App Router navigations need `$pageview` captured manually |
+| `window is not defined` at build | `posthog-js` imported from a server component |
+{{/unless}}
 | Replay shows sensitive data | Masking not configured for a custom input |
 
 ### Common mistakes
@@ -112,6 +137,8 @@ render the default and update when it arrives.
 ### Documentation
 
 - [PostHog docs](https://posthog.com/docs)
-- [React Native SDK](https://posthog.com/docs/libraries/react-native)
+{{#if has.react-native}}- [React Native SDK](https://posthog.com/docs/libraries/react-native)
+{{/if}}{{#unless has.react-native}}- [Next.js SDK](https://posthog.com/docs/libraries/next-js)
+{{/unless}}
 - [Feature flags](https://posthog.com/docs/feature-flags)
 - [Session replay privacy](https://posthog.com/docs/session-replay/privacy)

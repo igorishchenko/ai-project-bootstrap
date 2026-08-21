@@ -1,7 +1,8 @@
 node_modules
 dist
 build
-coverage
+{{#if has.nextjs}}.next
+{{/if}}coverage
 
 # Everything below is written by ai-project-bootstrap, and reformatting it
 # breaks `upgrade`.

@@ -27,13 +27,25 @@ that looks like a server problem.
 
 ## Persistence
 
-React Native has no `localStorage`. Without a storage adapter the user is signed
+{{#if has.react-native}}React Native has no `localStorage`. Without a storage adapter the user is signed
 out on every cold start — which reliably gets reported as "sign-in is broken":
 
 ```ts
 auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true }
 ```
+{{/if}}{{#unless has.react-native}}The session is a cookie, not `localStorage`, because server components have to
+read it too. Build every client through `@supabase/ssr` — `createBrowserClient`
+in client components, `createServerClient` **per request** everywhere else. A
+server client built once at module scope leaks one visitor's session into
+another's render.
 
+`middleware.ts` refreshes the expiring cookie. Without it the session dies
+mid-visit and the server quietly starts rendering signed-out, which reliably
+gets reported as "it signs me out at random".
+
+On the server use `getUser()`, never `getSession()`: only `getUser()` verifies
+the cookie against Supabase rather than trusting what the browser sent.
+{{/unless}}
 ## Sign-out
 
 Clear cached user-scoped state — queries, profile, entitlements — alongside

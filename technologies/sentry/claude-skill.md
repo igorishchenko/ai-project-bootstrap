@@ -50,6 +50,6 @@ do something about it.
 
 ## Verifying
 
-Sentry is disabled in development by design (`enabled: !__DEV__`), so an absence
+Sentry is disabled in development by design ({{#if has.react-native}}`enabled: !__DEV__`{{/if}}{{#unless has.react-native}}`enabled` gated on `NODE_ENV`{{/unless}}), so an absence
 of events locally is expected, not a bug. Verifying this integration means a
 production or staging build — if you have not done that, say so.

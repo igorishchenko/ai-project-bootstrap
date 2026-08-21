@@ -1,10 +1,12 @@
 {
   "packages": [
-    { "name": "@react-native-async-storage/async-storage", "version": "^3.1.0", "native": true },
+{{#if has.react-native}}    { "name": "@react-native-async-storage/async-storage", "version": "^3.1.0", "native": true },
     { "name": "expo-auth-session", "version": "^57.0.0", "native": true },
     { "name": "expo-web-browser", "version": "^57.0.0", "native": true }
-  ],
+{{/if}}{{#unless has.react-native}}    { "name": "@supabase/ssr", "version": "^0.12.4" }
+{{/unless}}  ],
   "install": [
-    "npx expo install @react-native-async-storage/async-storage expo-auth-session expo-web-browser"
-  ]
+{{#if has.react-native}}    "npx expo install @react-native-async-storage/async-storage expo-auth-session expo-web-browser"
+{{/if}}{{#unless has.react-native}}    "npm install @supabase/ssr"
+{{/unless}}  ]
 }

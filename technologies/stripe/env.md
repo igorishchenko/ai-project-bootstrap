@@ -10,4 +10,4 @@ Without it the endpoint accepts anything.
 | --- | --- | --- | --- |
 | `STRIPE_SECRET_KEY` | Yes | Server-side API key. Never ship in a client bundle. | `sk_test_xxxxxxxx` |
 | `STRIPE_WEBHOOK_SECRET` | Yes | Verifies webhook signatures. The endpoint is public without it. | `whsec_xxxxxxxx` |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | No | Browser-side key for Stripe.js. Safe to expose. | `pk_test_xxxxxxxx` |
+| `{{envPrefix}}STRIPE_PUBLISHABLE_KEY` | No | Browser-side key for Stripe.js. Safe to expose. | `pk_test_xxxxxxxx` |

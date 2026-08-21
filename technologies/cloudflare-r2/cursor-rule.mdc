@@ -9,7 +9,7 @@ alwaysApply: false
 ## Credentials
 
 - **Server-side only.** R2 keys are account-scoped; there is no client-safe
-  variant. Never in the app, never in an `EXPO_PUBLIC_*` variable.
+  variant. Never in the app, never in an `{{envPrefix}}*` variable.
 - Scope API tokens to a single bucket with least privilege.
 
 ## Presigned URLs

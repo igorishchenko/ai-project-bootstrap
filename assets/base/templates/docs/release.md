@@ -18,8 +18,8 @@ the version bump and changelog can be derived rather than argued about.
 1. Confirm the main branch is green.
 2. Work through `checklists/release.md`.
 3. Generate the changelog from the commits since the last tag.
-4. Bump the version. Native apps also need their build number incremented —
-   stores reject a duplicate.
+4. Bump the version.{{#if has.mobile}} The build number needs incrementing too —
+   stores reject a duplicate.{{/if}}
 
 ## Releasing
 

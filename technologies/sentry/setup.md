@@ -1,6 +1,6 @@
 ### Overview
 
-Sentry captures unhandled errors and native crashes, with the stack trace, the
+Sentry captures unhandled errors{{#if has.react-native}} and native crashes{{/if}}, with the stack trace, the
 breadcrumbs leading up to it, the device state, and which release it came from.
 
 Two things do most of the work and are the two most commonly skipped: **source
@@ -9,7 +9,7 @@ maps**, without which every production stack trace is minified gibberish, and
 
 ### Create the project
 
-1. Create a project at [sentry.io](https://sentry.io) — choose the React Native
+1. Create a project at [sentry.io](https://sentry.io) — choose the {{#if has.react-native}}React Native{{/if}}{{#unless has.react-native}}Next.js{{/unless}}
    platform so the correct defaults are applied.
 2. Copy the DSN from Settings → Client Keys.
 3. Create an auth token (Settings → Auth Tokens) with `project:releases` scope,
@@ -18,21 +18,32 @@ maps**, without which every production stack trace is minified gibberish, and
 
 ### Install
 
-```bash
+{{#if has.react-native}}```bash
 npx expo install @sentry/react-native
 npx expo prebuild --clean
 ```
+{{/if}}{{#unless has.react-native}}```bash
+npm install @sentry/nextjs
+npx @sentry/wizard@latest -i nextjs
+```
 
+The wizard writes the config files, wraps `next.config.ts` in `withSentryConfig`
+and sets up source map upload. Run it rather than hand-writing the wiring: the
+exact file names have changed across major versions, and the wizard always
+matches the version you just installed. Check the
+[Next.js guide](https://docs.sentry.io/platforms/javascript/guides/nextjs/) for
+what it produced.
+{{/unless}}
 ### Initialise
 
 Once, as early as possible in startup — before anything that might throw:
 
-```ts
+{{#if has.react-native}}```ts
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  environment: process.env.EXPO_PUBLIC_ENV ?? 'development',
+  dsn: process.env.{{envPrefix}}SENTRY_DSN,
+  environment: process.env.{{envPrefix}}APP_ENV ?? 'development',
   enabled: !__DEV__,
   tracesSampleRate: 0.2,
   sendDefaultPii: false,
@@ -41,17 +52,43 @@ Sentry.init({
 
 `enabled: !__DEV__` keeps development noise out of the dashboard. `sendDefaultPii: false`
 keeps user identifiers out of events unless you add them deliberately.
+{{/if}}{{#unless has.react-native}}The wizard generates one `Sentry.init` per runtime — browser, server and edge —
+because they load at different times and take different options. Each takes the
+same core settings:
 
+```ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.{{envPrefix}}SENTRY_DSN,
+  environment: process.env.{{envPrefix}}APP_ENV ?? 'development',
+  enabled: process.env.NODE_ENV === 'production',
+  tracesSampleRate: 0.2,
+  sendDefaultPii: false,
+});
+```
+
+The DSN needs the `{{envPrefix}}` prefix because the browser bundle reads it;
+`SENTRY_AUTH_TOKEN` must **not** have one — it is a build-time credential and a
+prefixed variable is inlined into JavaScript every visitor downloads.
+
+`enabled` off outside production keeps development noise out of the dashboard.
+`sendDefaultPii: false` keeps user identifiers out of events unless you add them
+deliberately.
+{{/unless}}
 ### Source maps
 
 Without uploaded source maps, a production stack trace points at line 1 of a
-minified bundle and is useless. The Expo plugin handles upload during EAS builds
+minified bundle and is useless. {{#if has.react-native}}The Expo plugin handles upload during EAS builds
 when the auth token is set:
 
 ```bash
 eas secret:create --name SENTRY_AUTH_TOKEN --value <token>
 ```
-
+{{/if}}{{#unless has.react-native}}`withSentryConfig` uploads them during `next build`
+when the auth token is present. Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
+`SENTRY_PROJECT` as CI secrets — never in `.env` in the repository.
+{{/unless}}
 Verify after your first production build: open any error in Sentry and confirm
 the frames name your files.
 
@@ -94,11 +131,15 @@ These are what turn "TypeError: undefined" into a reproducible sequence.
 
 | Symptom | Cause and fix |
 | --- | --- |
-| No events at all | `enabled: !__DEV__` and you are in development — expected |
+{{#if has.react-native}}| No events at all | `enabled: !__DEV__` and you are in development — expected |
 | Stack traces are minified | Source maps not uploaded. Check the auth token in EAS secrets |
 | Events lack a release | Release not set in the build. Check the plugin config |
 | Native crashes missing | Rebuild after installing — this is a native module |
-| Too many events | Lower `tracesSampleRate`; filter noise in `beforeSend` |
+{{/if}}{{#unless has.react-native}}| No events at all | `enabled` is false outside production — expected |
+| Nothing from the browser | The DSN is missing its `{{envPrefix}}` prefix, so the client bundle reads `undefined` |
+| Stack traces are minified | Source maps not uploaded. Check `SENTRY_AUTH_TOKEN` in the build environment |
+| Server errors missing | The server-side init is not loading. Re-run the wizard |
+{{/unless}}| Too many events | Lower `tracesSampleRate`; filter noise in `beforeSend` |
 
 ### Common mistakes
 
@@ -109,20 +150,25 @@ These are what turn "TypeError: undefined" into a reproducible sequence.
 - **Capturing and swallowing.** Reporting an error is not handling it — decide
   what the user sees.
 - **Alerting on everything.** Alert fatigue means real incidents get ignored.
-
+{{#unless has.react-native}}- **Prefixing the auth token.** `{{envPrefix}}SENTRY_AUTH_TOKEN` ships a
+  project-write credential to every visitor.
+{{/unless}}
 ### Production checklist
 
 - [ ] DSN set for the production environment.
 - [ ] Source maps uploading, verified on a real production error.
-- [ ] Release and build number tagged on every event.
+- [ ] Release{{#if has.mobile}} and build number{{/if}} tagged on every event.
 - [ ] `environment` distinguishes development, staging and production.
 - [ ] No personal data, tokens or keys in tags, extras or breadcrumbs.
 - [ ] Alerts configured for a spike in the crash-free rate, not for every event.
-- [ ] A native crash verified end to end on a physical device.
-
+{{#if has.react-native}}- [ ] A native crash verified end to end on a physical device.
+{{/if}}{{#unless has.react-native}}- [ ] An error verified end to end from both the browser and the server.
+{{/unless}}
 ### Documentation
 
-- [Sentry React Native](https://docs.sentry.io/platforms/react-native/)
+{{#if has.react-native}}- [Sentry React Native](https://docs.sentry.io/platforms/react-native/)
 - [Source maps](https://docs.sentry.io/platforms/react-native/sourcemaps/)
-- [Releases](https://docs.sentry.io/product/releases/)
+{{/if}}{{#unless has.react-native}}- [Sentry for Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+- [Source maps](https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/)
+{{/unless}}- [Releases](https://docs.sentry.io/product/releases/)
 - [Data scrubbing](https://docs.sentry.io/data-management-settings/scrubbing/)

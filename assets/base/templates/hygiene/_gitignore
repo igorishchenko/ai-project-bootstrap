@@ -9,7 +9,10 @@ node_modules/
 # Build output
 dist/
 build/
-coverage/
+{{#if has.nextjs}}.next/
+out/
+next-env.d.ts
+{{/if}}coverage/
 
 # Logs
 *.log

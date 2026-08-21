@@ -41,6 +41,13 @@ export interface Manifest {
   priority: number;
   /** Unset when the module has no cost of its own, or none worth stating. */
   pricing?: Pricing;
+  /**
+   * The prefix this platform requires on an environment variable it will inline
+   * into the client bundle. Only a module that owns a build pipeline declares
+   * one; every other module reads it as `{{envPrefix}}` so a variable meant for
+   * the client is named correctly for whichever platform was chosen.
+   */
+  clientEnvPrefix?: string;
 }
 
 /** A single environment variable declared by a module's `env.md` table. */

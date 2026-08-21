@@ -13,7 +13,7 @@ Work through this before any release that touches the schema or auth.
 
 ## Keys
 
-- [ ] `service_role` key is absent from the app, from every `EXPO_PUBLIC_*`
+- [ ] `service_role` key is absent from the app, from every `{{envPrefix}}*`
       variable, and from the repository history.
 - [ ] Production and development use separate projects with separate keys.
 - [ ] CI reads keys from secrets, not from a committed file.
@@ -36,6 +36,6 @@ Work through this before any release that touches the schema or auth.
 
 ## Auth
 
-- [ ] Redirect URLs configured for production, including deep links.
+- [ ] Redirect URLs configured for production, including {{#if has.mobile}}deep links{{/if}}{{#unless has.mobile}}preview deployments{{/unless}}.
 - [ ] Email templates reviewed and sent from a verified domain.
 - [ ] Session refresh works after the access token expires.
