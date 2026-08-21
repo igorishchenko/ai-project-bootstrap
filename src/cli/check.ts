@@ -12,6 +12,8 @@ import { fetchAdvisories, moduleIdsFrom, type Advisory } from './advisories.js';
 import { preservedPaths, readFingerprints, type Fingerprints } from '../core/vfs/preserve.js';
 import { loadSelectionFile, readPinnedPacks, readRecordedGeneratorVersion } from './configFile.js';
 import { loadPinnedPacks } from '../core/packs/packCache.js';
+import { replacedModuleIds } from '../core/packs/resolve.js';
+import type { RulePack } from '../core/packs/packTypes.js';
 import type { Reporter } from './reporter.js';
 
 /**
@@ -89,7 +91,62 @@ export interface CheckReport {
   advisoriesEntitled?: boolean;
   /** One line about why advisories are missing or incomplete. */
   advisoryNote?: string;
+  /** What each pinned rule pack did to the built-in rules. Absent when none. */
+  packs?: PackContribution[];
   severity: DriftSeverity;
+}
+
+/**
+ * One pinned pack's effect on this project's rules.
+ *
+ * Reported because an org pack silently changing a built-in rule is exactly
+ * the thing somebody later fails to explain: an advisory about our `nextjs`
+ * rule does not seem to apply, our testing section is not what the docs
+ * describe, and nothing on screen says a pack replaced it on purpose.
+ *
+ * Never drift. A pack doing what it was installed to do is the system working,
+ * so this never touches severity and never fails a build.
+ */
+export interface PackContribution {
+  id: string;
+  version: string;
+  /** Built-in rules this pack replaced outright. */
+  replaced: string[];
+  /** Built-in rules this pack appended its own content below. */
+  extended: string[];
+  /** Rules this pack contributed that have no built-in counterpart. */
+  added: string[];
+}
+
+/**
+ * **`replacedModuleIds` is the authority on who won, not the rule list.**
+ * When two packs replace the same built-in the later one takes effect, and
+ * that resolution already lives in `resolve.ts` where the builders read it.
+ * Recomputing it here would be a second implementation of a precedence rule,
+ * free to disagree with what was actually written — which is the failure this
+ * report exists to prevent.
+ */
+export function packContributions(packs: readonly RulePack[]): PackContribution[] {
+  const winners = replacedModuleIds(packs);
+
+  return packs
+    .map((pack) => ({
+      id: pack.id,
+      version: pack.version,
+      replaced: [...winners.entries()]
+        .filter(([, packId]) => packId === pack.id)
+        .map(([moduleId]) => moduleId)
+        .sort(),
+      // Every extension applies — they append cumulatively, so unlike a
+      // replacement there is no losing one to leave out.
+      extended: pack.rules
+        .flatMap((rule) => (rule.extends ? [rule.extends] : []))
+        .sort(),
+      added: pack.rules
+        .flatMap((rule) => (rule.appliesTo ? [rule.id] : []))
+        .sort(),
+    }))
+    .filter((entry) => entry.replaced.length + entry.extended.length + entry.added.length > 0);
 }
 
 const BOOLEANS = new Set(['--json', '--no-advisories', '-h', '--help']);
@@ -376,13 +433,15 @@ export async function runCheck(
   const installedVersion = readGeneratorPackageInfo(rootDir).version;
   const registry = loadRegistry(rootDir);
 
+  const packs = loadPinnedPacks(readPinnedPacks(configFile));
+
   const result = generate({
     rootDir,
     targetDir,
     selection,
     builders,
     registry,
-    packs: loadPinnedPacks(readPinnedPacks(configFile)),
+    packs,
     generatorVersion: installedVersion,
     // No `onBuilder` — a read-only report should not print a build log, and
     // --json must emit nothing but JSON.
@@ -412,6 +471,7 @@ export async function runCheck(
     installedVersion,
     ...classified,
     newAiTools,
+    ...(packs.length > 0 ? { packs: packContributions(packs) } : {}),
     ...(advisoryResult
       ? {
           advisories: advisoryResult.advisories,
@@ -488,6 +548,12 @@ export function toJson(report: CheckReport, failOn: DriftSeverity) {
         }
       : null,
     advisoryNote: report.advisoryNote ?? null,
+    /*
+     * Additive like `advisories` above, and `null` rather than absent for the
+     * same reason: a consumer can tell "this project pins no packs" from an
+     * older CLI that never reported them at all.
+     */
+    packs: report.packs ?? null,
     severity: report.severity,
     failOn,
     ok: !failsThreshold(report.severity, failOn),
