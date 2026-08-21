@@ -72,6 +72,22 @@ export function credentialsPath(
 
 interface CredentialsFile {
   licenseKey?: string;
+  /**
+   * The backend this key belongs to, when it is not the hosted one.
+   *
+   * A key is only meaningful against the server that issued it, so storing the
+   * two apart is what makes "that key was not accepted" the most confusing
+   * failure this CLI has: a local key checked against production and a
+   * production key checked against localhost both look exactly like a typo.
+   * Recording it at `login` means you point the CLI somewhere once, rather than
+   * exporting a variable before every command and discovering which ones you
+   * forgot.
+   *
+   * Only written when it differs from the default, so a normal install keeps a
+   * file with nothing in it but a key, and a value here always means somebody
+   * deliberately pointed this machine elsewhere.
+   */
+  apiUrl?: string;
 }
 
 /**
@@ -95,6 +111,21 @@ export function readStoredKey(
   }
 }
 
+/** The stored backend URL, or undefined when this machine uses the default. */
+export function readStoredApiUrl(
+  env: CredentialEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): string | undefined {
+  try {
+    const raw = fs.readFileSync(credentialsPath(env, platform), 'utf8');
+    const parsed = JSON.parse(raw) as CredentialsFile;
+    const url = parsed.apiUrl?.trim();
+    return url || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Writes the key with owner-only permissions on both the file and its
  * directory.
@@ -106,15 +137,17 @@ export function readStoredKey(
  */
 export function storeKey(
   key: string,
+  apiUrl?: string,
   env: CredentialEnv = process.env,
   platform: NodeJS.Platform = process.platform,
 ): string {
   const dir = resolveConfigDir(env, platform);
   const file = path.join(dir, FILE_NAME);
+  const contents: CredentialsFile = apiUrl ? { licenseKey: key, apiUrl } : { licenseKey: key };
 
   try {
     fs.mkdirSync(dir, { recursive: true, mode: DIR_MODE });
-    fs.writeFileSync(file, `${JSON.stringify({ licenseKey: key }, null, 2)}\n`, {
+    fs.writeFileSync(file, `${JSON.stringify(contents, null, 2)}\n`, {
       mode: FILE_MODE,
     });
     // Windows has no POSIX mode bits and chmod is close to a no-op there; the

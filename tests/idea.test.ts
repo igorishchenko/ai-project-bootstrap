@@ -26,10 +26,26 @@ const samplePreset = {
 
 describe('resolveApiUrl', () => {
   const original = process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+  const originalDir = process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR;
+  let dir: string;
+
+  /*
+   * The config dir is redirected because `resolveApiUrl` reads the stored
+   * credentials now, not just the environment. Without this the suite reads
+   * whatever the developer running it happens to have logged into — which is
+   * exactly how this was caught.
+   */
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'apb-apiurl-'));
+    process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR = dir;
+  });
 
   afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
     if (original) process.env.AI_PROJECT_BOOTSTRAP_API_URL = original;
     else delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+    if (originalDir) process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR = originalDir;
+    else delete process.env.AI_PROJECT_BOOTSTRAP_CONFIG_DIR;
   });
 
   it('defaults to the deployed backend', () => {
@@ -38,6 +54,18 @@ describe('resolveApiUrl', () => {
   });
 
   it('reads AI_PROJECT_BOOTSTRAP_API_URL when set', () => {
+    process.env.AI_PROJECT_BOOTSTRAP_API_URL = 'https://api.example.com';
+    expect(resolveApiUrl()).toBe('https://api.example.com');
+  });
+
+  it('falls back to the backend login stored, before the default', () => {
+    delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+    storeKey('apb_live_stored', 'http://localhost:8787');
+    expect(resolveApiUrl()).toBe('http://localhost:8787');
+  });
+
+  it('still lets the environment win over the stored one', () => {
+    storeKey('apb_live_stored', 'http://localhost:8787');
     process.env.AI_PROJECT_BOOTSTRAP_API_URL = 'https://api.example.com';
     expect(resolveApiUrl()).toBe('https://api.example.com');
   });
