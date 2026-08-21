@@ -93,12 +93,12 @@ describe('stored credentials', () => {
   });
 
   it('round-trips a key', () => {
-    storeKey('apb_live_abc123', env);
+    storeKey('apb_live_abc123', undefined, env);
     expect(readStoredKey(env)).toBe('apb_live_abc123');
   });
 
   it('creates the directory it needs', () => {
-    storeKey('apb_live_abc123', env);
+    storeKey('apb_live_abc123', undefined, env);
     expect(fs.existsSync(credentialsPath(env))).toBe(true);
   });
 
@@ -107,13 +107,13 @@ describe('stored credentials', () => {
    * on the machine gets to read the key.
    */
   it.skipIf(process.platform === 'win32')('writes the file owner-only', () => {
-    storeKey('apb_live_abc123', env);
+    storeKey('apb_live_abc123', undefined, env);
     const mode = fs.statSync(credentialsPath(env)).mode & 0o777;
     expect(mode).toBe(0o600);
   });
 
   it.skipIf(process.platform === 'win32')('creates the directory owner-only', () => {
-    storeKey('apb_live_abc123', env);
+    storeKey('apb_live_abc123', undefined, env);
     const mode = fs.statSync(resolveConfigDir(env)).mode & 0o777;
     expect(mode).toBe(0o700);
   });
@@ -124,10 +124,10 @@ describe('stored credentials', () => {
    * forever. `storeKey` chmods explicitly; this is what proves it.
    */
   it.skipIf(process.platform === 'win32')('tightens an existing file that was too permissive', () => {
-    storeKey('apb_live_first', env);
+    storeKey('apb_live_first', undefined, env);
     fs.chmodSync(credentialsPath(env), 0o644);
 
-    storeKey('apb_live_second', env);
+    storeKey('apb_live_second', undefined, env);
 
     expect(fs.statSync(credentialsPath(env)).mode & 0o777).toBe(0o600);
   });
@@ -150,7 +150,7 @@ describe('stored credentials', () => {
   });
 
   it('removes the key', () => {
-    storeKey('apb_live_abc123', env);
+    storeKey('apb_live_abc123', undefined, env);
     expect(removeStoredKey(env)).toBe(true);
     expect(readStoredKey(env)).toBeUndefined();
   });

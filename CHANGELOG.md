@@ -9,8 +9,137 @@ part of the PR that makes the change, not at release time.
 
 ## [Unreleased]
 
-Nothing yet. Entries land here in the PR that makes the change, not at
-release time — see `.claude/commands/changelog-entry.md`.
+### Added
+
+- **A web project is now generated as a web project.** Choosing `web` and
+  Next.js produced a half-mobile repository: twelve Expo packages with no React
+  Native to bind them to, `docs/setup.md` telling you to run
+  `npx expo install expo-auth-session`, and seven `EXPO_PUBLIC_*` variables that
+  Next.js never inlines, so every one of them read `undefined` in the browser.
+  Eight catalogue modules were written when the catalogue was mobile-only and
+  never revisited when the web target landed. They branch now — packages,
+  install commands, client construction, troubleshooting and rules — so the
+  same module produces the web integration path or the Expo one, and neither
+  mentions the other. Nothing about a mobile project changes. The reason this
+  survived four releases is that no test had ever asserted the two targets
+  produce *different* output; `tests/platformSplit.test.ts` now asserts the
+  absence of each platform's content from the other, which is the assertion
+  that would have caught it on day one.
+
+- **A module can name a client-visible variable without knowing the platform.**
+  `env.md`'s Key column accepts `{{envPrefix}}`, resolved from the platform's
+  own manifest — `NEXT_PUBLIC_`, `VITE_` or `EXPO_PUBLIC_`. It is a manifest
+  field rather than a `{{#if has.nextjs}}` chain because a repository carrying
+  both a mobile and a web app has two of them, and a chain would concatenate
+  both into one nonsense name. `.env.example` carries one row per key, so the
+  first declared prefix wins and generation warns about the other rather than
+  shipping a variable one of the two bundles silently reads as `undefined`.
+
+- **A generated Next.js project runs.** `app/` held nothing but a `.gitkeep` and
+  there was no `next.config.ts`, so `npm run dev` failed on a freshly generated
+  project before anyone had written a line. It now ships a root layout, a
+  placeholder page pointing at `docs/setup.md`, and a config file. `npm run
+  dev`, `build`, `typecheck`, `lint`, `format:check` and `test` all pass on a
+  fresh generate — verified by running them, not by generating and hoping.
+
+- **`GEMINI.md` follows the Gemini CLI answer.** Selecting or deselecting Gemini
+  CLI changed nothing whatsoever: the file shipped either way, so a project that
+  asked for Claude Code only got a file for a tool it had just declined.
+  `README.md`, `CLAUDE.md` and `AGENTS.md` stay unconditional — the first two
+  double as the project's own documentation, the third is the tool-agnostic
+  convention. This changes generated output for anyone who did not pick Gemini
+  CLI; `upgrade` will not delete an existing `GEMINI.md`, since regeneration
+  never deletes.
+
+- **`check` now names the rule pack behind a changed rule.** 1.4.0 said it did,
+  and it did not: `replacedModuleIds()` returned exactly the right map, was unit
+  tested, and was exported publicly through `/rules` — but no command called it,
+  so an organisation's pack could replace a built-in rule and nothing on screen
+  ever said so. The failure that costs is quiet: an advisory about our `nextjs`
+  rule does not seem to apply, the testing section is not what the docs
+  describe, and the reason is a deliberate decision somebody made months ago in
+  a different repository. `check` lists each pinned pack with what it replaced,
+  extended and added, in both the human report and `--json`. **Never drift, and
+  it cannot fail a build** — a pack doing its job is the system working. Which
+  pack "won" a contested replacement is read from `replacedModuleIds()` rather
+  than recomputed, so this report cannot disagree with the file on disk. `packs`
+  is additive and `null` when none are pinned, so `schema` stays `1` and the
+  action's moving `v1` tag is unaffected.
+
+- **`USAGE.md`** — a task-first tour of the whole tool: what you can do, the
+  command that does it, and where that part's instructions live. The README
+  grew into a reference organised by feature, which answers "how does `check`
+  work" well and "I have just installed this, now what" badly. Ordered by what
+  someone wants to accomplish rather than by command name, since nobody arriving
+  knows that "keep my AI rules from going stale" is spelled `check`.
+
+- **`login` remembers which backend the key belongs to.** A licence key is only
+  valid against the server that issued it, and the two were stored apart — so
+  pointing the CLI at anything but the hosted service meant exporting
+  `AI_PROJECT_BOOTSTRAP_API_URL` before every command, and forgetting it
+  produced "that key was not accepted", which is indistinguishable from a typo.
+  `login` now records the backend it verified against, and every later command
+  finds it. Resolution order matches `resolveLicenseKey` exactly — environment,
+  then stored, then the default — because a rule that overrode one and not the
+  other would check a key against a server that never issued it. Only a
+  non-default URL is written, so an ordinary install still ends up with a file
+  containing a key and nothing else, and a value there always means somebody
+  pointed this machine somewhere deliberately. `login --status` now always
+  names the backend, default or not; `logout` removes it with the key.
+
+### Fixed
+
+
+- **`npm run typecheck` failed on a freshly generated web project.** The base
+  `tsconfig.json` set `lib: ["ESNext"]` with no DOM, so the `dark-theme`
+  provider's own `window` and `document` were three errors on a repository
+  nobody had touched yet. DOM is added for a web target, `@/*` now resolves the
+  way `jest.config.js` already assumed it did, and `app/` is type-checked at
+  all.
+
+- **`next build` quietly disabled `upgrade` for `tsconfig.json`.** Next appends
+  its plugin and type globs to the file on first build, the generator
+  fingerprints what it writes and reads any change as a hand edit — so one
+  `npm run build` was enough to stop that file ever being refreshed again. It is
+  the 1.3.1 `npm run format` bug in a different costume. The generated file now
+  already contains everything Next would add, and `next build` leaves it byte
+  for byte alone.
+
+- **`next build` failed outright on any project with Dark Theme.** The web theme
+  provider read `localStorage` during render, and a `'use client'` component
+  still renders once on the server during prerendering. It reads from an effect
+  now, which also removes a hydration mismatch.
+
+- **Localization shipped an unformatted file,** so `format:check` — which the
+  generated CI workflow runs — went red on the first push of every project that
+  selected it. The formatting test's own fixture selected none of the feature
+  modules, so it could not see any of their output; it now selects every module
+  that ships a template.
+
+- **A web project no longer carries app-store release steps.** `docs/release.md`
+  and `checklists/release.md` asked for a build number "for native apps",
+  `prompts/release.md` asked for one outright, the Stripe troubleshooting table
+  listed App Store rejection, and the Supabase security checklist wanted redirect
+  URLs "including deep links". A checklist item nobody can satisfy is one people
+  learn to tick without reading, which costs the items around it too. All five
+  now follow the target. A mobile project is unchanged.
+
+- **A rejected key sent you back to the environment variable `login` exists to
+  replace.** The backend answers a refused key with a hint written for any
+  caller of any licensed endpoint — "Set AI_PROJECT_BOOTSTRAP_LICENSE_KEY to
+  your license key" — and `login` printed it verbatim. Right for a CI job,
+  absurd in front of somebody part-way through the one command whose whole
+  purpose is that nobody has to put a credential in a shell profile. 1.4.0
+  fixed the message you get with *no* key and left the one you get with a
+  *wrong* key still pointing at the variable, which is the message a new
+  subscriber who mistypes their key actually sees. `login` now writes its own
+  guidance; the backend's hint is untouched and still correct for its other
+  callers. The backend's *message* still comes through, because it is what
+  distinguishes a lapsed subscription from a typo.
+- **A refused key never said which backend refused it.** A dashboard key cannot
+  work against a backend on localhost, and a local development key cannot work
+  against the hosted one — and until the URL is on screen both look exactly
+  like a typo. `login` now names the backend it asked, in both directions.
 
 ## [1.4.0] — 2026-08-20
 

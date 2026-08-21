@@ -141,7 +141,9 @@ async function runAdd(argv: string[], rootDir: string, reporter: Reporter): Prom
     if (handEdited.length > 0) {
       throw new GeneratorError(
         'INVALID_CONFIG',
-        `Cannot replace ${oldModule?.manifest.name ?? oldId} — ${handEdited.length} of its file${handEdited.length > 1 ? 's have' : ' has'} been hand-edited since generation.`,
+        // "1 of its files has", never "1 of its file has": in this construction the
+        // noun is plural whatever the count, and only the verb agrees with it.
+        `Cannot replace ${oldModule?.manifest.name ?? oldId} — ${handEdited.length} of its files ${handEdited.length > 1 ? 'have' : 'has'} been hand-edited since generation.`,
         `Move or remove ${handEdited.join(', ')} yourself, then run "add ${module.manifest.id} --replace" again. Nothing was changed.`,
       );
     }

@@ -258,6 +258,13 @@ export class Reporter {
     }>;
     advisoriesEntitled?: boolean;
     advisoryNote?: string;
+    packs?: Array<{
+      id: string;
+      version: string;
+      replaced: string[];
+      extended: string[];
+      added: string[];
+    }>;
   }): void {
     const versionLine =
       report.recordedVersion === undefined
@@ -321,6 +328,35 @@ export class Reporter {
       this.write(
         pc.dim('  Add to "aiTools" in ai-project.config.json and upgrade again to include them.'),
       );
+      this.write();
+    }
+
+    /*
+     * Before advisories, because this is about *this* repository — and it is
+     * the answer to "why is our testing rule not what the docs describe".
+     * Stated whenever a pack is pinned, not only when something looks wrong:
+     * the moment somebody needs it is the moment they have not thought to ask.
+     *
+     * Never styled as a finding. A pack doing its job is not drift.
+     */
+    if (report.packs && report.packs.length > 0) {
+      this.write(
+        `${pc.bold('Rule packs')}  ${report.packs.length}  ${pc.dim('· your organisation’s own rules')}`,
+      );
+      for (const pack of report.packs) {
+        this.write(`    ${pc.bold(`${pack.id}@${pack.version}`)}`);
+        if (pack.replaced.length > 0) {
+          this.write(
+            pc.dim(`      replaces  ${pack.replaced.join(', ')}  — ours is not written at all`),
+          );
+        }
+        if (pack.extended.length > 0) {
+          this.write(pc.dim(`      extends   ${pack.extended.join(', ')}  — appended below ours`));
+        }
+        if (pack.added.length > 0) {
+          this.write(pc.dim(`      adds      ${pack.added.join(', ')}`));
+        }
+      }
       this.write();
     }
 

@@ -7,7 +7,7 @@ import {
   removeStoredKey,
   storeKey,
 } from './credentials.js';
-import { resolveApiUrl, resolveLicenseKey } from './idea.js';
+import { DEFAULT_API_URL, resolveApiUrl, resolveLicenseKey } from './idea.js';
 import type { Reporter } from './reporter.js';
 
 export const LOGIN_HELP_TEXT = `
@@ -89,6 +89,34 @@ interface ErrorResponseBody {
 }
 
 /**
+ * What to do about a key the backend would not take.
+ *
+ * **Deliberately not the backend's own `hint`.** That text is written for any
+ * caller of any licensed endpoint, and it says to set
+ * `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` — which is right for a CI job and absurd
+ * here, because the person reading it is part-way through `login`, the command
+ * that exists so nobody has to put a credential in an environment variable.
+ * Relaying it sent a new subscriber who mistyped their key straight back to the
+ * thing this command replaced. The backend's hint is still correct for its
+ * other callers, so it is left alone and this one call site stops echoing it.
+ *
+ * The backend it asked is always named, in both directions. A dashboard key
+ * cannot work against a backend on localhost, and a local development key
+ * cannot work against the hosted one — and until the URL is on screen, both
+ * failures look exactly like a mistyped key. Naming it only when overridden
+ * would have caught the first case and not the second, which is the one that
+ * happens to anyone running an installed CLI against a backend on their own
+ * machine.
+ */
+function rejectedKeyHint(apiUrl: string): string {
+  return [
+    'Nothing was stored.',
+    'Your key is on your dashboard, and was emailed when you subscribed.',
+    `Checked against ${apiUrl}.`,
+  ].join(' ');
+}
+
+/**
  * Asks the backend whether a key is live, without spending anything.
  *
  * `GET /v1/license/verify` exists for exactly this. Validating by making a real
@@ -121,8 +149,11 @@ export async function verifyLicenseKey(key: string): Promise<{ status?: string }
     const error = body?.error;
     throw new GeneratorError(
       (error?.code as GeneratorErrorCode | undefined) ?? 'IDEA_REQUEST_FAILED',
+      // The backend's *message* is worth keeping: the 402 body is
+      // differentiated, so it names the real cause — a lapsed subscription
+      // rather than a mistyped key. Only the hint is replaced.
       error?.message ?? `The backend rejected the key (${response.status}).`,
-      error?.hint ?? 'Check the key on your dashboard. Nothing was stored.',
+      rejectedKeyHint(apiUrl),
     );
   }
 
@@ -154,6 +185,14 @@ function reportStatus(reporter: Reporter): void {
   } else {
     lines.push('', `Stored at ${path}.`);
   }
+
+  // Always stated, even when it is the default. Which backend a key is checked
+  // against is half of whether it works, and leaving it implicit is what makes
+  // a rejected key unreadable.
+  const apiUrl = resolveApiUrl();
+  lines.push(
+    `Backend: ${apiUrl}${apiUrl === DEFAULT_API_URL ? '' : ' (remembered by login)'}.`,
+  );
   reporter.plain(lines.join('\n'));
 }
 
@@ -206,13 +245,18 @@ export async function runLogin(argv: string[], reporter: Reporter): Promise<numb
   }
   spin.stop('Key accepted.');
 
-  const path = storeKey(key);
+  // Recorded alongside the key, so the next command does not need the variable
+  // set again. Only when it is not the default: a normal install should end up
+  // with a file containing a key and nothing else.
+  const apiUrl = resolveApiUrl();
+  const path = storeKey(key, apiUrl === DEFAULT_API_URL ? undefined : apiUrl);
 
   reporter.plain(
     [
       `Logged in as ${maskKey(key)}${status && status !== 'active' ? ` (${status})` : ''}.`,
       '',
       `Stored at ${path}, readable only by you.`,
+      ...(apiUrl === DEFAULT_API_URL ? [] : [`Backend: ${apiUrl} — remembered, so it is used from now on.`]),
       '--idea, chat and the editor assistant will use it from now on.',
       'AI_PROJECT_BOOTSTRAP_LICENSE_KEY still wins where it is set, so CI is unaffected.',
     ].join('\n'),
@@ -232,7 +276,9 @@ export function runLogout(argv: string[], reporter: Reporter): number {
   if (!removed) {
     reporter.plain(`No stored key to remove — nothing at ${path}.`);
   } else {
-    reporter.plain(`Removed the stored key from ${path}.`);
+    reporter.plain(
+      `Removed the stored key from ${path}.\nAny backend URL recorded with it is gone too — the default is used again.`,
+    );
   }
 
   // Said whether or not anything was removed: someone who runs `logout` and

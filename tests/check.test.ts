@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   failsThreshold,
+  packContributions,
   parseCheckFlags,
   runCheck,
   severityOf,
@@ -338,5 +339,58 @@ describe('check, end to end', () => {
 
     expect(await runCheck(['--dir', targetDir], ROOT, reporter)).toBe(0);
     expect(output()).toContain('generated before versions were recorded');
+  });
+});
+
+
+/**
+ * The claim this exists to make true: a pack that replaces a built-in rule is
+ * named, so nobody has to work out for themselves why our section vanished.
+ */
+describe('packContributions', () => {
+  const pack = (id: string, version: string, rules: unknown[]) =>
+    ({ id, name: id, version, rules, docs: [], checklists: [] }) as never;
+
+  it('names what a pack replaced, extended and added', () => {
+    const entries = packContributions([
+      pack('acme', '1.0.0', [
+        { id: 'acme-testing', name: 'Testing', replaces: 'testing', content: 'x' },
+        { id: 'acme-arch', name: 'Arch', extends: 'architecture', content: 'x' },
+        { id: 'acme-log', name: 'Logging', appliesTo: ['nextjs'], content: 'x' },
+      ]),
+    ]);
+
+    expect(entries).toHaveLength(1);
+    const entry = entries[0] as (typeof entries)[number];
+    expect(entry.id).toBe('acme');
+    expect(entry.version).toBe('1.0.0');
+    expect(entry.replaced).toEqual(['testing']);
+    expect(entry.extended).toEqual(['architecture']);
+    expect(entry.added).toEqual(['acme-log']);
+  });
+
+  /**
+   * Two packs replacing one rule: only the one that actually took effect may
+   * be named. Reading the rule lists directly would credit both, and the
+   * report would contradict the file on disk.
+   */
+  it('credits only the pack whose replacement actually won', () => {
+    const entries = packContributions([
+      pack('first', '1.0.0', [
+        { id: 'first-testing', name: 'T', replaces: 'testing', content: 'x' },
+      ]),
+      pack('second', '1.0.0', [
+        { id: 'second-testing', name: 'T', replaces: 'testing', content: 'y' },
+      ]),
+    ]);
+
+    expect(entries.find((e) => e.id === 'second')?.replaced).toEqual(['testing']);
+    // `first` contributed nothing that survived, so it is not listed at all.
+    expect(entries.find((e) => e.id === 'first')).toBeUndefined();
+  });
+
+  it('omits a pack that changed nothing, and reports none for no packs', () => {
+    expect(packContributions([pack('empty', '1.0.0', [])])).toEqual([]);
+    expect(packContributions([])).toEqual([]);
   });
 });

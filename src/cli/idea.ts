@@ -1,18 +1,29 @@
 import * as prompts from '@clack/prompts';
 import type { Preset } from '../core/types.js';
 import { GeneratorError, type GeneratorErrorCode } from '../core/resolve/errors.js';
-import { readStoredKey } from './credentials.js';
+import { readStoredApiUrl, readStoredKey } from './credentials.js';
 
-const DEFAULT_API_URL = 'https://api.ai-project-bootstrap.com';
+export const DEFAULT_API_URL = 'https://api.ai-project-bootstrap.com';
 
 /**
- * Where the hosted propose-stack backend lives. Defaults to the deployed
- * service, since an installed CLI has no local backend to talk to — set
- * `AI_PROJECT_BOOTSTRAP_API_URL` to `http://localhost:8787` to develop
- * against a backend running on this machine.
+ * Where the hosted backend lives, from three places in this order:
+ *
+ *   1. `AI_PROJECT_BOOTSTRAP_API_URL` — set for this run, so the most
+ *      deliberate, and the only one that works before you have logged in.
+ *   2. Whatever `login` recorded, so pointing this machine at a backend is
+ *      something you do once rather than before every command. A key is only
+ *      valid against the server that issued it, so the two belong together.
+ *   3. The deployed service, which is right for an installed copy.
+ *
+ * Same precedence as `resolveLicenseKey`, deliberately: the key and the
+ * backend it belongs to should never be resolved by different rules, or an
+ * environment that overrides one and not the other checks a key against a
+ * server that never issued it.
  */
-export function resolveApiUrl(): string {
-  return process.env.AI_PROJECT_BOOTSTRAP_API_URL ?? DEFAULT_API_URL;
+export function resolveApiUrl(env: NodeJS.ProcessEnv = process.env): string {
+  const fromEnv = env.AI_PROJECT_BOOTSTRAP_API_URL?.trim();
+  if (fromEnv) return fromEnv;
+  return readStoredApiUrl() ?? DEFAULT_API_URL;
 }
 
 /**

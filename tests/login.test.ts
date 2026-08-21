@@ -12,7 +12,10 @@ vi.mock('@clack/prompts', () => ({
 }));
 
 const { parseLoginFlags, runLogin, runLogout } = await import('../src/cli/login.js');
-const { credentialsPath, readStoredKey, storeKey } = await import('../src/cli/credentials.js');
+const { credentialsPath, readStoredApiUrl, readStoredKey, storeKey } = await import(
+  '../src/cli/credentials.js',
+);
+const { resolveApiUrl } = await import('../src/cli/idea.js');
 
 /** Captures what the command printed, so assertions read the real output. */
 class FakeReporter {
@@ -109,6 +112,92 @@ describe('login', () => {
     await expect(runLogin(['--key', 'apb_live_wrong'], reporterFor())).rejects.toThrow(GeneratorError);
     expect(readStoredKey()).toBeUndefined();
     expect(fs.existsSync(credentialsPath())).toBe(false);
+  });
+
+  /**
+   * The backend's hint tells any caller to set AI_PROJECT_BOOTSTRAP_LICENSE_KEY.
+   * Relayed here it lands in front of somebody part-way through `login` — the
+   * command whose whole purpose is that nobody has to do that — so a new
+   * subscriber who mistyped their key was sent back to the environment variable
+   * this release retired.
+   */
+  it('does not relay the backend hint about the environment variable', async () => {
+    stubFetch({
+      ok: false,
+      status: 402,
+      body: {
+        error: {
+          code: 'LICENSE_REQUIRED',
+          message: 'A valid license key is required for this endpoint.',
+          hint: 'Set AI_PROJECT_BOOTSTRAP_LICENSE_KEY to your license key, or subscribe to get one.',
+        },
+      },
+    });
+
+    const error = await runLogin(['--key', 'apb_live_wrong'], reporterFor()).catch((e) => e);
+    expect(error).toBeInstanceOf(GeneratorError);
+    expect(error.hint).not.toContain('AI_PROJECT_BOOTSTRAP_LICENSE_KEY');
+    expect(error.hint).toContain('Nothing was stored');
+    // The backend's *message* still comes through — it is what distinguishes a
+    // lapsed subscription from a mistyped key.
+    expect(error.message).toContain('A valid license key is required');
+  });
+
+  /**
+   * Both directions look identical to a mistyped key until the URL is on
+   * screen: a dashboard key against localhost, and a local development key
+   * against the hosted backend.
+   */
+  it('names the backend it asked, overridden or not', async () => {
+    stubFetch({ ok: false, status: 402, body: { error: { code: 'LICENSE_REQUIRED' } } });
+    process.env.AI_PROJECT_BOOTSTRAP_API_URL = 'http://localhost:8787';
+    const overridden = await runLogin(['--key', 'apb_live_wrong'], reporterFor()).catch((e) => e);
+    expect(overridden.hint).toContain('http://localhost:8787');
+
+    delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+    stubFetch({ ok: false, status: 402, body: { error: { code: 'LICENSE_REQUIRED' } } });
+    const def = await runLogin(['--key', 'apb_live_wrong'], reporterFor()).catch((e) => e);
+    expect(def.hint).toContain('https://api.ai-project-bootstrap.com');
+  });
+
+  /**
+   * The point of recording it: a key is only valid against the server that
+   * issued it, so `login` once against a backend and every later command finds
+   * it — no variable exported before each one.
+   */
+  it('remembers a non-default backend, so later commands need no variable', async () => {
+    process.env.AI_PROJECT_BOOTSTRAP_API_URL = 'http://localhost:8787';
+    stubFetch({ ok: true, status: 200, body: { status: 'active' } });
+    await runLogin(['--key', KEY], reporterFor());
+    delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+
+    expect(readStoredApiUrl()).toBe('http://localhost:8787');
+    // The whole point: resolved with nothing in the environment at all.
+    expect(resolveApiUrl({})).toBe('http://localhost:8787');
+  });
+
+  /** A normal install should end up with a key and nothing else in the file. */
+  it('records nothing when the backend is the default one', async () => {
+    // The suite points every other test at a stand-in backend; the default
+    // path is the one case that has to run with nothing set at all.
+    delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+    stubFetch({ ok: true, status: 200, body: { status: 'active' } });
+    await runLogin(['--key', KEY], reporterFor());
+
+    expect(readStoredApiUrl()).toBeUndefined();
+    expect(resolveApiUrl({})).toBe('https://api.ai-project-bootstrap.com');
+  });
+
+  /** The environment is the more deliberate of the two and must still win. */
+  it('lets the environment override a remembered backend', async () => {
+    process.env.AI_PROJECT_BOOTSTRAP_API_URL = 'http://localhost:8787';
+    stubFetch({ ok: true, status: 200, body: { status: 'active' } });
+    await runLogin(['--key', KEY], reporterFor());
+    delete process.env.AI_PROJECT_BOOTSTRAP_API_URL;
+
+    expect(resolveApiUrl({ AI_PROJECT_BOOTSTRAP_API_URL: 'https://elsewhere.test' })).toBe(
+      'https://elsewhere.test',
+    );
   });
 
   it('does not overwrite a good stored key with a rejected one', async () => {
