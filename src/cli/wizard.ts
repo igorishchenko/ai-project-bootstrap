@@ -2,7 +2,7 @@ import * as prompts from '@clack/prompts';
 import type { CategoryQuestion, LoadedModule, Preset, Selection } from '../core/types.js';
 import { isGatingQuestion } from '../core/types.js';
 import { groupByCategory } from '../core/registry/loadModules.js';
-import { NONE } from '../core/resolve/validate.js';
+import { NONE, appliesTo } from '../core/resolve/validate.js';
 import { validateProjectInput } from './projectTarget.js';
 
 export class WizardCancelled extends Error {
@@ -63,7 +63,7 @@ export async function runWizard(options: WizardOptions): Promise<Selection> {
     // asked again, so "one click" stays one click for the parts it covers.
     if (category.id in choices) continue;
 
-    if (!shouldAsk(category, choices)) {
+    if (!appliesTo(category, choices)) {
       excluded.add(category.id);
       continue;
     }
@@ -172,26 +172,6 @@ function addWithPrerequisites(
   for (const requiredId of module.manifest.requires) {
     addWithPrerequisites(requiredId, target, byId);
   }
-}
-
-/**
- * Whether a question applies, given the answers so far.
- *
- * `showWhen` lists the answers that reveal it. "Both" reveals the mobile and
- * web questions by appearing in each of their conditions — the wizard knows
- * nothing about what "both" means.
- */
-function shouldAsk(
-  category: CategoryQuestion,
-  choices: Record<string, string | string[]>,
-): boolean {
-  if (!category.showWhen) return true;
-
-  return Object.entries(category.showWhen).every(([dependsOn, accepted]) => {
-    const answer = choices[dependsOn];
-    const given = Array.isArray(answer) ? answer : [answer];
-    return given.some((value) => value !== undefined && accepted.includes(value));
-  });
 }
 
 async function askGating(

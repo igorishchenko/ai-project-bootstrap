@@ -115,10 +115,16 @@ describe('architectureBuilder', () => {
     expect(auth0).not.toContain('Supabase');
   });
 
-  it.each(['postgresql', 'sqlite', 'firestore'])(
+  // sqlite requires react-native, so it only exists on a mobile target — the
+  // platform each of these is paired with is not incidental.
+  it.each([
+    ['postgresql', { target: 'web', web: 'nextjs' }],
+    ['sqlite', { target: 'mobile', mobile: 'expo' }],
+    ['firestore', { target: 'web', web: 'nextjs' }],
+  ])(
     'renders a starter ERD for the %s database module, marked as a starting point',
-    (databaseId) => {
-      const doc = architectureDoc(select({ target: 'web', web: 'nextjs', database: databaseId }));
+    (databaseId, platform) => {
+      const doc = architectureDoc(select({ ...platform, database: databaseId }));
 
       expect(doc).toContain('erDiagram');
       expect(doc.toLowerCase()).toContain('starting point');
