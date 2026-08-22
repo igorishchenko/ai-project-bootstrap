@@ -73,10 +73,19 @@ refuses to publish if the tag disagrees with `package.json`, publishes to npm
 with provenance, and cuts the GitHub Release from the changelog section. Watch
 it: `gh run watch`.
 
-If that workflow is not yet wired up (no `NPM_TOKEN` secret), publish by hand —
-`npm publish --access public`, whose `prepublishOnly` runs `pnpm build && pnpm
-check:publishable` — then `gh release create vX.Y.Z --notes-file` with the
-changelog section. Say which path you took.
+It authenticates with **trusted publishing (OIDC)** — there is no npm token in
+this repository, and nothing to rotate. What it depends on instead is the
+trusted publisher configured on npmjs.com against this repo and this workflow
+*filename*: rename `release.yml`, or publish from a different workflow, and npm
+stops recognising it. The preflight step names the cause when auth cannot work,
+rather than failing at `npm publish` after provenance is already signed.
+
+If the publish fails and you need the release out now, publish by hand —
+`npm publish --access public --otp=<code>`, whose `prepublishOnly` runs `pnpm
+build && pnpm check:publishable` — then `gh release create vX.Y.Z --notes-file`
+with the changelog section. Say which path you took, and open an issue for the
+workflow rather than leaving it broken for the next release: it failed silently
+for v1.5.0 and v1.5.1 precisely because a hand publish papered over it.
 
 ## 6. Verify what shipped
 
