@@ -12,16 +12,23 @@ alwaysApply: false
 const { isLoaded, isSignedIn, userId } = useAuth();
 if (!isLoaded) return <Splash />;
 ```
-
+{{#unless has.react-native}}{{#if has.nextjs}}
+`useAuth()` is a client hook. On the server — a Server Component, a route
+handler — read `await auth()` from `@clerk/nextjs/server` instead, and make sure
+`clerkMiddleware()` runs for that route or it has nothing to read.
+{{/if}}{{/unless}}
 Never treat "not loaded" as "signed out". Doing so flashes the sign-in screen at
 every launch for users who are already authenticated, and can redirect them out
 of a deep link.
 
 ## Tokens
 
-- `tokenCache` must be backed by `expo-secure-store`. A session token is a
+{{#if has.react-native}}- `tokenCache` must be backed by `expo-secure-store`. A session token is a
   credential; `AsyncStorage` is plaintext.
-- Send `await getToken()` as a bearer token to your backend.
+{{/if}}{{#unless has.react-native}}- The session lives in a cookie Clerk manages. Never copy a token into
+  `localStorage` to "keep the user signed in" — that is the one place a
+  cross-site script can read it.
+{{/unless}}- Send `await getToken()` as a bearer token to your backend.
 - The backend **verifies** the token. Never trust a user id from a request body
   or a query parameter.
 - The Clerk secret key is server-side only, never in the app.

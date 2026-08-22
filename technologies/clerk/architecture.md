@@ -8,7 +8,9 @@ sequenceDiagram
   participant API as Your backend
 
   App->>Clerk: sign in (hosted flow)
-  Clerk-->>App: session, cached in secure storage
+{{#if has.react-native}}  Clerk-->>App: session, cached in secure storage
+{{/if}}{{#unless has.react-native}}  Clerk-->>App: session cookie
+{{/unless}}
   App->>Clerk: getToken()
   Clerk-->>App: short-lived JWT
   App->>API: request with Bearer token

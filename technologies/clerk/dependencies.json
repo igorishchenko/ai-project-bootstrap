@@ -1,10 +1,14 @@
 {
   "packages": [
-    { "name": "@clerk/clerk-expo", "version": "^2.19.0", "native": true },
+{{#if has.react-native}}    { "name": "@clerk/clerk-expo", "version": "^2.20.0", "native": true },
     { "name": "expo-secure-store", "version": "^57.0.0", "native": true }
-  ],
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}    { "name": "@clerk/nextjs", "version": "^7.8.0" }
+{{/if}}{{#unless has.nextjs}}    { "name": "@clerk/clerk-react", "version": "^5.61.0" }
+{{/unless}}{{/unless}}  ],
   "install": [
-    "npx expo install @clerk/clerk-expo expo-secure-store",
+{{#if has.react-native}}    "npx expo install @clerk/clerk-expo expo-secure-store",
     "npx expo prebuild --clean"
-  ]
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}    "npm install @clerk/nextjs"
+{{/if}}{{#unless has.nextjs}}    "npm install @clerk/clerk-react"
+{{/unless}}{{/unless}}  ]
 }
