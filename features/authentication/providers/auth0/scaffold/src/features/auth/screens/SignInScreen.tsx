@@ -1,12 +1,27 @@
 // Scaffolded by `ai-project-bootstrap implement authentication` (Auth0).
 // See implementation/authentication/plan.md, steps 1 and 3.
 //
-// Deliberately minimal: the Auth0 Next.js SDK's integration shape (middleware
-// vs. route handlers) has changed across major versions, so this doesn't
-// assume one. Confirm the installed version's actual API — see plan.md,
-// step 1 — before filling this in for real.
+// Deliberately minimal: Auth0's SDK shape has changed across major versions,
+// so this doesn't assume one. Confirm the installed version's actual API —
+// see plan.md, step 1 — before filling this in for real.
+
+{{#if has.react-native}}import { Text, View } from 'react-native';
 
 export function SignInScreen(): React.JSX.Element {
+  return (
+    <View>
+      {/*
+        TODO (plan.md, step 1-3): react-native-auth0 exposes `useAuth0()`, whose
+        `authorize()` opens the hosted login page in a system browser — not a
+        WebView, which Auth0 rejects. Request the audience (plan.md, step 2) so
+        the token your API receives is verifiable, and register the callback
+        URL scheme in the dashboard or authorize() never returns.
+      */}
+      <Text>Sign in with Auth0 — not implemented yet.</Text>
+    </View>
+  );
+}
+{{/if}}{{#unless has.react-native}}export function SignInScreen(): React.JSX.Element {
   return (
     <div>
       {/*
@@ -21,3 +36,4 @@ export function SignInScreen(): React.JSX.Element {
     </div>
   );
 }
+{{/unless}}

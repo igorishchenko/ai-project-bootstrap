@@ -141,6 +141,11 @@ export class Reporter {
 
   private fileList(label: string, files: string[]): void {
     this.write(`${pc.bold(label)}  ${files.length}`);
+    this.fileLines(files);
+  }
+
+  /** The indented, truncated file listing every summary block shares. */
+  private fileLines(files: string[]): void {
     for (const file of files.slice(0, 8)) this.write(pc.dim(`    ${file}`));
     if (files.length > 8) this.write(pc.dim(`    …and ${files.length - 8} more`));
   }
@@ -454,6 +459,10 @@ export class Reporter {
     promptPaths: string[];
     scaffoldPaths: string[];
     preserved: string[];
+    /** Already on disk and never written by us — an archetype's, or your own. */
+    alreadyPresent?: string[];
+    /** Non-empty when a collision blocked the whole scaffold rather than part of it. */
+    skippedScaffold?: string[];
     dryRun: boolean;
   }): void {
     this.write();
@@ -462,10 +471,38 @@ export class Reporter {
       this.write(
         `${pc.cyan('ℹ')} Kept your edits — ${input.preserved.length} file${input.preserved.length > 1 ? 's' : ''} changed since last time:`,
       );
-      for (const file of input.preserved.slice(0, 8)) this.write(pc.dim(`    ${file}`));
-      if (input.preserved.length > 8) {
-        this.write(pc.dim(`    …and ${input.preserved.length - 8} more`));
-      }
+      this.fileLines(input.preserved);
+      this.write();
+    }
+
+    const alreadyPresent = input.alreadyPresent ?? [];
+    const skippedScaffold = input.skippedScaffold ?? [];
+
+    if (skippedScaffold.length > 0) {
+      // Deliberately not "kept your edits": we never wrote these, so there is
+      // no edit to keep. And the whole scaffold is skipped rather than the
+      // colliding files alone, because its files call each other — half of it
+      // does not compile. Say that plainly, or the missing files read as a bug.
+      const clashing = alreadyPresent.filter((file) => skippedScaffold.includes(file));
+      this.write(
+        `${pc.yellow('!')} Skipped the scaffold — ${clashing.length} of its ${skippedScaffold.length} files already exist and were not written by us:`,
+      );
+      this.fileLines(clashing);
+      this.write(
+        pc.dim('    These files call each other, so applying only the rest would not compile.'),
+      );
+      this.write(
+        pc.dim('    The plan and prompts below still apply — follow them against your own code.'),
+      );
+      this.write();
+    } else if (alreadyPresent.length > 0) {
+      this.write(
+        `${pc.yellow('!')} Left alone — ${alreadyPresent.length} file${alreadyPresent.length > 1 ? 's were' : ' was'} already there and not written by us:`,
+      );
+      this.fileLines(alreadyPresent);
+      this.write(
+        pc.dim('    Reconcile them against the plan by hand, or move them aside and re-run.'),
+      );
       this.write();
     }
 

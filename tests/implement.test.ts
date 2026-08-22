@@ -242,6 +242,87 @@ describe('implement, end to end', () => {
     expect(fs.readFileSync(scaffoldPath, 'utf8')).toContain('// MY EDIT');
   });
 
+  // The first run has no manifest, so every scaffold path is unrecorded — which
+  // used to mean "write straight over it". These paths are in the project's
+  // ordinary source layout, where an archetype's working code and anything
+  // started by hand already live.
+  it('never overwrites a file that was already there and it never wrote', async () => {
+    const targetDir = freshProject(
+      select({ target: 'mobile', mobile: 'expo', auth: 'supabase-auth' }),
+    );
+
+    const existing = path.join(targetDir, 'src/hooks/auth/useAuth.ts');
+    fs.mkdirSync(path.dirname(existing), { recursive: true });
+    fs.writeFileSync(existing, 'export function useAuth() {\n  return { signedIn: true };\n}\n');
+
+    const { reporter, output } = capturingReporter();
+    const code = await runImplement(['authentication', '--dir', targetDir], ROOT, reporter);
+
+    expect(code).toBe(0);
+    expect(fs.readFileSync(existing, 'utf8')).toContain('signedIn');
+    expect(output()).toContain('Skipped the scaffold');
+    expect(output()).toContain('src/hooks/auth/useAuth.ts');
+
+    // All of it, not just the colliding file: the scaffold's files call each
+    // other, and the half that happens not to collide does not compile against
+    // whatever was already there.
+    expect(fs.existsSync(path.join(targetDir, 'src/features/auth/authClient.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(targetDir, 'src/features/auth/screens/SignUpScreen.tsx'))).toBe(
+      false,
+    );
+
+    // The plan and prompts are ours alone, and are exactly what someone
+    // reconciling by hand needs — those still land.
+    expect(fs.existsSync(path.join(targetDir, 'implementation/authentication/plan.md'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(targetDir, 'implementation/authentication/prompts/implement.md')),
+    ).toBe(true);
+  });
+
+  it('does not quietly apply the skipped scaffold on the next run', async () => {
+    // The fingerprint manifest is written either way, so a skipped file must
+    // not be recorded as though it had been written — otherwise run two treats
+    // it as an ordinary refresh and produces the half-applied tree run one
+    // refused to.
+    const targetDir = freshProject(
+      select({ target: 'mobile', mobile: 'expo', auth: 'supabase-auth' }),
+    );
+    const existing = path.join(targetDir, 'src/hooks/auth/useAuth.ts');
+    fs.mkdirSync(path.dirname(existing), { recursive: true });
+    fs.writeFileSync(existing, 'export function useAuth() {\n  return { signedIn: true };\n}\n');
+
+    const { reporter: first } = capturingReporter();
+    await runImplement(['authentication', '--dir', targetDir], ROOT, first);
+
+    const { reporter: second, output } = capturingReporter();
+    await runImplement(['authentication', '--dir', targetDir], ROOT, second);
+
+    expect(output()).toContain('Skipped the scaffold');
+    expect(fs.readFileSync(existing, 'utf8')).toContain('signedIn');
+    expect(fs.existsSync(path.join(targetDir, 'src/features/auth/authClient.ts'))).toBe(false);
+  });
+
+  it('still refreshes its own scaffold on a re-run', async () => {
+    // The guard keys off "we have no record of writing this", so a second run
+    // must not start treating the scaffold it just wrote as somebody else's.
+    const targetDir = freshProject(
+      select({ target: 'mobile', mobile: 'expo', auth: 'supabase-auth' }),
+    );
+    const { reporter: first } = capturingReporter();
+    await runImplement(['authentication', '--dir', targetDir], ROOT, first);
+
+    const scaffoldPath = path.join(targetDir, 'src/features/auth/authClient.ts');
+    const written = fs.readFileSync(scaffoldPath, 'utf8');
+    fs.writeFileSync(scaffoldPath, 'wiped\n', 'utf8');
+    fs.writeFileSync(scaffoldPath, written, 'utf8'); // back to exactly what we wrote
+
+    const { reporter: second, output } = capturingReporter();
+    await runImplement(['authentication', '--dir', targetDir], ROOT, second);
+
+    expect(output()).not.toContain('already there and not written by us');
+    expect(fs.readFileSync(scaffoldPath, 'utf8')).toBe(written);
+  });
+
   it('--dry-run writes nothing to disk', async () => {
     const targetDir = freshProject(
       select({ target: 'mobile', mobile: 'expo', auth: 'supabase-auth' }),

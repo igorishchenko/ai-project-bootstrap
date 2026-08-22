@@ -1,7 +1,7 @@
 // Scaffolded by `ai-project-bootstrap implement authentication` (Clerk).
 // See implementation/authentication/plan.md, step 2.
 
-import { useState } from 'react';
+{{#if has.react-native}}import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
 
@@ -21,11 +21,9 @@ export function SignUpScreen(): React.JSX.Element {
       if (attempt.status === 'complete') {
         await setActive({ session: attempt.createdSessionId });
       } else {
-        // TODO (plan.md, step 2): most sign-ups land here first — Clerk
-        // requires email verification by default. Prepare/attempt the
-        // verification step (signUp.prepareEmailAddressVerification()) and
-        // collect the code from the user.
-        setError('Check your email to verify your account.');
+        // TODO (plan.md, step 2): the usual next step here is email
+        // verification — prepareEmailAddressVerification, then a code screen.
+        setError('Additional verification required.');
       }
     } catch {
       setError('Sign-up failed. Check your details and try again.');
@@ -56,3 +54,13 @@ export function SignUpScreen(): React.JSX.Element {
     </View>
   );
 }
+{{/if}}{{#unless has.react-native}}// Clerk's prebuilt component — see the note in SignInScreen.tsx for why this
+// is not a hand-rolled form.
+{{#if has.nextjs}}import { SignUp } from '@clerk/nextjs';
+{{/if}}{{#unless has.nextjs}}import { SignUp } from '@clerk/clerk-react';
+{{/unless}}
+export function SignUpScreen(): React.JSX.Element {
+  // TODO (plan.md, step 2): point these at the routes you actually mount.
+  return <SignUp signInUrl="/sign-in" forceRedirectUrl="/" />;
+}
+{{/unless}}

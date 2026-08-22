@@ -1,9 +1,13 @@
 // Scaffolded by `ai-project-bootstrap implement authentication` (Supabase Auth).
 // See implementation/authentication/plan.md, step 5.
 
-import { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
-import { useAuth } from '../../../hooks/auth/useAuth';
+{{#unless has.react-native}}// Session state lives in the browser, so this half of the tree is a client
+// component. The directive has to precede the imports.
+'use client';
+
+{{/unless}}import { useState } from 'react';
+{{#if has.react-native}}import { Text, TextInput, View } from 'react-native';
+{{/if}}import { useAuth } from '../../../hooks/auth/useAuth';
 
 export function SignInScreen(): React.JSX.Element {
   const { signIn } = useAuth();
@@ -26,7 +30,7 @@ export function SignInScreen(): React.JSX.Element {
     }
   };
 
-  return (
+{{#if has.react-native}}  return (
     <View>
       <TextInput
         placeholder="Email"
@@ -48,4 +52,34 @@ export function SignInScreen(): React.JSX.Element {
       </Text>
     </View>
   );
-}
+{{/if}}{{#unless has.react-native}}  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+    >
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        autoComplete="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+      />
+      <label htmlFor="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+      />
+      {/* TODO (plan.md, step 5): announce this to assistive tech — role="alert". */}
+      {error ? <p>{error}</p> : null}
+      <button type="submit" disabled={submitting}>
+        {submitting ? 'Signing in…' : 'Sign in'}
+      </button>
+    </form>
+  );
+{{/unless}}}
