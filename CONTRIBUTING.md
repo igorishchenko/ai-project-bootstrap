@@ -180,7 +180,17 @@ this feature has real content for. Adding a provider means a new
 `features/<feature-id>/providers/<technology-id>/` directory with `plan.md`,
 `checklist.md`, `prompts/*.md` and (optionally) `scaffold/**`, following an
 existing sibling as the structural reference — **not** as a template to fill
-in blanks on. The whole point of `implement` is that two providers produce
+in blanks on. Scaffold files are rendered against the project's full
+resolved stack, the same data `technologies/*/templates/**` gets, so a screen
+**must** branch on the platform rather than assuming one: `{{#if
+has.react-native}}` for native primitives, `{{#unless has.react-native}}` for
+DOM, and `{{envPrefix}}` for a client-visible variable's name. A provider is a
+technology, not a platform — Clerk and Supabase Auth each answer "auth" on both
+— and `tests/implementPlatform.test.ts` fails on a scaffold that imports
+`react-native` into a web project, or renders a `<div>` into a native one. It
+also fails on a relative import pointing at a file nothing writes, which is the
+other way a scaffold reaches a user broken: assume nothing exists outside your
+own `scaffold/**` unless you have checked. The whole point of `implement` is that two providers produce
 genuinely different content, grounded in that specific technology's actual
 APIs and gotchas (its own `cursor-rule.mdc`/`setup.md` are the best source for
 those), not the same prose with a name substituted in. If you're not
