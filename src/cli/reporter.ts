@@ -526,8 +526,12 @@ export class Reporter {
         if (input.performancePointers.length === 0) {
           this.write(pc.dim('  No stack-specific guidance found for this project.'));
         } else {
-          for (const pointer of input.performancePointers)
-            this.write(`  ${pc.cyan('ℹ')} ${pointer}`);
+          // Pointers, not findings. They share the section but not the
+          // severity markers: a clean project would otherwise show a column of
+          // ℹ directly above a summary line reading "0 info", and a report that
+          // contradicts itself is one people stop reading.
+          this.write(pc.dim('  No issues found. Guidance for this stack already lives in:'));
+          for (const pointer of input.performancePointers) this.write(pc.dim(`    • ${pointer}`));
         }
         this.write();
         continue;
