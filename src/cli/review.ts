@@ -133,6 +133,7 @@ function renderReportMarkdown(input: {
       if (input.performancePointers.length === 0) {
         lines.push('No stack-specific guidance found for this project.', '');
       } else {
+        lines.push('No issues found. Guidance for this stack already lives in:', '');
         for (const pointer of input.performancePointers) lines.push(`- ${pointer}`);
         lines.push('');
       }

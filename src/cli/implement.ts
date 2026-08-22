@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { CONFIG_FILENAME } from '../builders/configBuilder.js';
 import { outputPath } from '../builders/reserved.js';
-import { slugify } from '../core/pipeline/buildContext.js';
+import { createBuildContext, templateData } from '../core/pipeline/buildContext.js';
 import {
   loadFeatures,
   type FeatureProviderContent,
@@ -11,9 +11,15 @@ import {
 import { loadRegistry } from '../core/registry/loadModules.js';
 import { readGeneratorPackageInfo } from '../core/registry/packageInfo.js';
 import { GeneratorError } from '../core/resolve/errors.js';
+import { resolveSelection } from '../core/resolve/resolveSelection.js';
+import { gatingCategoryIds } from '../core/resolve/validate.js';
 import { render } from '../core/template/render.js';
 import { fingerprint } from '../core/vfs/fingerprint.js';
-import { type Fingerprints, preservedPaths } from '../core/vfs/preserve.js';
+import {
+  type Fingerprints,
+  preservedPaths,
+  unrecordedExistingPaths,
+} from '../core/vfs/preserve.js';
 import { VirtualFs } from '../core/vfs/virtualFs.js';
 import { loadSelectionFile } from './configFile.js';
 import type { Reporter } from './reporter.js';
@@ -96,8 +102,11 @@ Output
   implementation/<feature>/prompts/*.md     ready to hand to your AI assistant
   (scaffold files land in the project's normal source layout — src/features/, etc.)
 
-Re-running is safe: a file you have hand-edited since it was written is left
-alone, the same fingerprint-based protection \`add\` and \`upgrade\` use.
+Never overwrites work it did not write. A file you have hand-edited since it
+was scaffolded is left alone — the same fingerprint-based protection \`add\` and
+\`upgrade\` use — and so is a file that was already there and we have no record
+of writing at all, which is what an archetype's own screens and hooks are.
+Both are named in the summary.
 `.trim();
 
 const MANIFEST_FILENAME = '.manifest.json';
@@ -234,7 +243,33 @@ export async function runImplement(
     `Implementing ${feature.manifest.name} (${providerName}) in ${selection.projectName}…\n`,
   );
 
-  const data = { projectName: selection.projectName, projectSlug: slugify(selection.projectName) };
+  // Rendered against the project's *resolved* stack, not just its name.
+  //
+  // A provider's content is per-technology, but a technology is not a
+  // platform: Supabase Auth and Clerk both answer "auth" on a web app and on a
+  // native one, and a screen written with react-native primitives does not
+  // compile in either Next.js project this tool can generate. Reusing
+  // `templateData` rather than assembling a smaller object here is deliberate —
+  // a scaffold branching on `{{#if has.react-native}}` then means exactly what
+  // the same line means inside `technologies/<id>/templates/`, instead of a
+  // second, subtly different vocabulary for feature authors to learn.
+  const { modules } = resolveSelection(
+    selection,
+    registry.byId,
+    gatingCategoryIds(registry.categories),
+  );
+  const data = templateData(
+    createBuildContext({
+      rootDir,
+      projectName: selection.projectName,
+      targetDir,
+      selection,
+      modules,
+      categories: registry.categories,
+      base: registry.base,
+      generatorVersion: readGeneratorPackageInfo(rootDir).version,
+    }),
+  );
   const base = `implementation/${feature.manifest.id}`;
 
   const vfs = new VirtualFs();
@@ -265,13 +300,41 @@ export async function runImplement(
 
   const allFiles = vfs.snapshot().files;
   const recorded = readFeatureFingerprints(targetDir, feature.manifest.id);
-  const preserve = new Set(preservedPaths(targetDir, allFiles, recorded));
 
-  const flushed = vfs.flush(targetDir, { dryRun: flags.dryRun, force: true, preserve });
+  // Two reasons to leave a file alone, kept apart because they need different
+  // sentences. One is "you edited what we wrote"; the other is "this was
+  // already here and we have never written it" — which is the whole first run,
+  // and is how `implement authentication` used to overwrite the working
+  // `useAuth.ts` an archetype had just scaffolded, leaving a project that no
+  // longer compiled against its own App.tsx.
+  const edited = preservedPaths(targetDir, allFiles, recorded);
+  const alreadyPresent = unrecordedExistingPaths(targetDir, allFiles, recorded);
+
+  // A scaffold is all-or-nothing, following `add --replace`: its files call
+  // each other, so applying the half that happens not to collide is worse than
+  // applying none of it. Preserving the archetype's `useAuth.ts` per-file while
+  // still writing `SignUpScreen.tsx` left a screen calling a `signUp` the
+  // preserved hook does not export — a project that compiled before `implement`
+  // and did not after, which is the failure this guard exists to prevent.
+  //
+  // The plan, checklist and prompts are ours alone and still land: they are
+  // what someone reconciling by hand actually needs.
+  const scaffoldSet = new Set(scaffoldPaths);
+  const blockedBy = alreadyPresent.filter((file) => scaffoldSet.has(file));
+  const skippedScaffold = blockedBy.length > 0 ? scaffoldPaths : [];
+
+  const preserve = new Set([...edited, ...alreadyPresent, ...skippedScaffold]);
+
+  vfs.flush(targetDir, { dryRun: flags.dryRun, force: true, preserve });
 
   if (!flags.dryRun) {
-    const generated: Fingerprints = {};
+    // Keep every fingerprint already on record, and add one only for what was
+    // actually written. Re-recording a skipped file would let the next run
+    // write it as an ordinary refresh, re-creating the half-applied scaffold
+    // this run just refused to produce.
+    const generated: Fingerprints = { ...recorded };
     for (const file of allFiles) {
+      if (preserve.has(file)) continue;
       const fresh = vfs.read(file);
       if (fresh !== undefined) generated[file] = fingerprint(fresh);
     }
@@ -285,8 +348,10 @@ export async function runImplement(
     planPath,
     checklistPath,
     promptPaths,
-    scaffoldPaths,
-    preserved: flushed.preserved,
+    scaffoldPaths: skippedScaffold.length > 0 ? [] : scaffoldPaths,
+    preserved: edited,
+    alreadyPresent,
+    skippedScaffold,
     dryRun: flags.dryRun,
   });
 

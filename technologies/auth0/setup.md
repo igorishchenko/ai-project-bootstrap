@@ -26,9 +26,10 @@ one, so sharing means test users in your production directory.
 ### Install
 
 ```bash
-npm install @auth0/nextjs-auth0     # server-rendered
-npm install @auth0/auth0-react      # single-page app
-```
+{{#if has.react-native}}npx expo install react-native-auth0
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}npm install @auth0/nextjs-auth0
+{{/if}}{{#unless has.nextjs}}npm install @auth0/auth0-react
+{{/unless}}{{/unless}}```
 
 ### Getting a usable token
 

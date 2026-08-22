@@ -1,7 +1,7 @@
 // Scaffolded by `ai-project-bootstrap implement authentication` (Clerk).
 // See implementation/authentication/plan.md, step 2.
 
-import { useState } from 'react';
+{{#if has.react-native}}import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 
@@ -55,3 +55,18 @@ export function SignInScreen(): React.JSX.Element {
     </View>
   );
 }
+{{/if}}{{#unless has.react-native}}// Clerk's prebuilt component, deliberately. It already handles multi-factor,
+// social providers, password reset and every error state a hand-rolled form
+// would have to reimplement — and unlike the custom-flow API (`useSignIn`),
+// its shape has been stable across majors.
+//
+// If you do need a custom form, build it with `useSignIn` and check the
+// current docs for your installed version first — see plan.md, step 2.
+{{#if has.nextjs}}import { SignIn } from '@clerk/nextjs';
+{{/if}}{{#unless has.nextjs}}import { SignIn } from '@clerk/clerk-react';
+{{/unless}}
+export function SignInScreen(): React.JSX.Element {
+  // TODO (plan.md, step 2): point these at the routes you actually mount.
+  return <SignIn signUpUrl="/sign-up" forceRedirectUrl="/" />;
+}
+{{/unless}}

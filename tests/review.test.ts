@@ -114,6 +114,23 @@ describe('review, end to end', () => {
     expect(output()).not.toContain('✖');
   });
 
+  it('does not render the performance pointers as if they were findings', async () => {
+    // The Performance section lists where this stack's guidance already lives;
+    // those are pointers, not issues. Marking them with the same ℹ the info
+    // findings use put a column of them directly above a summary line reading
+    // "0 info" — a report that contradicts itself on its own screen is one
+    // people learn to skip.
+    const targetDir = freshProject(select({ target: 'web', web: 'nextjs', auth: 'clerk' }));
+
+    const { reporter, output } = capturingReporter();
+    await runReview(['--dir', targetDir], ROOT, reporter);
+
+    const text = output();
+    expect(text).toContain('.cursor/rules/clerk.mdc');
+    expect(text).toContain('0 critical, 0 warning, 0 info');
+    expect(text, 'a pointer was marked as an info finding').not.toContain('ℹ');
+  });
+
   it('flags a hardcoded secret added to the project since generation', async () => {
     const targetDir = freshProject(select({ target: 'web', web: 'nextjs' }));
     fs.mkdirSync(path.join(targetDir, 'src', 'config'), { recursive: true });

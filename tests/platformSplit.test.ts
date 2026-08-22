@@ -160,3 +160,73 @@ describe('the env prefix mechanism itself', () => {
     expect(env).not.toMatch(/\{\{/);
   });
 });
+
+/**
+ * The 1.5.0 split covered eight modules and missed the two auth providers that
+ * have no `requires` tying them to a platform. `clerk` was the expensive one:
+ * it is in the shipped `enterprise` preset, so a Next.js + NestJS project
+ * installed `@clerk/clerk-expo` and `expo-secure-store`, and its setup guide
+ * told you to run `npx expo prebuild --clean` — next to a code sample passing
+ * `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` into a provider imported from the Expo
+ * SDK. Every other module's `requires` kept it out of the wizard on web;
+ * these two had nothing to keep them out.
+ */
+describe('an auth provider with no platform requires still follows the target', () => {
+  const cases = [
+    {
+      auth: 'clerk',
+      native: '@clerk/clerk-expo',
+      nextjs: '@clerk/nextjs',
+      spa: '@clerk/clerk-react',
+    },
+    {
+      auth: 'auth0',
+      native: 'react-native-auth0',
+      nextjs: '@auth0/nextjs-auth0',
+      spa: '@auth0/auth0-react',
+    },
+  ] as const;
+
+  it.each(cases)('$auth installs the native SDK on a mobile target', ({ auth, native, nextjs }) => {
+    const { packageJson } = run({
+      projectName: 'Native Auth',
+      choices: { target: 'mobile', mobile: 'expo', auth },
+    });
+    const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    expect(deps).toHaveProperty(native);
+    expect(deps).not.toHaveProperty(nextjs);
+  });
+
+  it.each(cases)('$auth installs the Next.js SDK on a web target', ({ auth, native, nextjs }) => {
+    const { packageJson, readFile } = run({
+      projectName: 'Web Auth',
+      choices: { target: 'web', web: 'nextjs', auth },
+    });
+    const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    expect(deps).toHaveProperty(nextjs);
+    expect(deps).not.toHaveProperty(native);
+    expect(Object.keys(deps).filter((name) => NATIVE_ONLY.test(name))).toEqual([]);
+    expect(readFile('docs/setup.md')).not.toMatch(/npx expo (install|prebuild)/);
+  });
+
+  it.each(cases)('$auth installs the browser SDK on a non-Next web target', ({ auth, spa }) => {
+    const { packageJson } = run({
+      projectName: 'SPA Auth',
+      choices: { target: 'web', web: 'react', auth },
+    });
+    const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    expect(deps).toHaveProperty(spa);
+  });
+
+  it('leaks no Expo instruction into the rules a web project feeds its assistant', () => {
+    for (const auth of ['clerk', 'auth0'] as const) {
+      const { files, readFile } = run({
+        projectName: 'Web Auth',
+        choices: { target: 'web', web: 'nextjs', auth },
+      });
+      for (const file of files.filter((name) => name.includes(`/${auth}`))) {
+        expect(readFile(file), `${file} mentions Expo`).not.toMatch(/expo-secure-store|clerk-expo/);
+      }
+    }
+  });
+});

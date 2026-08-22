@@ -5,8 +5,10 @@
 // (plan.md, step 5) is what actually verifies it — this hook only sends it.
 
 import { useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
-
+{{#if has.react-native}}import { useAuth } from '@clerk/clerk-expo';
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}import { useAuth } from '@clerk/nextjs';
+{{/if}}{{#unless has.nextjs}}import { useAuth } from '@clerk/clerk-react';
+{{/unless}}{{/unless}}
 export function useAuthedFetch(): (input: RequestInfo, init?: RequestInit) => Promise<Response> {
   const { getToken } = useAuth();
 

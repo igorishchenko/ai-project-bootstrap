@@ -9,8 +9,85 @@ part of the PR that makes the change, not at release time.
 
 ## [Unreleased]
 
-Nothing yet. Entries land here in the PR that makes the change, not at
-release time — see `.claude/commands/changelog-entry.md`.
+### Fixed
+
+- **`implement authentication` produced a project that would not compile.** The
+  Supabase Auth scaffold imported `src/services/supabase/client`, and its own
+  plan.md said the Supabase module had already written that file. It never did —
+  only the `habit-tracker` archetype ships one. So the first command a new user
+  runs after generating failed `tsc --noEmit` with three errors, on code nobody
+  had touched yet. The scaffold now writes the client itself, branched by
+  platform: `AsyncStorage` and the URL polyfill on native, the browser client on
+  web, with the per-request/server split named rather than left to be discovered.
+  `tests/implementPlatform.test.ts` now resolves every relative import in every
+  scaffold against what was actually written, for all six provider/platform
+  combinations — the one assertion that would have caught this the day it landed.
+
+- **`implement` wrote React Native screens into Next.js projects.** Every auth
+  screen used `View`, `Text` and `TextInput` regardless of target, so a web
+  project got `import { Text } from 'react-native'`; Auth0's scaffold had the
+  same bug pointing the other way, rendering a `<div>` into a native app. A
+  provider is a technology, not a platform — Supabase Auth and Clerk each answer
+  "auth" on both — and the scaffolds had no way to tell the difference: they were
+  rendered against `{ projectName, projectSlug }` and nothing else. They now
+  render against the project's resolved stack through the same `templateData()`
+  every builder uses, so `{{#if has.react-native}}` and `{{envPrefix}}` mean
+  exactly what they mean inside `technologies/<id>/templates/`. Reusing that
+  rather than assembling a smaller object is the point: a second, nearly
+  identical vocabulary for feature authors is how the two drift apart again.
+
+- **The 1.5.0 platform split missed Clerk and Auth0.** Both have no `requires`
+  tying them to a platform, which is exactly what kept them out of the sweep and
+  what let them through on web. `clerk` was the expensive one, because it is in
+  the shipped `enterprise` preset: a Next.js + NestJS project installed
+  `@clerk/clerk-expo` and `expo-secure-store`, and `docs/setup.md` told you to
+  run `npx expo prebuild --clean` — directly above a sample passing
+  `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` into a `ClerkProvider` imported from the
+  Expo SDK. The env prefix had been branched in 1.5.0; the code around it had
+  not. Both modules now follow the target across packages, install commands,
+  setup guide, rules and skill — `@clerk/nextjs` or `@clerk/clerk-react` on web,
+  `@clerk/clerk-expo` on native, and the same three ways for Auth0. A mobile
+  project is unchanged apart from Auth0, which was installing the Next.js SDK.
+
+- **A hand-written config could select a technology the wizard would never have
+  offered.** `--config` with `"target": "web"` and `"payments": "revenuecat"`
+  generated without complaint, dragging Expo and React Native into a Next.js
+  repository through `requires`. The wizard has always refused to offer these;
+  nothing refused to accept one, and `--config` is the path `add` and `upgrade`
+  replay. `validateSelection` now rejects a module whose category — or the
+  category of anything it transitively requires — the project's own gating
+  answers rule out, naming the answer to change. The `showWhen` logic moved
+  beside the validator so the wizard and the validator cannot disagree about
+  what a target permits. An _unanswered_ gating question still rules nothing
+  out: gating questions are exempt from the required-answer check, so a config
+  predating `target` has none, and reading that silence as "web" would reject
+  projects that generate correctly today.
+
+- **`implement` overwrote code it had never written.** Its fingerprint guard
+  asks whether you edited a file _it_ wrote, and on the first run it has written
+  nothing — so every scaffold path counted as free, and scaffolds land in the
+  project's ordinary source layout rather than a namespace of their own. Running
+  `implement authentication` inside a `--archetype habit-tracker` project
+  replaced the archetype's working `useAuth.ts` with one exporting a different
+  shape, and the project stopped compiling against its own `App.tsx` —
+  `Property 'signedIn' does not exist on type 'UseAuthResult'`. Anyone who had
+  started their auth code by hand lost it the same way, silently. `implement`
+  now leaves alone anything it has no record of writing, and skips the **whole**
+  scaffold rather than the colliding files alone — following `add --replace`,
+  because these files import each other and the half that happens not to collide
+  does not compile either. The plan, checklist and prompts still land, since
+  they are exactly what reconciling by hand needs, and the summary names every
+  file it stepped around. Skipped files are not recorded as written, so a second
+  run does not quietly finish the job.
+
+- **`review` reported fourteen performance issues on a clean project.** The
+  Performance section lists where this stack's guidance already lives, which is
+  useful — but it marked each pointer with the same cyan `ℹ` the info findings
+  use, so a freshly generated project showed a column of them two lines above a
+  summary reading "0 critical, 0 warning, 0 info". A report that contradicts
+  itself on its own screen is one people learn to skip, which costs the findings
+  that are real. They render as plain bullets under an explicit "No issues
+  found" now, in both the terminal output and `--report`'s markdown.
 
 ## [1.5.0] — 2026-08-21
 
@@ -27,7 +104,7 @@ release time — see `.claude/commands/changelog-entry.md`.
   same module produces the web integration path or the Expo one, and neither
   mentions the other. Nothing about a mobile project changes. The reason this
   survived four releases is that no test had ever asserted the two targets
-  produce *different* output; `tests/platformSplit.test.ts` now asserts the
+  produce _different_ output; `tests/platformSplit.test.ts` now asserts the
   absence of each platform's content from the other, which is the assertion
   that would have caught it on day one.
 
@@ -44,7 +121,7 @@ release time — see `.claude/commands/changelog-entry.md`.
   there was no `next.config.ts`, so `npm run dev` failed on a freshly generated
   project before anyone had written a line. It now ships a root layout, a
   placeholder page pointing at `docs/setup.md`, and a config file. `npm run
-  dev`, `build`, `typecheck`, `lint`, `format:check` and `test` all pass on a
+dev`, `build`, `typecheck`, `lint`, `format:check` and `test` all pass on a
   fresh generate — verified by running them, not by generating and hoping.
 
 - **`GEMINI.md` follows the Gemini CLI answer.** Selecting or deselecting Gemini
@@ -94,7 +171,6 @@ release time — see `.claude/commands/changelog-entry.md`.
 
 ### Fixed
 
-
 - **`npm run typecheck` failed on a freshly generated web project.** The base
   `tsconfig.json` set `lib: ["ESNext"]` with no DOM, so the `dark-theme`
   provider's own `window` and `document` were three errors on a repository
@@ -135,11 +211,11 @@ release time — see `.claude/commands/changelog-entry.md`.
   your license key" — and `login` printed it verbatim. Right for a CI job,
   absurd in front of somebody part-way through the one command whose whole
   purpose is that nobody has to put a credential in a shell profile. 1.4.0
-  fixed the message you get with *no* key and left the one you get with a
-  *wrong* key still pointing at the variable, which is the message a new
+  fixed the message you get with _no_ key and left the one you get with a
+  _wrong_ key still pointing at the variable, which is the message a new
   subscriber who mistypes their key actually sees. `login` now writes its own
   guidance; the backend's hint is untouched and still correct for its other
-  callers. The backend's *message* still comes through, because it is what
+  callers. The backend's _message_ still comes through, because it is what
   distinguishes a lapsed subscription from a typo.
 - **A refused key never said which backend refused it.** A dashboard key cannot
   work against a backend on localhost, and a local development key cannot work
@@ -192,7 +268,6 @@ release time — see `.claude/commands/changelog-entry.md`.
   starts out identical and quietly stops being so. `/core` cannot do this — it
   imports `node:fs` for registry loading.
 
-
 - **`login` and `logout`.** The first thing a paying customer used to meet was
   an error message teaching them about `AI_PROJECT_BOOTSTRAP_LICENSE_KEY` — a
   credential, introduced as an environment variable, with no suggestion of
@@ -223,7 +298,7 @@ release time — see `.claude/commands/changelog-entry.md`.
   build through `--fail-on`.** `critical` has been accepted-but-unreachable
   since 1.3.0, reserved for exactly this. The cost is real — somebody else
   publishing a change can turn your CI red with no commit on your side — and
-  it is the right trade: an advisory is a *stronger* signal than a stale file,
+  it is the right trade: an advisory is a _stronger_ signal than a stale file,
   `--fail-on` still defaults to `none` so nothing fails unless asked, and an
   advisory only raises severity if you can actually read it. Nobody's build
   fails over text the same response refuses to show them.
@@ -231,7 +306,6 @@ release time — see `.claude/commands/changelog-entry.md`.
   lookup is the only network call the command makes, and it degrades to
   nothing on every failure — no network, a timeout, any non-200 — leaving the
   full drift report plus one line saying why advisories are missing.
-
 
 - **Every command that needs a license key now looks in two places**, in this
   order: `AI_PROJECT_BOOTSTRAP_LICENSE_KEY`, then the key stored by `login`.

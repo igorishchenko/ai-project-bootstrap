@@ -30,14 +30,14 @@ since signing a user in changes nothing on its own.
 
 ## Steps
 
-1. **Install the session-persistence dependency**, if `npm run setup` hasn't
+{{#if has.react-native}}1. **Install the session-persistence dependency**, if `npm run setup` hasn't
    already: `npx expo install @react-native-async-storage/async-storage`. React
    Native has no `localStorage`; without a storage adapter the user is signed
    out on every cold start.
 
-2. **Wire session persistence into the Supabase client.** The Supabase module
-   already scaffolded `src/services/supabase/client.ts` — find where
-   `createClient` is called and pass the `auth` options:
+2. **Check the scaffolded Supabase client.** `src/services/supabase/client.ts`
+   is written for you (see below) with the `auth` options session persistence
+   needs:
 
    ```ts
    import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,7 +52,26 @@ since signing a user in changes nothing on its own.
    });
    ```
 
-3. **Fill in `src/features/auth/authClient.ts`** (scaffolded — see below) with
+   If your project already had a client at that path, this scaffold replaced
+   it — reconcile the two before going further.
+
+{{/if}}{{#unless has.react-native}}1. **Install the SSR helper**, if `npm run setup` hasn't already:
+   `npm install @supabase/ssr`. The browser keeps the session in a cookie the
+   server has to be able to read, which is the whole reason a server-rendered
+   app needs more than the one browser client.
+
+2. **Check the scaffolded Supabase client.** `src/services/supabase/client.ts`
+   is written for you (see below). It is the **browser** client, and it is the
+   only one safe to import from a component.
+
+   Anything rendering on the server — a Server Component, a route handler,
+   middleware — needs a *per-request* client built from that request's cookies,
+   not this shared module-level one. A single client reused across requests
+   leaks one visitor's session into another visitor's render. Build that second
+   client with `createServerClient` from `@supabase/ssr`, and check the current
+   Supabase docs for the cookie adapter your installed version expects.
+
+{{/unless}}3. **Fill in `src/features/auth/authClient.ts`** (scaffolded — see below) with
    `signInWithPassword`, `signUp` and `signOut`, plus a `subscribe` helper
    around `supabase.auth.onAuthStateChange`. This is the one place that talks
    to `supabase.auth` — screens and the hook never call it directly.

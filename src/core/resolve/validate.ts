@@ -31,6 +31,125 @@ export function gatingCategoryIds(categories: readonly CategoryQuestion[]): Set<
 }
 
 /**
+ * Whether a question applies, given the answers so far.
+ *
+ * `showWhen` lists the answers that reveal it. "Both" reveals the mobile and
+ * web questions by appearing in each of their conditions — nothing here knows
+ * what "both" means.
+ *
+ * Lives beside the validator rather than in the wizard because both need it and
+ * they must agree: the wizard uses it to decide what to *offer*, and
+ * `validateSelection` uses it to decide what to *accept*. Two copies would
+ * drift, and the direction they drift in is the quiet one — a config naming
+ * something the wizard would never have offered, generated without complaint.
+ */
+export function appliesTo(
+  category: CategoryQuestion,
+  choices: Record<string, string | string[]>,
+): boolean {
+  if (!category.showWhen) return true;
+
+  return Object.entries(category.showWhen).every(([dependsOn, accepted]) => {
+    const answer = choices[dependsOn];
+    const given = Array.isArray(answer) ? answer : [answer];
+    return given.some((value) => value !== undefined && accepted.includes(value));
+  });
+}
+
+/**
+ * Whether the answers actively *contradict* a question, as opposed to merely
+ * not revealing it yet.
+ *
+ * Not the negation of `appliesTo`, deliberately. The wizard asks in `order`, so
+ * by the time it evaluates a question its gating answer is always present, and
+ * "unanswered" can safely mean "do not ask". A saved config is not ordered and
+ * need not be complete — `target` is a gating question, and gating questions
+ * are exempt from the required-answer check above, so a config predating it has
+ * no `target` at all. Treating that silence as "web" would reject projects that
+ * generate correctly today.
+ */
+function ruledOut(category: CategoryQuestion, choices: Record<string, string | string[]>): boolean {
+  if (!category.showWhen) return false;
+
+  return Object.entries(category.showWhen).some(([dependsOn, accepted]) => {
+    const answer = choices[dependsOn];
+    if (answer === undefined) return false;
+    const given = Array.isArray(answer) ? answer : [answer];
+    return !given.some((value) => accepted.includes(value));
+  });
+}
+
+/** Adds a module and everything it transitively requires. */
+function collectWithPrerequisites(
+  id: string,
+  target: Set<string>,
+  byId: Map<string, LoadedModule>,
+): void {
+  if (target.has(id)) return;
+  const module = byId.get(id);
+  if (!module) return;
+
+  target.add(id);
+  for (const requiredId of module.manifest.requires) {
+    collectWithPrerequisites(requiredId, target, byId);
+  }
+}
+
+/**
+ * Rejects a module the project's own gating answers rule out.
+ *
+ * The wizard already refuses to offer these (see `isCompatible`), so this only
+ * ever fires for a hand-written or hand-edited config — which is exactly the
+ * path that had no check at all. `--config` with `"target": "web"` and
+ * `"payments": "revenuecat"` used to generate happily, pulling Expo and React
+ * Native into a Next.js project through `requires` and writing `npx expo
+ * install` into its setup guide.
+ *
+ * Transitive, because that is how it gets in: `revenuecat` itself belongs to
+ * `payments`, a category no target rules out. It is the `expo` it requires that
+ * belongs to the ruled-out one.
+ */
+function assertGatedCategoriesUnselected(
+  selection: Selection,
+  categories: readonly CategoryQuestion[],
+  byId: Map<string, LoadedModule>,
+  gating: ReadonlySet<string>,
+): void {
+  const ruledOutCategories = new Map(
+    categories
+      .filter((category) => !gating.has(category.id) && ruledOut(category, selection.choices))
+      .map((category) => [category.id, category] as const),
+  );
+  if (ruledOutCategories.size === 0) return;
+
+  for (const id of selectedModuleIds(selection, gating)) {
+    const closure = new Set<string>();
+    collectWithPrerequisites(id, closure, byId);
+
+    for (const requiredId of closure) {
+      const category = ruledOutCategories.get(byId.get(requiredId)?.manifest.category ?? '');
+      if (!category) continue;
+
+      const because = Object.entries(category.showWhen ?? {})
+        .map(([dependsOn, accepted]) => {
+          const answer = selection.choices[dependsOn];
+          const given = Array.isArray(answer) ? answer.join(', ') : (answer ?? 'unanswered');
+          return `"${category.label}" applies when ${dependsOn} is ${accepted.join(' or ')}; this project has ${dependsOn}: ${given}`;
+        })
+        .join('. ');
+
+      throw new GeneratorError(
+        'INVALID_CONFIG',
+        requiredId === id
+          ? `"${id}" belongs to "${category.label}", which this project's answers rule out.`
+          : `"${id}" requires "${requiredId}", which belongs to "${category.label}" — ruled out by this project's answers.`,
+        `${because}. Remove it, or change that answer.`,
+      );
+    }
+  }
+}
+
+/**
  * A gating answer must be one of its declared choices. A typo in a hand-written
  * config would otherwise silently hide every question it gates, producing a
  * project missing whole layers with no error.
@@ -81,7 +200,8 @@ export function validateSelection(
     if (!availableCategories.has(category.id)) continue;
 
     const value = selection.choices[category.id];
-    const empty = value === undefined || value === NONE || (Array.isArray(value) && value.length === 0);
+    const empty =
+      value === undefined || value === NONE || (Array.isArray(value) && value.length === 0);
     if (empty) {
       throw new GeneratorError(
         'MISSING_REQUIRED_CATEGORY',
@@ -128,4 +248,6 @@ export function validateSelection(
       }
     }
   }
+
+  assertGatedCategoriesUnselected(selection, categories, byId, gating);
 }

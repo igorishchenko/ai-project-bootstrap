@@ -1,10 +1,13 @@
 {
   "packages": [
-    { "name": "@auth0/nextjs-auth0", "version": "^4.26.0" }
-  ],
+{{#if has.react-native}}    { "name": "react-native-auth0", "version": "^5.11.0", "native": true }
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}    { "name": "@auth0/nextjs-auth0", "version": "^4.27.0" }
+{{/if}}{{#unless has.nextjs}}    { "name": "@auth0/auth0-react", "version": "^2.24.0" }
+{{/unless}}{{/unless}}  ],
   "install": [
-    "# Server-rendered (Next.js):  npm install @auth0/nextjs-auth0",
-    "# Single-page app:            npm install @auth0/auth0-react",
-    "# Native (Expo):              npx expo install react-native-auth0"
-  ]
+{{#if has.react-native}}    "npx expo install react-native-auth0",
+    "npx expo prebuild --clean"
+{{/if}}{{#unless has.react-native}}{{#if has.nextjs}}    "npm install @auth0/nextjs-auth0"
+{{/if}}{{#unless has.nextjs}}    "npm install @auth0/auth0-react"
+{{/unless}}{{/unless}}  ]
 }

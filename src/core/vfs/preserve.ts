@@ -45,6 +45,38 @@ export function preservedPaths(
   return preserved.sort();
 }
 
+/**
+ * Files already on disk that the caller has no record of ever writing.
+ *
+ * `preservedPaths` answers "did the user edit something we wrote". This answers
+ * the question before it: "was something already here that we never wrote at
+ * all". Those are two different states, and only the first one has a
+ * fingerprint to compare against — a file absent from `recorded` looks
+ * identical to a file that has never existed, which is why the write path
+ * flattened them and overwrote both.
+ *
+ * That is safe for `generate`'s own output, whose paths no one else owns, and
+ * unsafe for `implement`, whose scaffold paths land in the project's ordinary
+ * source layout — `src/hooks/auth/useAuth.ts` is exactly where an archetype
+ * puts a working one, and exactly where someone who started by hand puts
+ * theirs. On the first run there is no manifest yet, so *everything* is
+ * unrecorded, and the whole scaffold used to be written straight over the top.
+ */
+export function unrecordedExistingPaths(
+  targetDir: string,
+  candidates: readonly string[],
+  recorded: Fingerprints | undefined,
+): string[] {
+  const existing: string[] = [];
+
+  for (const relative of candidates) {
+    if (recorded?.[relative] !== undefined) continue;
+    if (fs.existsSync(path.join(targetDir, ...relative.split('/')))) existing.push(relative);
+  }
+
+  return existing.sort();
+}
+
 export interface RemovablePaths {
   /** Vanished from this generation, untouched since the last one — safe to delete. */
   safe: string[];

@@ -420,17 +420,47 @@ for what that looks like in practice; each is written independently, not
 templated from a shared skeleton.
 
 `implement` builds its own `VirtualFs` (not `generate()`'s builder pipeline —
-there's no per-module content to merge, just one feature's content rendered
-against `{ projectName, projectSlug }`) and reuses the exact same
+there's no per-module content to merge, just one feature's content) and reuses
+the exact same
 fingerprint-preservation mechanism described above, but scoped to the
 feature: fingerprints for what it wrote live in
 `implementation/<feature-id>/.manifest.json`, a small sibling of
 `ai-project.config.json`'s own `generated` map, read and written with the
 same `Fingerprints` type and `preservedPaths()` function — nothing new
-invented for file safety. Scaffold files are skeletons with `TODO` comments
+invented for file safety. One thing `generate()` does not need and this
+does: `unrecordedExistingPaths()` (`preserve.ts`), the question _before_
+"did the user edit what we wrote" — "was something already here that we never
+wrote at all". A fingerprint can only answer the first; a file absent from the
+recorded map is indistinguishable from one that never existed, and on the first
+run _every_ scaffold path is absent. That is fine for `generate()`, whose
+output paths nobody else owns, and wrong here, because a scaffold lands in the
+project's ordinary source layout — `src/hooks/auth/useAuth.ts` is exactly where
+`--archetype habit-tracker` puts a working one.
+
+When a scaffold path is already taken, the whole scaffold is skipped rather
+than the colliding files alone, following `add --replace`'s precedent that a
+partial application is worse than none: the scaffold's files import each other,
+so preserving `useAuth.ts` while still writing `SignUpScreen.tsx` produced a
+screen calling a `signUp` the preserved hook does not export. The plan,
+checklist and prompts are ours alone and still land — they are what someone
+reconciling by hand actually needs. Skipped files are deliberately _not_
+recorded in the manifest either, or the next run would write them as an
+ordinary refresh and rebuild the half-applied tree this one refused to. Scaffold files are skeletons with `TODO` comments
 pointing back to the plan, not working implementations; that boundary is
 deliberate, not a shortcut — see the prompt this feature shipped from
 (`.planning/prompts/06-implement-command.md`) for why.
+
+Content is rendered against the _resolved stack_, not just the project name:
+`implement` runs `resolveSelection` on the saved config and renders through the
+same `templateData()` every builder uses, so `{{#if has.react-native}}` and
+`{{envPrefix}}` mean exactly what they mean inside
+`technologies/<id>/templates/`. That matters because a technology is not a
+platform — Supabase Auth and Clerk each answer "auth" on a web app and on a
+native one, and until 1.5.1 every auth screen was written with react-native
+primitives regardless, so `implement authentication` in a Next.js project
+emitted `import { View } from 'react-native'`. Reusing `templateData` rather
+than assembling a smaller object was the point: a second, nearly-identical
+vocabulary for feature authors is how the two drift apart again.
 
 ## Starter templates: `archetypes/`
 

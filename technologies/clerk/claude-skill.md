@@ -15,13 +15,22 @@ if (!isSignedIn) return <SignIn />;
 sign-in screen flash on every launch for authenticated users, and can bounce
 them out of a deep link before the session resolves.
 
-## The token cache is a credential store
+{{#if has.react-native}}## The token cache is a credential store
 
 `tokenCache` must use `expo-secure-store`, which is the keychain.
 `AsyncStorage` is unencrypted — a session token there is readable on a
 compromised device. And omitting the cache entirely signs users out on every
 cold start, which invariably gets reported as "sign-in is broken".
+{{/if}}{{#unless has.react-native}}## The session is a cookie, not something you store
 
+Clerk manages the session cookie. There is no token cache to configure, and
+nothing to persist yourself — copying a token into `localStorage` to "keep the
+user signed in" only creates somewhere a cross-site script can read it.
+{{#if has.nextjs}}
+What does need configuring is `clerkMiddleware()`. Without it `auth()` returns
+no user id on the server, which reads exactly like a signed-out user and sends
+people looking in the wrong place entirely.
+{{/if}}{{/unless}}
 ## Client state is not authorisation
 
 The client tells you who someone claims to be. The backend decides what they may
