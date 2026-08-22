@@ -1,6 +1,6 @@
 {
   "name": "ai-project-bootstrap",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Generate and maintain an AI-assisted dev environment tailored to your stack: rules for Cursor, Claude Code and 6 more AI tools, docs, prompts, cost estimates and starter templates, plus check, review, analyze, implement, doctor and upgrade commands.",
   "type": "module",
   "license": "MIT",
