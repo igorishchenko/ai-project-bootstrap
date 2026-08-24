@@ -1,7 +1,15 @@
 # Publishes on a `vX.Y.Z` tag pushed to main — see .claude/commands/release.md
 # for the procedure that produces the tag.
 #
-# Requires an `NPM_TOKEN` repository secret (an npm automation token).
+# Authenticates to npm with trusted publishing (OIDC) — there is no token in
+# this repository. The one-time setup is on npmjs.com: the package's Settings →
+# Trusted Publisher, pointing at this repository and this workflow file. Change
+# either of those names and npm stops recognising the publisher.
+#
+# The previous arrangement was an `NPM_TOKEN` secret, and it never published
+# once: whatever was in it needed a one-time password, so v1.5.0 and v1.5.1 both
+# failed at `npm publish` with EOTP. A token cannot be the wrong type if there
+# is no token.
 name: Release
 
 on:
@@ -11,7 +19,7 @@ on:
 
 permissions:
   contents: write # cut the GitHub Release
-  id-token: write # npm provenance
+  id-token: write # mint the OIDC token npm exchanges for a publish credential
 
 jobs:
   publish:
@@ -25,11 +33,22 @@ jobs:
         with:
           version: 10
 
+      # Deliberately no `registry-url`: it makes setup-node write an .npmrc
+      # pinning the registry to ${NODE_AUTH_TOKEN}, which is now unset, and an
+      # empty auth line is worse than none — npm reads it as "authenticate with
+      # this token" and never reaches the OIDC exchange. The default registry is
+      # registry.npmjs.org and package.json declares no publishConfig, so there
+      # is nothing for it to override.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing landed in npm 11.5.1, and the npm bundled with the
+      # Node 22 image predates it. Without this the publish below falls back to
+      # looking for a token that is deliberately not here.
+      - name: npm new enough to publish without a token
+        run: npm install -g npm@^11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -51,14 +70,38 @@ jobs:
           pnpm typecheck
           pnpm test
 
+      # Both halves of publish auth, checked before `npm publish` gets far
+      # enough to sign anything. The EOTP that killed v1.5.0 and v1.5.1 surfaced
+      # only after provenance had been signed and published to the transparency
+      # log, and read like a mistyped 2FA code rather than the wrong kind of
+      # credential — an error that sends you to the wrong place costs more than
+      # the failure itself.
+      - name: Preflight — this job can actually authenticate
+        run: |
+          installed=$(npm --version)
+          if ! npx --yes semver@7 -r '>=11.5.1' "$installed" >/dev/null 2>&1; then
+            echo "::error::npm $installed cannot use trusted publishing; needs >= 11.5.1"
+            exit 1
+          fi
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "::error::No OIDC token available. This job needs id-token: write, and trusted publishing cannot work without it."
+            exit 1
+          fi
+          if grep -rqs '_authToken' ~/.npmrc .npmrc 2>/dev/null; then
+            echo "::error::An .npmrc is setting _authToken. Trusted publishing needs no token, and an empty or stale one is used in preference to the OIDC exchange."
+            exit 1
+          fi
+          echo "npm $installed, OIDC token endpoint present, no competing .npmrc auth."
+
       # `prepublishOnly` runs `pnpm build && pnpm check:publishable`, so the
       # tarball is built and audited by the publish itself. A tarball missing
       # config/, technologies/, archetypes/ or features/ installs fine and
       # fails at runtime, which is what check:publishable exists to catch.
+      #
+      # No `--provenance`: trusted publishing attests automatically, and no
+      # NODE_AUTH_TOKEN, which is the point.
       - name: Publish to npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Release notes from CHANGELOG.md
         run: |
