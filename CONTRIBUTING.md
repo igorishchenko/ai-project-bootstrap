@@ -17,7 +17,8 @@ typecheck and tests — proving the generator's output actually works, not just
 that the generator's own code compiles.
 
 Before opening a PR: `pnpm test && pnpm lint && pnpm typecheck` should all
-pass locally. If you touched `README.md`'s technology table by hand, run
+pass locally. `VERIFYING.md` lists every check across all four repositories with
+the result each one produces, including the ones that are supposed to fail. If you touched `README.md`'s technology table by hand, run
 `pnpm docs:tech-table` — `tests/techTable.test.ts` fails CI if the checked-in
 table drifts from `technologies/*/manifest.json`.
 

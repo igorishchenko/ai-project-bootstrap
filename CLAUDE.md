@@ -10,6 +10,7 @@ rather than restating them here:
 
 - @ARCHITECTURE.md — the registry, the builders, the virtual filesystem
 - @CONTRIBUTING.md — adding a technology, feature or archetype; module contracts
+- @VERIFYING.md — every check across the four repos, and its expected result
 
 ## The invariant
 
@@ -31,6 +32,10 @@ project that fails to install. When a change can reach generated output —
 any builder — generate a real project and run its own checks too. `/verify`
 does both halves. Every bug class this repo has shipped twice was invisible to
 `pnpm test` alone.
+
+@VERIFYING.md is the long form: what each command should print, the file count
+each entry point produces, the exit code each refusal returns, and the four
+failures that only look like failures.
 
 ## Branches, commits, changelog
 
