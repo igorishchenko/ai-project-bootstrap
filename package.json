@@ -1,6 +1,10 @@
 {
   "name": "ai-project-bootstrap",
   "version": "1.5.1",
+  "workspace": {
+    "kind": "package",
+    "product": "ai-project-bootstrap"
+  },
   "description": "Generate and maintain an AI-assisted dev environment tailored to your stack: rules for Cursor, Claude Code and 6 more AI tools, docs, prompts, cost estimates and starter templates, plus check, review, analyze, implement, doctor and upgrade commands.",
   "type": "module",
   "license": "MIT",
@@ -57,7 +61,8 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "standards": "node scripts/verify-repo-standards.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
