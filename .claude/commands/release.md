@@ -16,13 +16,13 @@ describes something you cannot find in the log, or if the bump is ambiguous.
 ## 1. Preflight
 
 ```bash
-git switch main && git pull
+git switch develop && git pull
 git status --short          # must be clean
-gh run list --branch main --limit 1   # latest CI on main must be green
+gh run list --branch develop --limit 1   # latest CI on develop must be green
 ```
 
 Confirm the version you are about to publish is not already on npm
-(`npm view ai-project-bootstrap versions --json`), and run `/verify` if main
+(`npm view ai-project-bootstrap versions --json`), and run `/verify` if develop
 has moved since the last full run.
 
 ## 2. Cut the release branch
@@ -31,8 +31,9 @@ has moved since the last full run.
 git switch -c release/X.Y.Z
 ```
 
-Short-lived, cut from `main`, one commit. It is not an integration branch —
-features never merge into it.
+Short-lived, cut from `develop`, one commit, and it goes into `main`. It is not
+an integration branch — features never merge into it. A hotfix is the same from
+here on, on `hotfix/X.Y.Z` cut from `main` instead.
 
 ## 3. The one commit
 
@@ -55,7 +56,7 @@ being fixed — what repairs it. Match the voice of the previous release commits
 
 ```bash
 git push -u origin release/X.Y.Z
-gh pr create --fill
+gh pr create --base main --fill
 ```
 
 Wait for CI. Merge. Never tag the release branch — the tag belongs on `main`.
@@ -72,6 +73,16 @@ The tag triggers `.github/workflows/release.yml`, which re-runs the checks,
 refuses to publish if the tag disagrees with `package.json`, publishes to npm
 with provenance, and cuts the GitHub Release from the changelog section. Watch
 it: `gh run watch`.
+
+Then the back-merge, the same day: `main` now has the release commit and
+`develop` does not.
+
+```bash
+gh pr create --base develop --head main --title "chore: back-merge vX.Y.Z into develop"
+```
+
+Ihor merges it with a merge commit. Until it lands, the standard check warns that
+`main` is ahead of `develop`.
 
 It authenticates with **trusted publishing (OIDC)** — there is no npm token in
 this repository, and nothing to rotate. What it depends on instead is the

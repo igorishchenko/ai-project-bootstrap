@@ -54,7 +54,10 @@ What the standard adds to what this repo already did:
 
 ## Branches, commits, changelog
 
-- Branch off `main`: `feat/…`, `fix/…`, `chore/…`, `docs/…`. One change per PR.
+- **`develop` is development and testing, `main` is production** (standard R1).
+  Branch off `develop`: `feat/…`, `fix/…`, `chore/…`, `docs/…`, and open the PR
+  against it. One change per PR. Only `release/X.Y.Z` and `hotfix/X.Y.Z` go into
+  `main`.
 - Conventional Commits. The subject says what changed for someone using the
   CLI, not which file moved.
 - Every PR that changes behaviour adds its own entry under `## [Unreleased]`
@@ -65,9 +68,11 @@ What the standard adds to what this repo already did:
 
 ## Releases
 
-Features merge to `main`. A release is a short-lived `release/X.Y.Z` branch cut
-from `main` carrying exactly one `chore: release vX.Y.Z` commit (CHANGELOG plus
-the version bump), merged back, then tagged on `main` once CI is green. Pushing
+Features merge to `develop`. A release is a short-lived `release/X.Y.Z` branch cut
+from `develop` carrying exactly one `chore: release vX.Y.Z` commit (CHANGELOG plus
+the version bump), merged into `main`, then tagged on `main` once CI is green, and
+`main` is back-merged into `develop`. A hotfix is `hotfix/X.Y.Z` cut from `main`,
+the same way. Pushing
 the tag runs `.github/workflows/release.yml`, which publishes to npm and cuts
 the GitHub Release from the changelog section. Full procedure: `/release`, or
 the shared `cut-release` skill.

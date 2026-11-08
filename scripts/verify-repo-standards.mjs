@@ -343,6 +343,18 @@ function checkWorkflows(kind) {
     else fail('R9', 'ci.yml does not run on pull requests');
     if (/verify-repo-standards/.test(ci)) pass('R9', 'ci.yml runs this standard check');
     else fail('R9', 'ci.yml does not run verify-repo-standards.mjs — R9 step 6');
+    // develop is gated like main, so every `branches:` filter in the triggers has to let it
+    // through. A filter of `['**']` does; `[main]` alone is the shape every repo had before R1
+    // gained develop.
+    const triggers = ci.split(/^jobs:/m)[0];
+    const filters = [...triggers.matchAll(/branches:\s*(\[[^\]]*\]|(?:\n\s*-\s*[^\n]+)+)/g)].map((m) => m[1]);
+    if (filters.some((f) => !/develop|\*\*/.test(f)))
+      fail('R9', 'ci.yml has a branches filter that leaves out develop — run it on PRs into and pushes to develop and main');
+    else pass('R9', 'ci.yml runs on develop as well as main');
+    // A shallow clone has no develop or main beside HEAD, and the R1/R6 checks below then
+    // compare against nothing and pass by default.
+    if (/fetch-depth:\s*0/.test(body)) pass('R9', 'ci.yml checks out the full history');
+    else fail('R9', 'ci.yml checks out shallow — the verifier needs fetch-depth: 0 to see develop and main');
   }
 
   if (!TAG_RELEASED.includes(kind)) {
@@ -372,22 +384,48 @@ function checkWorkflows(kind) {
 }
 
 // ── R1 / R2 · branch and commits ─────────────────────────────────────────────────
-const BRANCH_RE = /^(feat|fix|refactor|perf|test|docs|chore|ci|build|revert)\/[a-z0-9]+(-[a-z0-9]+)*$|^release\/\d+\.\d+\.\d+$/;
+const BRANCH_RE =
+  /^(feat|fix|refactor|perf|test|docs|chore|ci|build|revert)\/[a-z0-9]+(-[a-z0-9]+)*$|^(release|hotfix)\/\d+\.\d+\.\d+$|^hotfix\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const COMMIT_RE = /^(feat|fix|refactor|perf|test|docs|chore|ci|build|revert)(\([a-z0-9._-]+\))?!?: .+/;
+const LONG_LIVED = ['develop', 'main', 'master'];
+/** Branches that are cut for `main` and go back into it (R1). */
+const INTO_MAIN = /^(release|hotfix)\//;
+/** The two that carry a release commit, and so may move the version (R4). */
+const BUMPS_VERSION = /^(release|hotfix)\/\d+\.\d+\.\d+$/;
+
+/** `origin/<name>` if the clone has it, else the local branch, else null. */
+function branchRef(name) {
+  if (git('rev-parse', '--verify', '--quiet', `refs/remotes/origin/${name}`)) return `origin/${name}`;
+  if (git('rev-parse', '--verify', '--quiet', `refs/heads/${name}`)) return name;
+  return null;
+}
+
+/** The version in package.json at `ref`, or null. */
+function versionAt(ref) {
+  try {
+    return JSON.parse(git('show', `${ref}:package.json`) ?? 'null')?.version ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function checkBranchAndCommits() {
   const branch = git('rev-parse', '--abbrev-ref', 'HEAD');
   if (!branch || branch === 'HEAD') return; // detached: a CI checkout, nothing to judge
-  if (branch === 'main' || branch === 'master') {
+  if (LONG_LIVED.includes(branch)) {
     pass('R1', `on ${branch}`);
     return;
   }
   if (BRANCH_RE.test(branch)) pass('R1', `branch name '${branch}' conforms`);
   else if (branch.startsWith('claude/'))
     warn('R1', `'${branch}' is a worktree branch — rename it to a real prefix before opening a PR`);
-  else fail('R1', `branch name '${branch}' does not match <type>/<slug> or release/X.Y.Z`);
+  else fail('R1', `branch name '${branch}' does not match <type>/<slug>, release/X.Y.Z or hotfix/…`);
 
-  const base = git('merge-base', 'HEAD', 'origin/main') ?? git('merge-base', 'HEAD', 'main');
+  // A branch is measured against where it is going: a release or hotfix against main,
+  // everything else against develop — or main, in a repo that has no develop yet.
+  const main = branchRef('main');
+  const target = INTO_MAIN.test(branch) ? main : (branchRef('develop') ?? main);
+  const base = target ? git('merge-base', 'HEAD', target) : null;
   if (!base) return;
   // --first-parent: only the commits put on THIS branch. A merge brings someone else's
   // history — another repo's, in a subtree import — and R2 does not reach back into
@@ -405,21 +443,50 @@ function checkBranchAndCommits() {
   const long = subjects.filter((s) => s.length > 72);
   for (const s of long) warn('R2', `commit subject is ${s.length} characters, over 72: "${s.slice(0, 50)}…"`);
 
-  // R4: only a release branch moves the version.
-  if (!branch.startsWith('release/')) {
-    const baseVersion = git('show', `${base}:package.json`);
-    if (baseVersion) {
-      try {
-        const before = JSON.parse(baseVersion).version;
-        const after = readJson('package.json')?.version;
-        if (before && after && before !== after)
-          fail('R4', `version moved ${before} → ${after} on a feature branch — only a release commit bumps it`);
-        else pass('R4', 'the version is untouched on this branch');
-      } catch {
-        /* unparseable base package.json: nothing to compare */
-      }
-    }
+  // R4: only a release or hotfix branch moves the version. A back-merge brings main's
+  // version into develop, so arriving at exactly main's version is not a bump.
+  if (!BUMPS_VERSION.test(branch)) {
+    const before = versionAt(base);
+    const after = readJson('package.json')?.version;
+    if (before && after && before !== after) {
+      if (main && after === versionAt(main)) pass('R4', `the version is main's ${after} — a back-merge`);
+      else fail('R4', `version moved ${before} → ${after} on a feature branch — only a release commit bumps it`);
+    } else if (before) pass('R4', 'the version is untouched on this branch');
   }
+}
+
+// ── R1 / R6 · develop, main and the back-merge ───────────────────────────────────
+function checkFlow(kind) {
+  const develop = branchRef('develop');
+  const main = branchRef('main');
+  if (!develop) warn('R1', 'no develop branch — every repo has develop (development) and main (production)');
+  else if (main) {
+    // After a release or a hotfix, main holds commits develop has not seen until the
+    // back-merge lands. Merge commits are left out: a web repo's develop → main release
+    // adds only one, and needs no back-merge.
+    const behind = Number(git('rev-list', '--count', '--no-merges', `${develop}..${main}`) ?? 0);
+    if (behind > 0)
+      warn('R6', `main has ${behind} commit(s) develop does not — open the back-merge, a PR from main into develop`);
+    else pass('R6', 'develop has everything main has');
+  }
+
+  // Which branch a PR may go into. GitHub's free plan has no branch protection on private
+  // repos, so this is where R1's table is enforced. GitHub sets both names on PR runs only.
+  const head = process.env.GITHUB_HEAD_REF;
+  const into = process.env.GITHUB_BASE_REF;
+  if (!head || !into || !develop) return;
+  if (into === 'main') {
+    if (INTO_MAIN.test(head) || (head === 'develop' && kind === 'web')) pass('R1', `${head} may go into main`);
+    else
+      fail(
+        'R1',
+        `${head} → main: only release/X.Y.Z and hotfix/… go into main` +
+          `${kind === 'web' ? ', and develop as the release' : ''}` +
+          (head === 'develop' ? ' — cut release/X.Y.Z off develop instead' : ' — open this PR against develop'),
+      );
+  } else if (into === 'develop' && INTO_MAIN.test(head)) {
+    fail('R1', `${head} → develop: a release or hotfix goes into main, and reaches develop by the back-merge`);
+  } else pass('R1', `${head} may go into ${into}`);
 }
 
 // ── R5 · tags ────────────────────────────────────────────────────────────────────
@@ -481,6 +548,7 @@ checkEnvDocumented(kind);
 checkWeb(kind, pkg);
 checkWorkflows(kind);
 checkBranchAndCommits();
+checkFlow(kind);
 checkTags(kind);
 checkPlugin();
 
