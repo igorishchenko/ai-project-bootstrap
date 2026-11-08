@@ -10,6 +10,7 @@
 
 <!-- What you ran, and what you looked at by hand. -->
 
+- [ ] it targets `develop` — or `main`, for a `release/` or `hotfix/` branch (R1)
 - [ ] the repo's gate is green (`npm run verify`, or lint + type-check)
 - [ ] `node scripts/verify-repo-standards.mjs` is clean
 - [ ] `CHANGELOG.md` has an entry under `[Unreleased]`, or this change is invisible to users

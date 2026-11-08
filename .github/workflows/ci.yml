@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # develop is development and preview, main is production (standard R1).
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 permissions:
@@ -19,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        # The standard check compares the branch with develop and main (R9).
+        with: { fetch-depth: 0 }
 
       - uses: pnpm/action-setup@v4
         with:
