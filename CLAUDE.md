@@ -32,6 +32,26 @@ any builder — generate a real project and run its own checks too. `/verify`
 does both halves. Every bug class this repo has shipped twice was invisible to
 `pnpm test` alone.
 
+## How work lands
+
+Branches, commits, pull requests, versions, tags and releases follow the
+**workspace repository standard** — `/Users/ihor/ihor-dev/context/global/repo-standards.md`,
+the same in every one of Ihor's repos. `pnpm standards` checks it, and so does CI.
+Invoke the `open-pr` and `cut-release` skills rather than reconstructing the rules.
+
+This repo declares itself `kind: package`, product `ai-project-bootstrap`, in
+package.json (R0). That is what says it has **no web surface of its own** — the
+product has one, and `ai-project-bootstrap-site` is the repo that owns it. The
+README on npm is this package's landing page, and it is where
+`AI_PROJECT_BOOTSTRAP_LICENSE_KEY` is documented; there is no `.env.example`
+because nothing here loads a `.env` file.
+
+What the standard adds to what this repo already did:
+
+- Branch names are `<type>/<slug>` — the prefixes below, and nothing else.
+- **Pushing the tag publishes to npm**, publicly and permanently. It needs
+  Ihor's word, separately from the word that merged the release PR.
+
 ## Branches, commits, changelog
 
 - Branch off `main`: `feat/…`, `fix/…`, `chore/…`, `docs/…`. One change per PR.
@@ -49,7 +69,8 @@ Features merge to `main`. A release is a short-lived `release/X.Y.Z` branch cut
 from `main` carrying exactly one `chore: release vX.Y.Z` commit (CHANGELOG plus
 the version bump), merged back, then tagged on `main` once CI is green. Pushing
 the tag runs `.github/workflows/release.yml`, which publishes to npm and cuts
-the GitHub Release from the changelog section. Full procedure: `/release`.
+the GitHub Release from the changelog section. Full procedure: `/release`, or
+the shared `cut-release` skill.
 
 From 1.0.0 this package is real semver. A breaking change to the CLI's flags,
 its exit codes, or the generated-project contract is a **major** — not a

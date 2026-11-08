@@ -41,6 +41,10 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # R9 step 6. The rules are context/global/repo-standards.md; this is their teeth.
+      - name: Repository standard
+        run: node scripts/verify-repo-standards.mjs
+
   generate:
     name: Generate a project and run its own checks
     runs-on: ubuntu-latest

@@ -6,6 +6,9 @@ dist/
 coverage/
 .env
 .env.local
+# A directory nothing here should ever need — the public CLI holds no secret
+# and calls no paid service. Ignored so an accident cannot become a commit.
+secrets/
 
 # Claude Code local state — worktrees are full checkouts, settings are per-machine
 .claude/worktrees/
